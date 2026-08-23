@@ -493,11 +493,14 @@ describe('App shell', () => {
           assert.ok(css.includes(want), `${page} does not link ${want}. Stylesheets found: ${css.join(', ') || 'none'}`);
         }
         const js = $('script[src]').toArray().map((el) => $(el).attr('src'));
-        for (const want of ['../assets/js/data/demo-data.js', '../assets/js/api.js', '../assets/js/shell.js']) {
+        for (const want of ['../assets/js/data/demo-data.js', '../assets/js/demo-backend.js',
+                            '../assets/js/api.js', '../assets/js/shell.js']) {
           assert.ok(js.includes(want), `${page} does not load ${want}. Scripts found: ${js.join(', ') || 'none'}`);
         }
-        assert.ok(js.indexOf('../assets/js/data/demo-data.js') < js.indexOf('../assets/js/api.js'),
-          `${page} loads api.js before demo-data.js; the API throws if the dataset is not there yet.`);
+        assert.ok(js.indexOf('../assets/js/data/demo-data.js') < js.indexOf('../assets/js/demo-backend.js'),
+          `${page} loads demo-backend.js before demo-data.js; the backend throws if the seed is not there yet.`);
+        assert.ok(js.indexOf('../assets/js/demo-backend.js') < js.indexOf('../assets/js/api.js'),
+          `${page} loads api.js before demo-backend.js; api.js resolves its adapter at load time.`);
         assert.ok(js.indexOf('../assets/js/api.js') < js.indexOf('../assets/js/shell.js'),
           `${page} loads shell.js before api.js; the shell reads the school name through the API.`);
       });
@@ -814,7 +817,7 @@ describe('Data access discipline', () => {
    * around the API to read window.DEMO_DATA, step 4 stops being a swap and
    * becomes a rewrite — which is exactly what this test exists to prevent.
    */
-  const ALLOWED = new Set(['assets/js/api.js', 'assets/js/data/demo-data.js']);
+  const ALLOWED = new Set(['assets/js/demo-backend.js', 'assets/js/data/demo-data.js']);
 
   function sourceFiles() {
     const out = [];
@@ -839,7 +842,7 @@ describe('Data access discipline', () => {
         if (line.includes('DEMO_DATA')) offenders.push(`${file}:${i + 1} — ${line.trim().slice(0, 100)}`);
       });
     }
-    assert.deepEqual(offenders, [], `These files reach past assets/js/api.js straight into the dataset:\n  ${offenders.join('\n  ')}`);
+    assert.deepEqual(offenders, [], `These files reach past assets/js/demo-backend.js straight into the dataset:\n  ${offenders.join('\n  ')}`);
   });
 
   it('the scan is looking at real files', () => {
@@ -870,10 +873,64 @@ describe('Data access discipline', () => {
     assert.deepEqual(undocumented, [], `These api.js functions have no "// GET /api/…" route comment above them: ${undocumented.join(', ')}`);
   });
 
-  it('api.js returns promises from every exported function', () => {
+  it('every route function in api.js is async', () => {
     const src = codeOf('assets/js/api.js');
-    assert.ok(!/Math\.random\(\)/.test(src), 'assets/js/api.js calls Math.random(); the data layer must stay deterministic.');
-    assert.ok(/function resolve\(/.test(src), 'assets/js/api.js has no resolve() helper — every function is meant to return a promise.');
+    const declared = src.match(/^\s*(async\s+)?function\s+\w+\s*\(/gm) || [];
+    const notAsync = declared.filter((d) => !/async/.test(d)).map((d) => d.trim());
+    assert.deepEqual(notAsync, [],
+      `These functions in api.js are not async; every route must return a promise:\n  ${notAsync.join('\n  ')}`);
+    assert.ok(declared.length >= 50, `api.js declares only ${declared.length} functions; 57 routes were expected.`);
+  });
+
+  /**
+   * The split is the point of this test. api.js is a route map: arguments in,
+   * BACKEND call out, result back. The moment arithmetic, a ledger posting or a
+   * store read appears in it, step 5 stops being a swap and becomes a rewrite.
+   */
+  it('api.js never touches the store, the ledger or the dataset', () => {
+    const src = codeOf('assets/js/api.js');
+    const FORBIDDEN = [
+      [/DEMO_DATA/, 'reads the seed dataset'],
+      [/sessionStorage|localStorage/, 'touches browser storage'],
+      [/journal_lines|postEntry|debit|credit/, 'posts to the general ledger'],
+      [/\.invoices\b|\.students\b|\.guardians\b|\.attendance\b|\.exam_results\b/, 'reaches into a store collection'],
+      [/\breconcile|amount_due\s*-|balance\s*=/, 'does invoice arithmetic'],
+      [/\.filter\(|\.reduce\(|\.sort\(/, 'filters, sorts or aggregates — that is the backend\'s job']
+    ];
+    const found = FORBIDDEN.filter(([re]) => re.test(src))
+      .map(([re, what]) => `api.js ${what} (matched ${re})`);
+    assert.deepEqual(found, [],
+      `api.js is no longer a thin route map:\n  ${found.join('\n  ')}\n` +
+      'Business rules belong in assets/js/demo-backend.js, which step 5 deletes.');
+  });
+
+  it('api.js resolves its backend through one swappable reference', () => {
+    const src = readFile('assets/js/api.js');
+    assert.ok(/global\.SHULE_BACKEND\s*\|\|\s*global\.DemoBackend/.test(src),
+      'api.js does not read `window.SHULE_BACKEND || DemoBackend`; there must be exactly one swap point.');
+    const calls = (codeOf('assets/js/api.js').match(/BACKEND\./g) || []).length;
+    assert.ok(calls >= 55, `api.js only calls BACKEND ${calls} times; every route should go through it.`);
+  });
+
+  it('the backend adapter owns the rules, and says it is the file that goes', () => {
+    const src = readFile('assets/js/demo-backend.js');
+    assert.ok(/DemoBackend\s*=/.test(src), 'assets/js/demo-backend.js does not export window.DemoBackend.');
+    assert.ok(/STEP 5 DELETES THIS FILE/i.test(src),
+      'demo-backend.js does not say it is the file step 5 deletes; that note is how the next person knows which half is disposable.');
+    for (const rule of ['journal_lines', 'sessionStorage', 'DEMO_DATA']) {
+      assert.ok(src.includes(rule), `demo-backend.js does not mention ${rule}; the rules did not move across.`);
+    }
+  });
+
+  it('demo-backend.js is not referenced by any page except through the script tag', () => {
+    const leaks = [];
+    for (const file of sourceFiles()) {
+      if (file === 'assets/js/demo-backend.js' || file === 'assets/js/api.js') continue;
+      if (/\.html$/.test(file)) continue;
+      if (/DemoBackend/.test(codeOf(file))) leaks.push(file);
+    }
+    assert.deepEqual(leaks, [],
+      `These files call the demo backend directly instead of going through api.js: ${leaks.join(', ')}`);
   });
 
   it('demo-data.js is seeded and never reads the clock', () => {
