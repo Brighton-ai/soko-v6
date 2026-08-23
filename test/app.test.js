@@ -288,9 +288,13 @@ describe('Data integrity', () => {
     assert.ok(runs > 0, 'Not one absence runs into the next day; the brief asked for realistic clustering, not evenly sprinkled noise.');
   });
 
-  it('two exams exist, one with results, some rows unverified', () => {
+  it('several exams exist, one with results, some rows unverified', () => {
     const exams = D.exams.filter((e) => e.term_id === D.current_term_id);
-    assert.equal(exams.length, 2, `There are ${exams.length} exams this term, expected 2.`);
+    assert.ok(exams.length >= 2, `There are ${exams.length} exams this term; at least 2 were expected.`);
+    const scales = new Set(exams.map((e) => e.grading_scale_id));
+    assert.ok(scales.size >= 2,
+      `Every seeded exam binds to the same grading scale (${[...scales].join(', ')}); ` +
+      'both seeded scales should be in use so they are visible side by side.');
     const withResults = exams.filter((e) => D.exam_results.some((r) => r.exam_id === e.id));
     assert.equal(withResults.length, 1, `${withResults.length} exams have results; the brief asked for exactly one.`);
     const unverified = D.exam_results.filter((r) => !r.verified);
@@ -892,6 +896,66 @@ function checkInvariants(win, after) {
     const key = `${i.student_id}|${i.class_id}|${i.term_id}`;
     if (seen[key]) problems.push(`student ${i.student_id} has two invoices for ${i.class_id} in ${i.term_id}: ${seen[key]} and ${i.id}`);
     seen[key] = i.id;
+  });
+
+  // ── academics ────────────────────────────────────────────────────────
+  // one attendance record per pupil per class per date
+  const marks = {};
+  D.attendance.forEach((a) => {
+    const key = `${a.student_id}|${a.class_id}|${a.date}`;
+    if (marks[key]) problems.push(`${a.student_id} has two attendance records for ${a.class_id} on ${a.date}: ${marks[key]} and ${a.id}`);
+    marks[key] = a.id;
+    if (!a.marked_by) problems.push(`attendance ${a.id} has no marked_by`);
+  });
+
+  // every band set tiles its range
+  D.grading_scales.forEach((g) => {
+    const bands = g.bands.slice().sort((a, b) => a.min - b.min);
+    if (bands[0].min !== 0) problems.push(`scale ${g.name} starts at ${bands[0].min}, not 0`);
+    for (let i = 1; i < bands.length; i++) {
+      if (bands[i].min !== bands[i - 1].max + 1) {
+        problems.push(`scale ${g.name}: ${bands[i - 1].grade} ends ${bands[i - 1].max} but ${bands[i].grade} starts ${bands[i].min}`);
+      }
+    }
+    if (bands[bands.length - 1].max !== g.max_score) {
+      problems.push(`scale ${g.name} ends at ${bands[bands.length - 1].max}, not ${g.max_score}`);
+    }
+  });
+
+  // every stored grade is the band its score falls in, for that exam's scale
+  const scaleOf = {};
+  D.exams.forEach((e) => { scaleOf[e.id] = D.grading_scales.filter((g) => g.id === e.grading_scale_id)[0]; });
+  D.exam_results.forEach((r) => {
+    const exam = D.exams.filter((e) => e.id === r.exam_id)[0];
+    if (!exam) { problems.push(`result ${r.id} points at exam ${r.exam_id}, which does not exist`); return; }
+    if (r.score < 0 || r.score > exam.max_score) {
+      problems.push(`result ${r.id} scores ${r.score}, outside 0–${exam.max_score} for ${exam.name}`);
+      return;
+    }
+    const scale = scaleOf[r.exam_id];
+    if (!scale) { problems.push(`exam ${r.exam_id} binds to a scale that does not exist`); return; }
+    const band = scale.bands.filter((b) => r.score >= b.min && r.score <= b.max)[0];
+    if (!band) { problems.push(`result ${r.id} scores ${r.score}, which falls in no band of ${scale.name}`); return; }
+    if (band.grade !== r.grade) problems.push(`result ${r.id} scores ${r.score} in band ${band.grade} but is stored as ${r.grade}`);
+    if (band.points !== r.points) problems.push(`result ${r.id} grade ${r.grade} carries ${band.points} points but is stored as ${r.points}`);
+  });
+
+  // report card positions are dense-ranked by average, and class_size is the roll
+  const byClass = {};
+  D.report_cards.forEach((c) => { (byClass[c.class_id] = byClass[c.class_id] || []).push(c); });
+  Object.keys(byClass).forEach((classId) => {
+    const cards = byClass[classId];
+    const ordered = cards.slice().sort((a, b) => b.average - a.average);
+    let rank = 0, previous = null;
+    ordered.forEach((card) => {
+      if (previous === null || card.average !== previous) { rank += 1; previous = card.average; }
+      if (card.position !== rank) {
+        problems.push(`report card ${card.id}: average ${card.average} dense-ranks to ${rank} but is stored as position ${card.position}`);
+      }
+      if (card.class_size !== cards.length) {
+        problems.push(`report card ${card.id} says class_size ${card.class_size}, but ${cards.length} cards are ranked in ${classId}`);
+      }
+    });
   });
 
   deepEqual(problems.slice(0, 8), [], `Invariants broken after ${after}:\n  ${problems.slice(0, 8).join('\n  ')}`);
@@ -1734,5 +1798,781 @@ describe('Student record', () => {
     dom.window.close();
     assert.ok(notFound, 'student.html with no id at all did not render the not-found panel.');
     deepEqual(errors, [], `Opening student.html with no id logged an error:\n  ${errors.join('\n  ')}`);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Step 4 — academics
+// ══════════════════════════════════════════════════════════════════════════
+
+describe('Grading scales', () => {
+  let dom, win, API;
+  before(async () => { dom = await openPage('app/grading-scales.html'); win = dom.window; API = win.ShuleAPI; });
+  after(() => { if (dom) dom.window.close(); });
+
+  it('seeds two scales, side by side, both covering their whole range', async () => {
+    const rows = await API.listGradingScaleRows('sch-riverside', {});
+    assert.ok(rows.length >= 2, `Only ${rows.length} grading scales are seeded; two were asked for.`);
+    const names = rows.map((g) => g.name).join(' | ');
+    assert.ok(/cbc/i.test(names), `No CBC scale among: ${names}`);
+    assert.ok(/8-4-4|letter/i.test(names), `No 8-4-4 scale among: ${names}`);
+    const holes = rows.filter((g) => !g.tiles).map((g) => g.name);
+    deepEqual(holes, [], `These seeded scales do not tile their range: ${holes.join(', ')}`);
+    assert.equal(rows.filter((g) => g.is_default).length, 1,
+      `${rows.filter((g) => g.is_default).length} scales are marked default; exactly one should be.`);
+  });
+
+  it('the CBC scale has the four performance levels', async () => {
+    const rows = await API.listGradingScaleRows('sch-riverside', {});
+    const cbc = rows.filter((g) => /cbc/i.test(g.name))[0];
+    const grades = cbc.bands.map((b) => b.grade).sort();
+    deepEqual(grades, ['AE', 'BE', 'EE', 'ME'],
+      `The CBC scale has bands [${grades.join(', ')}]; BE, AE, ME and EE were specified.`);
+  });
+
+  it('refuses a gap and names the score that falls through', () => {
+    const problem = API.validateBands([
+      { grade: 'D', min: 0, max: 39, points: 1, remark: 'Below' },
+      { grade: 'C', min: 40, max: 49, points: 2, remark: 'Fair' },
+      { grade: 'B', min: 51, max: 100, points: 3, remark: 'Good' }
+    ], 100);
+    assert.ok(problem, 'A scale with a hole at 50 was accepted.');
+    assert.ok(/gap/i.test(problem), `The message does not say "gap": ${problem}`);
+    assert.ok(/\b50\b/.test(problem), `The message does not name the score that falls through: ${problem}`);
+  });
+
+  it('refuses an overlap and names the range that matches twice', () => {
+    const problem = API.validateBands([
+      { grade: 'D', min: 0, max: 50, points: 1, remark: 'Below' },
+      { grade: 'C', min: 40, max: 100, points: 2, remark: 'Fair' }
+    ], 100);
+    assert.ok(problem, 'Two bands overlapping 40–50 were accepted.');
+    assert.ok(/overlap/i.test(problem), `The message does not say "overlap": ${problem}`);
+    assert.ok(/40/.test(problem) && /50/.test(problem), `The message does not name the overlapping range: ${problem}`);
+  });
+
+  it('refuses bands that do not start at 0 or reach the maximum', () => {
+    const low = API.validateBands([{ grade: 'A', min: 10, max: 100, points: 1, remark: 'x' }], 100);
+    assert.ok(low && /0 to 9|must start at 0/i.test(low), `Starting at 10 was accepted or misreported: ${low}`);
+    const high = API.validateBands([{ grade: 'A', min: 0, max: 90, points: 1, remark: 'x' }], 100);
+    assert.ok(high && /91/.test(high), `Ending at 90 out of 100 was accepted or misreported: ${high}`);
+  });
+
+  it('refuses a duplicate grade and a backwards band', () => {
+    const dupe = API.validateBands([
+      { grade: 'A', min: 0, max: 50, points: 1, remark: 'x' },
+      { grade: 'A', min: 51, max: 100, points: 2, remark: 'x' }
+    ], 100);
+    assert.ok(dupe && /twice/i.test(dupe), `A duplicate grade was accepted: ${dupe}`);
+    const back = API.validateBands([{ grade: 'A', min: 80, max: 20, points: 1, remark: 'x' }], 100);
+    assert.ok(back && /backwards/i.test(back), `A band running 80 to 20 was accepted: ${back}`);
+  });
+
+  it('accepts a clean scale and saves it', async () => {
+    const before = (await API.listGradingScaleRows('sch-riverside', {})).length;
+    const scale = await API.createGradingScale('sch-riverside', {
+      name: 'Junior formative (test)', maxScore: 40,
+      bands: [
+        { grade: 'BE', min: 0, max: 15, points: 1, remark: 'Below expectation' },
+        { grade: 'AE', min: 16, max: 25, points: 2, remark: 'Approaching expectation' },
+        { grade: 'ME', min: 26, max: 33, points: 3, remark: 'Meeting expectation' },
+        { grade: 'EE', min: 34, max: 40, points: 4, remark: 'Exceeding expectation' }
+      ]
+    });
+    const after = await API.listGradingScaleRows('sch-riverside', {});
+    checkInvariants(win, 'creating a grading scale');
+    assert.equal(after.length, before + 1, `The scale list went from ${before} to ${after.length}.`);
+    assert.equal(scale.max_score, 40, `The saved scale is out of ${scale.max_score}, expected 40.`);
+    assert.ok(after.filter((g) => g.id === scale.id)[0].tiles, 'The saved scale does not tile its range.');
+    await API.deleteGradingScale('sch-riverside', scale.id);
+  });
+
+  it('will not delete a scale that exams grade against, or the default', async () => {
+    const rows = await API.listGradingScaleRows('sch-riverside', {});
+    const bound = rows.filter((g) => g.exam_count > 0 && !g.is_default)[0] ||
+                  rows.filter((g) => g.exam_count > 0)[0];
+    let err = null;
+    await API.deleteGradingScale('sch-riverside', bound.id).catch((e) => { err = e; });
+    assert.ok(err, `"${bound.name}" was deleted despite ${bound.exam_count} exams grading against it.`);
+    assert.equal(err.status, 409, `The refusal came back as ${err.status}, expected 409.`);
+    assert.ok(/exam|default/i.test(err.message), `The refusal does not explain itself: ${err.message}`);
+    const still = await API.listGradingScaleRows('sch-riverside', {});
+    assert.ok(still.some((g) => g.id === bound.id), 'The scale went anyway.');
+  });
+
+  it('editing a scale regrades every mark bound to it', async () => {
+    const page = await openPage('app/grading-scales.html');
+    const w = page.window;
+    const scale = (await w.ShuleAPI.listGradingScaleRows('sch-riverside', {}))
+      .filter((g) => g.result_count > 0)[0];
+    assert.ok(scale, 'No seeded scale has marks against it.');
+
+    // move the top boundary down by two, so anyone on the old top two marks of
+    // the band below moves up a grade. Both bands stay valid.
+    const bands = scale.bands.map((b) => Object.assign({}, b));
+    const top = bands[bands.length - 1], below = bands[bands.length - 2];
+    below.max = below.max - 2;
+    top.min = top.min - 2;
+
+    const r = await w.ShuleAPI.updateGradingScale('sch-riverside', scale.id, {
+      name: scale.name, maxScore: scale.max_score, bands: bands
+    });
+    checkInvariants(w, 'editing a grading scale');
+    page.window.close();
+    assert.ok(r.regraded > 0, 'Widening a band regraded nothing, so stored grades have drifted from the scale.');
+  });
+});
+
+describe('Attendance', () => {
+  let dom, win, API;
+  before(async () => { dom = await openPage('app/attendance.html'); win = dom.window; API = win.ShuleAPI; });
+  after(() => { if (dom) dom.window.close(); });
+
+  const UNMARKED = 'cls-g6w';   // no register taken today in the seed
+
+  it('the register opens on the roll for the chosen class and date', async () => {
+    const r = await API.getClassRegister('sch-riverside', UNMARKED, { date: storeOf(win).today });
+    const roll = storeOf(win).students.filter((s) => s.class_id === UNMARKED && s.status === 'active').length;
+    assert.equal(r.roll.length, roll, `The register drew ${r.roll.length} pupils for a roll of ${roll}.`);
+    assert.equal(r.already_marked, false, 'That class is marked today; the unmarked path is never exercised.');
+    assert.ok(r.roll.every((x) => x.status === null), 'An unmarked register came back with marks on it.');
+  });
+
+  it('renders the roll with a mark control per pupil', () => {
+    const rows = $$(win, '#roll tr');
+    assert.ok(rows.length > 0, 'The register table drew no rows.');
+    const missing = rows.filter((tr) => tr.querySelectorAll('[data-mark]').length !== 3)
+      .map((tr) => tr.getAttribute('data-student'));
+    deepEqual(missing.slice(0, 5), [],
+      `These rows do not offer present, absent and late: ${missing.slice(0, 5).join(', ')}`);
+  });
+
+  it('submitting a register that already exists updates rather than duplicates', async () => {
+    const page = await openPage('app/attendance.html');
+    const w = page.window;
+    const API2 = w.ShuleAPI;
+    const D = storeOf(w);
+    const date = D.today;
+    const roll = D.students.filter((s) => s.class_id === UNMARKED && s.status === 'active');
+    const before = D.attendance.length;
+
+    const first = await API2.markAttendance('sch-riverside', UNMARKED, {
+      date, markedBy: 'tch-04',
+      records: roll.map((s) => ({ student_id: s.id, status: 'present' }))
+    });
+    checkInvariants(w, 'marking a register for the first time');
+    const afterFirst = storeOf(w).attendance.length;
+
+    assert.equal(first.created, roll.length, `The first submit created ${first.created} of ${roll.length}.`);
+    assert.equal(first.updated, 0, `The first submit updated ${first.updated}; nothing existed to update.`);
+    assert.equal(afterFirst, before + roll.length,
+      `The record count went from ${before} to ${afterFirst}, expected ${before + roll.length}.`);
+
+    // now mark the same register again, with different values
+    const second = await API2.markAttendance('sch-riverside', UNMARKED, {
+      date, markedBy: 'tch-04',
+      records: roll.map((s, i) => ({ student_id: s.id, status: i < 3 ? 'absent' : 'present', note: i < 3 ? 'Sick' : null }))
+    });
+    checkInvariants(w, 'marking the same register twice');
+    const afterSecond = storeOf(w).attendance.length;
+    const today = storeOf(w).attendance.filter((a) => a.class_id === UNMARKED && a.date === date);
+
+    assert.equal(afterSecond, afterFirst,
+      `The second submit changed the record count from ${afterFirst} to ${afterSecond}. A repeat register must upsert, not insert.`);
+    assert.equal(second.created, 0, `The second submit created ${second.created} new records.`);
+    assert.equal(second.updated, roll.length, `The second submit updated ${second.updated} of ${roll.length}.`);
+    assert.equal(second.was_update, true, 'The second submit did not report itself as an update.');
+    assert.equal(today.length, roll.length,
+      `${today.length} records exist for ${roll.length} pupils on ${date}; there must be exactly one each.`);
+
+    const absent = today.filter((a) => a.status === 'absent');
+    assert.equal(absent.length, 3, `${absent.length} pupils are marked absent after the update; 3 were.`);
+    assert.ok(absent.every((a) => a.note === 'Sick'), 'The notes did not come through on the update.');
+    assert.ok(today.every((a) => a.marked_by === 'tch-04'), 'marked_by was not stamped on every record.');
+    page.window.close();
+  });
+
+  it('refuses a register with an unmarked pupil or a bad status', async () => {
+    const page = await openPage('app/attendance.html');
+    const w = page.window;
+    const before = storeOf(w).attendance.length;
+    let err = null;
+    await w.ShuleAPI.markAttendance('sch-riverside', UNMARKED, {
+      date: storeOf(w).today, markedBy: 'tch-04',
+      records: [{ student_id: storeOf(w).students[0].id, status: 'maybe' }]
+    }).catch((e) => { err = e; });
+    const after = storeOf(w).attendance.length;
+    page.window.close();
+    assert.ok(err, 'A status of "maybe" was accepted.');
+    assert.equal(after, before, 'The rejected register still wrote records.');
+  });
+
+  it('refuses a register dated in the future', async () => {
+    let err = null;
+    await API.markAttendance('sch-riverside', UNMARKED, {
+      date: '2027-01-01', markedBy: 'tch-04',
+      records: [{ student_id: storeOf(win).students[0].id, status: 'present' }]
+    }).catch((e) => { err = e; });
+    assert.ok(err, 'A register dated in 2027 was accepted.');
+    assert.ok(/future/i.test(err.message), `The refusal reads "${err.message}".`);
+  });
+
+  it('the report percentages match a recount from the store', async () => {
+    const r = await API.getAttendanceReport('sch-riverside', { classId: 'cls-g4e' });
+    const D = storeOf(win);
+    const off = r.rows.slice(0, 8).map((row) => {
+      const mine = D.attendance.filter((a) => a.student_id === row.student_id &&
+        a.date >= r.from && a.date <= r.to);
+      const here = mine.filter((a) => a.status === 'present' || a.status === 'late').length;
+      const expected = mine.length ? here / mine.length * 100 : null;
+      if (expected === null && row.percentage === null) return null;
+      return Math.abs(row.percentage - expected) < 0.001 ? null
+        : `${row.name}: report says ${row.percentage}, recount gives ${expected}`;
+    }).filter(Boolean);
+    deepEqual(off, [], `Attendance percentages do not match the register:\n  ${off.join('\n  ')}`);
+  });
+
+  it('the report grid is one column per school day in the range', async () => {
+    const r = await API.getAttendanceReport('sch-riverside', { classId: 'cls-g4e' });
+    const weekend = r.dates.filter((d) => [0, 6].includes(new Date(d + 'T00:00:00Z').getUTCDay()));
+    deepEqual(weekend, [], `The report includes non-school days: ${weekend.join(', ')}`);
+    const wrong = r.rows.filter((row) => row.days.length !== r.dates.length).map((row) => row.name);
+    deepEqual(wrong.slice(0, 3), [], `These rows have the wrong number of day cells: ${wrong.slice(0, 3).join(', ')}`);
+  });
+
+  it('the absentee list is exactly who was away that day', async () => {
+    const D = storeOf(win);
+    const date = D.today;
+    const r = await API.getAbsentees('sch-riverside', { date });
+    const expected = D.attendance.filter((a) => a.date === date &&
+      (a.status === 'absent' || a.status === 'excused')).length;
+    assert.equal(r.total, expected, `The absentee list shows ${r.total}; the register has ${expected} away.`);
+    assert.ok(r.items.every((a) => a.guardian_phone), 'An absentee has no guardian phone to call.');
+  });
+});
+
+describe('Exams', () => {
+  let dom, win, API;
+  before(async () => { dom = await openPage('app/exams.html'); win = dom.window; API = win.ShuleAPI; });
+  after(() => { if (dom) dom.window.close(); });
+
+  it('lists the term exams with their scale and mark counts', async () => {
+    const rows = await API.listExamRows('sch-riverside', {});
+    assert.ok(rows.length >= 2, `Only ${rows.length} exams are seeded.`);
+    const nameless = rows.filter((e) => !e.scale_name || e.scale_name === '—').map((e) => e.name);
+    deepEqual(nameless, [], `These exams are not bound to a grading scale: ${nameless.join(', ')}`);
+    const marked = rows.filter((e) => e.result_count > 0);
+    assert.ok(marked.length >= 1, 'No exam has any marks, so nothing downstream can be tested.');
+    assert.ok(marked[0].locked, 'An exam with marks is not reported as locked.');
+  });
+
+  it('creating an exam requires a bound scale it can actually grade against', async () => {
+    const base = {
+      name: 'Opener 2027', type: 'opener', termId: 't2-2026',
+      startsOn: '2026-09-10', endsOn: '2026-09-12', maxScore: 100, classIds: ['cls-g4e']
+    };
+    let err = null;
+    await API.createExam('sch-riverside', Object.assign({}, base, { gradingScaleId: null })).catch((e) => { err = e; });
+    assert.ok(err, 'An exam with no grading scale was created.');
+    assert.ok(/grading scale/i.test(err.message), `The refusal reads "${err.message}".`);
+
+    // a 200-mark exam cannot grade on a scale that stops at 100
+    err = null;
+    await API.createExam('sch-riverside', Object.assign({}, base, { maxScore: 200, gradingScaleId: 'grd-844' }))
+      .catch((e) => { err = e; });
+    assert.ok(err, 'An exam out of 200 was bound to a scale that only reaches 100.');
+    assert.ok(/only grades up to|outside every band/i.test(err.message),
+      `The refusal does not explain the mismatch: ${err.message}`);
+  });
+
+  it('creates a valid exam and refuses one that ends before it starts', async () => {
+    const before = (await API.listExamRows('sch-riverside', {})).length;
+    const exam = await API.createExam('sch-riverside', {
+      name: 'Opener Term 3', type: 'opener', termId: 't2-2026',
+      startsOn: '2026-09-10', endsOn: '2026-09-12', maxScore: 100,
+      gradingScaleId: 'grd-844', classIds: ['cls-g4e', 'cls-g5w']
+    });
+    const after = await API.listExamRows('sch-riverside', {});
+    checkInvariants(win, 'creating an exam');
+    assert.equal(after.length, before + 1, `The exam list went from ${before} to ${after.length}.`);
+    assert.equal(exam.class_ids.length, 2, 'The classes sitting it were not saved.');
+
+    let err = null;
+    await API.createExam('sch-riverside', {
+      name: 'Backwards', type: 'cat', termId: 't2-2026',
+      startsOn: '2026-09-20', endsOn: '2026-09-10', maxScore: 40,
+      gradingScaleId: 'grd-cbc', classIds: ['cls-g4e']
+    }).catch((e) => { err = e; });
+    assert.ok(err && /ends before it starts/i.test(err.message),
+      `An exam ending before it starts was accepted, or misreported: ${err && err.message}`);
+  });
+
+  it("an exam's scale cannot change once results exist, and says why", async () => {
+    const page = await openPage('app/exams.html');
+    const w = page.window;
+    const marked = (await w.ShuleAPI.listExamRows('sch-riverside', {}))
+      .filter((e) => e.result_count > 0)[0];
+    const wasScale = marked.grading_scale_id;
+    const other = (await w.ShuleAPI.listGradingScaleRows('sch-riverside', {}))
+      .filter((g) => g.id !== wasScale)[0];
+
+    let err = null;
+    await w.ShuleAPI.updateExam('sch-riverside', marked.id, { gradingScaleId: other.id }).catch((e) => { err = e; });
+    const now = (await w.ShuleAPI.listExamRows('sch-riverside', {})).filter((e) => e.id === marked.id)[0];
+    page.window.close();
+
+    assert.ok(err, `"${marked.name}" moved scale despite ${marked.result_count} marks against it.`);
+    assert.equal(err.status, 409, `The refusal came back as ${err.status}, expected 409.`);
+    assert.ok(err.message.includes(String(marked.result_count)),
+      `The refusal does not say how many marks are affected: ${err.message}`);
+    assert.ok(/already marked|old bands/i.test(err.message),
+      `The refusal does not explain the risk: ${err.message}`);
+    assert.equal(now.grading_scale_id, wasScale, 'The scale changed anyway.');
+  });
+
+  it('an unmarked exam can still be re-bound', async () => {
+    const page = await openPage('app/exams.html');
+    const w = page.window;
+    const clean = (await w.ShuleAPI.listExamRows('sch-riverside', {}))
+      .filter((e) => e.result_count === 0 && e.max_score === 100)[0];
+    assert.ok(clean, 'No unmarked exam to re-bind.');
+    const updated = await w.ShuleAPI.updateExam('sch-riverside', clean.id, { gradingScaleId: 'grd-cbc' });
+    checkInvariants(w, 'rebinding an unmarked exam');
+    page.window.close();
+    assert.equal(updated.grading_scale_id, 'grd-cbc',
+      `The scale is ${updated.grading_scale_id} after re-binding an exam with no marks.`);
+  });
+});
+
+describe('Results', () => {
+  let dom, win, API;
+  const EXAM = 'exm-t2-mid', CLASS = 'cls-g7w', SUBJECT = 'sub-mat';
+  before(async () => { dom = await openPage('app/results.html'); win = dom.window; API = win.ShuleAPI; });
+  after(() => { if (dom) dom.window.close(); });
+
+  it('the mark sheet is one row per pupil, with the exam maximum on it', async () => {
+    const sheet = await API.getMarkSheet('sch-riverside', EXAM, { classId: CLASS, subjectId: SUBJECT });
+    const roll = storeOf(win).students.filter((s) => s.class_id === CLASS && s.status === 'active').length;
+    assert.equal(sheet.roll.length, roll, `The sheet drew ${sheet.roll.length} rows for a roll of ${roll}.`);
+    assert.equal(sheet.max_score, 100, `The sheet says out of ${sheet.max_score}.`);
+    assert.ok(sheet.scale && sheet.scale.bands.length, 'The sheet came back with no grading scale.');
+  });
+
+  it('renders a score input bounded by the exam maximum', () => {
+    const inputs = $$(win, '#rows [data-score]');
+    assert.ok(inputs.length > 0, 'The mark sheet drew no score inputs.');
+    const wrong = inputs.filter((i) => i.getAttribute('max') !== '100' || i.getAttribute('min') !== '0');
+    assert.equal(wrong.length, 0, `${wrong.length} score inputs are not bounded to 0–100.`);
+  });
+
+  it('typing a mark derives its grade and points live', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const input = $(w, '#rows [data-score]');
+    const id = input.getAttribute('data-score');
+    input.value = '72';
+    input.dispatchEvent(new w.Event('input', { bubbles: true }));
+
+    // the cell is "<grade>" followed by a <span> carrying the remark
+    const grade = $(w, `[data-grade="${id}"]`).childNodes[0].nodeValue.trim();
+    const points = text($(w, `[data-points="${id}"]`));
+    const scale = storeOf(w).grading_scales.filter((g) => g.id === 'grd-844')[0];
+    const band = scale.bands.filter((b) => 72 >= b.min && 72 <= b.max)[0];
+    page.window.close();
+
+    assert.equal(grade, band.grade, `Typing 72 showed grade "${grade}"; the scale puts it in ${band.grade}.`);
+    assert.equal(points, String(band.points), `Typing 72 showed ${points} points; the band carries ${band.points}.`);
+  });
+
+  it('a mark outside 0..max is rejected inline and blocks the save', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const before = storeOf(w).exam_results.length;
+    const input = $(w, '#rows [data-score]');
+    const id = input.getAttribute('data-score');
+
+    input.value = '140';
+    input.dispatchEvent(new w.Event('input', { bubbles: true }));
+    const err = $(w, `#scoreerr-${id}`);
+    assert.ok(text(err).length > 0, 'A mark of 140 out of 100 showed no inline error.');
+    assert.ok(/out of 100/i.test(text(err)), `The inline error reads "${text(err)}".`);
+    assert.equal(input.getAttribute('aria-invalid'), 'true', 'The out-of-range input is not marked aria-invalid.');
+
+    $(w, '#save-marks').click();
+    await new Promise((r) => w.setTimeout(r, 80));
+    const after = storeOf(w).exam_results.length;
+    const toast = $(w, '#toasts [data-toast]');
+    page.window.close();
+
+    assert.equal(after, before, `Saving with an out-of-range mark wrote ${after - before} results.`);
+    assert.ok(toast && /outside/i.test(text(toast)), `The save produced no explanatory toast: ${toast && text(toast)}`);
+  });
+
+  it('the backend refuses an out-of-range mark even if the page is bypassed', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const before = storeOf(w).exam_results.length;
+    const roll = storeOf(w).students.filter((s) => s.class_id === CLASS && s.status === 'active');
+
+    for (const bad of [-1, 101, 999]) {
+      let err = null;
+      await w.ShuleAPI.saveExamResults('sch-riverside', EXAM, {
+        classId: CLASS, subjectId: SUBJECT, enteredBy: 'tch-01',
+        scores: [{ student_id: roll[0].id, score: bad }]
+      }).catch((e) => { err = e; });
+      assert.ok(err, `A score of ${bad} was accepted against an exam out of 100.`);
+      assert.ok(/outside 0–100/.test(err.message), `The refusal reads "${err.message}".`);
+    }
+    const after = storeOf(w).exam_results.length;
+    checkInvariants(w, 'rejected out-of-range marks');
+    page.window.close();
+    assert.equal(after, before, 'A rejected mark sheet still wrote results.');
+  });
+
+  it('saving derives grade and points from the bound scale, never from the caller', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const roll = storeOf(w).students.filter((s) => s.class_id === CLASS && s.status === 'active');
+    const scale = storeOf(w).grading_scales.filter((g) => g.id === 'grd-844')[0];
+
+    await w.ShuleAPI.saveExamResults('sch-riverside', EXAM, {
+      classId: CLASS, subjectId: SUBJECT, enteredBy: 'tch-01',
+      scores: roll.slice(0, 5).map((s, i) => ({
+        student_id: s.id, score: [0, 44, 50, 79, 100][i],
+        grade: 'Z', points: 999             // a caller trying to dictate the grade
+      }))
+    });
+    checkInvariants(w, 'saving a mark sheet');
+
+    const saved = storeOf(w).exam_results.filter((r) =>
+      r.exam_id === EXAM && r.class_id === CLASS && r.subject_id === SUBJECT &&
+      roll.slice(0, 5).some((s) => s.id === r.student_id));
+    page.window.close();
+
+    assert.equal(saved.length, 5, `${saved.length} of 5 marks were saved.`);
+    const wrong = saved.map((r) => {
+      const band = scale.bands.filter((b) => r.score >= b.min && r.score <= b.max)[0];
+      if (r.grade !== band.grade) return `${r.score} stored as ${r.grade}, band says ${band.grade}`;
+      if (r.points !== band.points) return `${r.score} stored with ${r.points} points, band carries ${band.points}`;
+      return null;
+    }).filter(Boolean);
+    deepEqual(wrong, [], `Stored grades do not follow the bound scale:\n  ${wrong.join('\n  ')}`);
+  });
+
+  it('a changed mark goes back to unverified', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const verified = storeOf(w).exam_results.filter((r) => r.exam_id === EXAM && r.verified)[0];
+    assert.ok(verified, 'No verified result in the seed to disturb.');
+
+    await w.ShuleAPI.saveExamResults('sch-riverside', EXAM, {
+      classId: verified.class_id, subjectId: verified.subject_id, enteredBy: 'tch-01',
+      scores: [{ student_id: verified.student_id, score: Math.max(0, verified.score - 3) }]
+    });
+    const now = storeOf(w).exam_results.filter((r) => r.id === verified.id)[0];
+    checkInvariants(w, 'changing a verified mark');
+    page.window.close();
+    assert.equal(now.verified, false,
+      'Changing a verified mark left it verified. A new number has not been checked by anyone.');
+    assert.equal(now.verified_by, null, 'The old verifier is still stamped on a changed mark.');
+  });
+
+  it('verification is a separate action that records who did it', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const unverified = storeOf(w).exam_results.filter((r) => r.exam_id === EXAM && !r.verified);
+    assert.ok(unverified.length, 'Nothing in the seed is awaiting verification.');
+    const classId = unverified[0].class_id;
+
+    let err = null;
+    await w.ShuleAPI.verifyExamResults('sch-riverside', EXAM, { classId }).catch((e) => { err = e; });
+    assert.ok(err, 'Verification went through without a name against it.');
+    assert.ok(/signed|choose who/i.test(err.message), `The refusal reads "${err.message}".`);
+
+    const r = await w.ShuleAPI.verifyExamResults('sch-riverside', EXAM, { classId, verifiedBy: 'tch-06', allowSelf: true });
+    checkInvariants(w, 'verifying results');
+    const after = storeOf(w).exam_results.filter((x) => x.exam_id === EXAM && x.class_id === classId);
+    page.window.close();
+
+    assert.ok(r.verified > 0, `Verification reported ${r.verified} marks.`);
+    const left = after.filter((x) => !x.verified);
+    assert.equal(left.length, 0, `${left.length} marks in that class are still unverified.`);
+    const unstamped = after.filter((x) => !x.verified_by).length;
+    assert.equal(unstamped, 0, `${unstamped} verified marks carry no verified_by.`);
+  });
+
+  it('the person who entered a mark cannot verify it', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const roll = storeOf(w).students.filter((s) => s.class_id === CLASS && s.status === 'active');
+    await w.ShuleAPI.saveExamResults('sch-riverside', EXAM, {
+      classId: CLASS, subjectId: SUBJECT, enteredBy: 'tch-02',
+      scores: [{ student_id: roll[0].id, score: 61 }]
+    });
+    let err = null;
+    await w.ShuleAPI.verifyExamResults('sch-riverside', EXAM, {
+      classId: CLASS, subjectId: SUBJECT, verifiedBy: 'tch-02'
+    }).catch((e) => { err = e; });
+    page.window.close();
+    assert.ok(err, 'The teacher who entered the marks was allowed to verify them.');
+    assert.ok(/separate steps|same person/i.test(err.message), `The refusal reads "${err.message}".`);
+  });
+
+  it('unverified results are visibly marked in the sheet', () => {
+    const rows = $$(win, '#rows tr[data-verified="false"]');
+    const unmarked = rows.filter((tr) => !tr.querySelector('.tag--warn') && !tr.querySelector('.tag--mute'));
+    assert.equal(unmarked.length, 0,
+      `${unmarked.length} unverified rows carry no state pill, so nothing tells the reader the mark is unchecked.`);
+  });
+
+  it('class analysis matches a recount from the store', async () => {
+    const a = await API.getClassAnalysis('sch-riverside', EXAM, { classId: 'cls-g4e' });
+    const rows = storeOf(win).exam_results.filter((r) => r.exam_id === EXAM && r.class_id === 'cls-g4e');
+    const scores = rows.map((r) => r.score);
+    assert.equal(a.entries, rows.length, `The analysis counts ${a.entries} entries; the store holds ${rows.length}.`);
+    assert.ok(Math.abs(a.mean - scores.reduce((n, v) => n + v, 0) / scores.length) < 0.001,
+      `The analysis mean is ${a.mean}; a recount gives ${scores.reduce((n, v) => n + v, 0) / scores.length}.`);
+    assert.equal(a.highest, Math.max(...scores), `Highest is ${a.highest}, recount gives ${Math.max(...scores)}.`);
+    assert.equal(a.lowest, Math.min(...scores), `Lowest is ${a.lowest}, recount gives ${Math.min(...scores)}.`);
+    const subjects = [...new Set(rows.map((r) => r.subject_id))];
+    assert.equal(a.subjects.length, subjects.length,
+      `The breakdown has ${a.subjects.length} subjects; ${subjects.length} were marked.`);
+  });
+
+  it('the merit list ranks by total descending, with ties sharing a rank', async () => {
+    const m = await API.getMeritList('sch-riverside', EXAM, { classId: 'cls-g4e' });
+    assert.ok(m.total > 0, 'The merit list is empty.');
+
+    const totals = m.items.map((e) => e.total);
+    const sorted = totals.slice().sort((a, b) => b - a);
+    deepEqual(totals, sorted, `The merit list is not in descending total order: ${totals.slice(0, 6).join(', ')}`);
+
+    // recompute the ranking from the store and compare
+    const rows = storeOf(win).exam_results.filter((r) => r.exam_id === EXAM && r.class_id === 'cls-g4e');
+    const byStudent = {};
+    rows.forEach((r) => { byStudent[r.student_id] = (byStudent[r.student_id] || 0) + r.score; });
+    const expected = Object.keys(byStudent).map((id) => ({ id, total: byStudent[id] }))
+      .sort((a, b) => b.total - a.total);
+    let rank = 0, previous = null;
+    const want = {};
+    expected.forEach((e) => {
+      if (previous === null || e.total !== previous) { rank += 1; previous = e.total; }
+      want[e.id] = rank;
+    });
+    const off = m.items.filter((e) => e.position !== want[e.student_id])
+      .map((e) => `${e.name}: total ${e.total} ranks ${want[e.student_id]} but is shown at ${e.position}`);
+    deepEqual(off.slice(0, 5), [], `Merit positions do not match a recount:\n  ${off.slice(0, 5).join('\n  ')}`);
+  });
+
+  it('ties share a rank and the next distinct total follows immediately', async () => {
+    const page = await openPage('app/results.html');
+    const w = page.window;
+    const roll = storeOf(w).students.filter((s) => s.class_id === CLASS && s.status === 'active').slice(0, 4);
+
+    // wipe the class, then give two pupils identical marks
+    const subjects = [...new Set(storeOf(w).exam_results
+      .filter((r) => r.exam_id === EXAM && r.class_id === CLASS).map((r) => r.subject_id))];
+    for (const sub of subjects) {
+      await w.ShuleAPI.saveExamResults('sch-riverside', EXAM, {
+        classId: CLASS, subjectId: sub, enteredBy: 'tch-01',
+        scores: storeOf(w).students.filter((s) => s.class_id === CLASS)
+          .map((s) => ({ student_id: s.id, score: null }))
+      });
+    }
+    await w.ShuleAPI.saveExamResults('sch-riverside', EXAM, {
+      classId: CLASS, subjectId: SUBJECT, enteredBy: 'tch-01',
+      scores: [
+        { student_id: roll[0].id, score: 80 },
+        { student_id: roll[1].id, score: 80 },
+        { student_id: roll[2].id, score: 70 },
+        { student_id: roll[3].id, score: 60 }
+      ]
+    });
+    const m = await w.ShuleAPI.getMeritList('sch-riverside', EXAM, { classId: CLASS });
+    checkInvariants(w, 'a merit list with a tie');
+    page.window.close();
+
+    const positions = m.items.map((e) => e.position);
+    deepEqual(positions, [1, 1, 2, 3],
+      `Two pupils tied on 80, then 70 and 60, should rank 1, 1, 2, 3 — got ${positions.join(', ')}.`);
+  });
+});
+
+describe('Report cards', () => {
+  const CLASS = 'cls-g8e';   // unverified in the seed, so publish is blocked
+
+  it('generates a card per pupil with recomputable totals', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const r = await win.ShuleAPI.generateReportCards('sch-riverside', { classId: 'cls-g4e', examId: 'exm-t2-mid' });
+    checkInvariants(win, 'generating report cards');
+
+    const D = storeOf(win);
+    const roll = D.students.filter((s) => s.class_id === 'cls-g4e' && s.status === 'active').length;
+    assert.equal(r.generated, roll, `${r.generated} cards for a roll of ${roll}.`);
+
+    const off = r.cards.map((c) => {
+      const mine = D.exam_results.filter((x) => x.exam_id === c.exam_id && x.student_id === c.student_id);
+      const total = mine.reduce((n, x) => n + x.score, 0);
+      const average = Math.round((total / mine.length) * 10) / 10;
+      if (c.total_marks !== total) return `${c.id}: total ${c.total_marks}, results sum to ${total}`;
+      if (c.average !== average) return `${c.id}: average ${c.average}, recompute gives ${average}`;
+      if (c.subject_count !== mine.length) return `${c.id}: ${c.subject_count} subjects, ${mine.length} results`;
+      return null;
+    }).filter(Boolean);
+    dom.window.close();
+    deepEqual(off.slice(0, 5), [], `Card totals are not recomputable from their results:\n  ${off.slice(0, 5).join('\n  ')}`);
+  });
+
+  it('positions are dense-ranked by average, and class_size is the roll', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const r = await win.ShuleAPI.listReportCardRows('sch-riverside', { classId: 'cls-g4e' });
+    const cards = r.items;
+
+    const ordered = cards.slice().sort((a, b) => b.average - a.average);
+    let rank = 0, previous = null;
+    const want = {};
+    ordered.forEach((c) => {
+      if (previous === null || c.average !== previous) { rank += 1; previous = c.average; }
+      want[c.id] = rank;
+    });
+    const off = cards.filter((c) => c.position !== want[c.id])
+      .map((c) => `${c.student_name}: average ${c.average} ranks ${want[c.id]} but is at ${c.position}`);
+    const sizes = [...new Set(cards.map((c) => c.class_size))];
+    dom.window.close();
+
+    deepEqual(off.slice(0, 5), [], `Positions do not dense-rank by average:\n  ${off.slice(0, 5).join('\n  ')}`);
+    deepEqual(sizes, [cards.length], `class_size reads ${sizes.join(', ')} but ${cards.length} pupils are ranked.`);
+    const top = cards.filter((c) => c.position === 1);
+    assert.ok(top.length >= 1, 'Nobody is ranked first.');
+  });
+
+  it('refuses to publish while any result feeding a card is unverified, and names the subjects', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const D = storeOf(win);
+
+    const unverified = D.exam_results.filter((r) => r.class_id === CLASS && !r.verified);
+    assert.ok(unverified.length, `Class ${CLASS} has no unverified results, so the block is never exercised.`);
+    await win.ShuleAPI.generateReportCards('sch-riverside', { classId: CLASS, examId: 'exm-t2-mid' });
+
+    let err = null;
+    await win.ShuleAPI.publishReportCardsFor('sch-riverside', { classId: CLASS }).catch((e) => { err = e; });
+    const after = storeOf(win).report_cards.filter((c) => c.class_id === CLASS);
+    checkInvariants(win, 'a blocked publish');
+
+    const expectedSubjects = [...new Set(unverified.map((r) => {
+      const s = D.subjects.filter((x) => x.id === r.subject_id)[0];
+      return s ? s.name : r.subject_id;
+    }))].sort();
+    dom.window.close();
+
+    assert.ok(err, 'A class with unverified results was published.');
+    assert.equal(err.status, 409, `The refusal came back as ${err.status}, expected 409.`);
+    for (const name of expectedSubjects) {
+      assert.ok(err.message.includes(name),
+        `The refusal does not name "${name}". It says: ${err.message}`);
+    }
+    assert.ok(Array.isArray(err.blocked) && err.blocked.length,
+      'The refusal does not say which pupils are blocked.');
+    const published = after.filter((c) => c.status === 'published');
+    assert.equal(published.length, 0, `${published.length} cards were published anyway.`);
+  });
+
+  it('publishes once every result is verified, and stamps published_at', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const API = win.ShuleAPI;
+
+    await API.verifyExamResults('sch-riverside', 'exm-t2-mid', {
+      classId: CLASS, verifiedBy: 'tch-06', allowSelf: true
+    });
+    await API.generateReportCards('sch-riverside', { classId: CLASS, examId: 'exm-t2-mid' });
+    const r = await API.publishReportCardsFor('sch-riverside', { classId: CLASS });
+    checkInvariants(win, 'publishing report cards');
+
+    const cards = storeOf(win).report_cards.filter((c) => c.class_id === CLASS);
+    dom.window.close();
+
+    assert.ok(r.published > 0, `Publishing reported ${r.published} cards.`);
+    const drafts = cards.filter((c) => c.status === 'draft');
+    assert.equal(drafts.length, 0, `${drafts.length} cards are still in draft after publishing.`);
+    const unstamped = cards.filter((c) => !c.published_at);
+    assert.equal(unstamped.length, 0, `${unstamped.length} published cards carry no published_at.`);
+    assert.ok(cards.every((c) => c.published_by), 'A published card has no published_by.');
+  });
+
+  it('a published card cannot have its comments rewritten', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const API = win.ShuleAPI;
+    await API.verifyExamResults('sch-riverside', 'exm-t2-mid', { classId: CLASS, verifiedBy: 'tch-06', allowSelf: true });
+    await API.generateReportCards('sch-riverside', { classId: CLASS, examId: 'exm-t2-mid' });
+    await API.publishReportCardsFor('sch-riverside', { classId: CLASS });
+    const card = storeOf(win).report_cards.filter((c) => c.class_id === CLASS)[0];
+
+    let err = null;
+    await API.updateReportCard('sch-riverside', card.id, { teacher_comment: 'Rewritten' }).catch((e) => { err = e; });
+    const now = storeOf(win).report_cards.filter((c) => c.id === card.id)[0];
+    dom.window.close();
+    assert.ok(err, 'A published card was edited under a guardian who may already have read it.');
+    assert.notEqual(now.teacher_comment, 'Rewritten', 'The comment changed anyway.');
+  });
+
+  it('regenerating a published card puts it back in draft', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const API = win.ShuleAPI;
+    await API.verifyExamResults('sch-riverside', 'exm-t2-mid', { classId: CLASS, verifiedBy: 'tch-06', allowSelf: true });
+    await API.generateReportCards('sch-riverside', { classId: CLASS, examId: 'exm-t2-mid' });
+    await API.publishReportCardsFor('sch-riverside', { classId: CLASS });
+    const r = await API.generateReportCards('sch-riverside', { classId: CLASS, examId: 'exm-t2-mid' });
+    checkInvariants(win, 'regenerating a published class');
+    dom.window.close();
+    const stillPublished = r.cards.filter((c) => c.status === 'published');
+    assert.equal(stillPublished.length, 0,
+      `${stillPublished.length} cards stayed published after regeneration, so a guardian could be reading stale numbers.`);
+  });
+
+  it('nothing in draft reaches a guardian-facing surface', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const D = storeOf(win);
+    const drafts = D.report_cards.filter((c) => c.status === 'draft');
+    assert.ok(drafts.length, 'No draft cards exist, so the check proves nothing.');
+
+    // the guardian surface is the published set; a draft must never appear in it
+    const published = await win.ShuleAPI.listReportCardRows('sch-riverside', { status: 'published' });
+    const leaked = published.items.filter((c) => c.status !== 'published').map((c) => c.id);
+    const stamped = published.items.filter((c) => !c.published_at).map((c) => c.id);
+    dom.window.close();
+    deepEqual(leaked, [], `Draft cards came back from the published query: ${leaked.join(', ')}`);
+    deepEqual(stamped, [], `Cards in the published set with no published_at: ${stamped.join(', ')}`);
+  });
+
+  it('the card view names every unverified subject on a draft', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const D = storeOf(win);
+    const draft = D.report_cards.filter((c) => c.status === 'draft' &&
+      D.exam_results.some((r) => r.exam_id === c.exam_id && r.student_id === c.student_id && !r.verified))[0];
+    assert.ok(draft, 'No draft card with unverified results.');
+    const v = await win.ShuleAPI.getReportCard('sch-riverside', draft.id);
+    dom.window.close();
+    assert.ok(v.unverified_subjects.length > 0,
+      'A card built on unverified marks reports no unverified subjects.');
+    assert.equal(v.card.status, 'draft', 'That card is not in draft.');
+  });
+
+  it('the page carries a print stylesheet that hides the application chrome', () => {
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/app.css'), 'utf8');
+    const print = css.slice(css.lastIndexOf('@media print'));
+    assert.ok(print.length > 200, 'There is no substantial @media print block in app.css.');
+    for (const hidden of ['.side', '.top', '.toasts']) {
+      assert.ok(print.includes(hidden), `The print stylesheet does not hide ${hidden}.`);
+    }
+    assert.ok(/page-break-after/.test(print), 'The print stylesheet does not break pages between cards.');
+    assert.ok(/@page/.test(print), 'The print stylesheet sets no page size or margin.');
   });
 });
