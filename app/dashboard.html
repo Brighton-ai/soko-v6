@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Shule</title>
+<meta name="description" content="School admin dashboard for Riverside Academy: enrolment, fee collection, arrears by class, register status and the work needing attention.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/theme.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body class="app-body" data-role="admin" data-page="dashboard">
+
+<div class="app">
+<aside class="side" id="side">
+  <div class="side__top">
+    <a href="../index.html" class="logo">
+      <span class="logo__m"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+  </div>
+  <nav class="side__scroll" id="sidenav" aria-label="Sections">
+      <div class="navg" data-group="overview">
+        <p class="navg__t">Overview</p>
+        <ul>
+          <li><a href="dashboard.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.6"/><rect x="14" y="3" width="7" height="5" rx="1.6"/><rect x="14" y="12" width="7" height="9" rx="1.6"/><rect x="3" y="16" width="7" height="5" rx="1.6"/></svg><span>Dashboard</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="people">
+        <p class="navg__t">People</p>
+        <ul>
+          <li><a href="students.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M16.5 6.4a3 3 0 0 1 0 5.6M18 14a6 6 0 0 1 3 5"/></svg><span>Students</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M9 9v11"/></svg><span>Classes & streams</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.6 2.2 3 5 3s5-1.4 5-3v-5"/></svg><span>Teachers</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="fees">
+        <p class="navg__t">Fees</p>
+        <ul>
+          <li><a href="invoices.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><span>Invoices</span></a></li>
+          <li><a href="payments.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg><span>Payments</span></a></li>
+          <li><a href="defaulters.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg><span>Defaulters</span></a></li>
+          <li><a href="fee-structures.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V9M10 20V4M16 20v-8M22 20h-20"/></svg><span>Fee structures</span></a></li>
+          <li><a href="waivers.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="academics">
+        <p class="navg__t">Academics</p>
+        <ul>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg><span>Exams</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V12M10 20V6M16 20v-9M22 20h-20"/><circle cx="10" cy="6" r="1.6"/></svg><span>Results</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 16h6M9 12h3"/></svg><span>Report cards</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.4 6 6.1.5-4.7 4 1.5 6L12 16.3 6.7 19.5l1.5-6-4.7-4 6.1-.5z"/></svg><span>Grading scales</span><span class="navg__soon">Step 4</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="daily">
+        <p class="navg__t">Daily</p>
+        <ul>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg><span>Attendance</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>Timetable</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="facilities">
+        <p class="navg__t">Facilities</p>
+        <ul>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6M3 21h18"/></svg><span>Boarding</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17V7a2 2 0 0 1 2-2h9v12H3z"/><path d="M14 9h4l3 4v4h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg><span>Transport</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2.6 2.6 0 0 1 2 2.6V19a2.2 2.2 0 0 0-2.2-2.2H4Z"/><path d="M20 5h-6a2.6 2.6 0 0 0-2 2.6V19a2.2 2.2 0 0 1 2.2-2.2H20Z"/></svg><span>Library</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="communication">
+        <p class="navg__t">Communication</p>
+        <ul>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v13H8l-4 3z"/><path d="M8 9h8M8 13h5"/></svg><span>Announcements</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/></svg><span>Events</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="admin">
+        <p class="navg__t">Admin</p>
+        <ul>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 14 3.5-4 3 3L19 7"/></svg><span>Reports</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg><span>Settings</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+  </nav>
+  <div class="side__end">
+    <div class="sidecard">
+      <b>Term 2 · 2026</b>
+      <p>Closes Friday 7 August. 240 pupils on roll.</p>
+      <a href="#" data-step="5" class="btn btn--ghost btn--sm btn--full">Switch term</a>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+<header class="top">
+  <button class="top__menu" id="sidetoggle" aria-label="Open menu" aria-expanded="false" aria-controls="side"><span></span></button>
+  <div class="top__school">
+    <span data-bind="school-name">Riverside Academy</span>
+    <small data-bind="term-name">Term 2 2026 · Nairobi</small>
+  </div>
+  <div class="search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <label class="vh" for="app-search">Search students, invoices and classes</label>
+    <input type="search" id="app-search" name="q" placeholder="Search pupils, invoices, classes…" autocomplete="off">
+  </div>
+  <button class="iconbtn" id="notifs" aria-label="Notifications, 3 unread">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    <span class="iconbtn__dot" id="notif-dot"></span>
+  </button>
+  <button class="who" id="usermenu" aria-expanded="false" aria-haspopup="true" aria-controls="usermenu-panel">
+    <span class="who__av" data-bind="user-initials">JW</span>
+    <span class="who__n"><span data-bind="user-name">Jane Wanjiru</span><small data-bind="user-role">School admin</small></span>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div class="menu" id="usermenu-panel" role="menu" aria-labelledby="usermenu">
+    <div class="menu__h">
+      <b data-bind="user-name">Jane Wanjiru</b>
+      <span data-bind="user-email">jane.wanjiru@riverside.ac.ke</span>
+    </div>
+    <a href="#" data-step="5" role="menuitem">Profile &amp; password</a>
+    <a href="#" data-step="5" role="menuitem">School settings</a>
+    <button type="button" role="menuitem" id="reset-demo">Reset demo data</button>
+    <button type="button" role="menuitem" id="signout">Sign out</button>
+  </div>
+</header>
+
+<main class="content">
+  <div class="phd">
+    <div>
+      <h1>Dashboard</h1>
+      <p><span data-bind="term-long">Term 2, 2026</span> · <span data-bind="today-long">Thursday 20 August</span></p>
+    </div>
+    <div class="phd__act">
+      <a href="#" data-step="5" class="btn btn--ghost btn--sm">Export term report</a>
+      <button type="button" class="btn btn--solid btn--sm" data-modal-open="modal-invoices">Generate invoices</button>
+    </div>
+  </div>
+
+  <div class="grid grid--kpi">
+      <div class="kpi" data-kpi="enrolment">
+        <p class="kpi__l"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M16.5 6.4a3 3 0 0 1 0 5.6M18 14a6 6 0 0 1 3 5"/></svg>Pupils enrolled</p>
+        <span class="kpi__v" data-kpi-value><span class="sk sk--head" style="width:74%;height:26px;margin:2px 0 0"></span></span>
+        <p class="kpi__d" data-kpi-delta><span class="sk sk--line" style="width:60%;margin:4px 0 0"></span></p>
+      </div>
+      <div class="kpi" data-kpi="collection">
+        <p class="kpi__l"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg>Collection rate</p>
+        <span class="kpi__v" data-kpi-value><span class="sk sk--head" style="width:74%;height:26px;margin:2px 0 0"></span></span>
+        <p class="kpi__d" data-kpi-delta><span class="sk sk--line" style="width:60%;margin:4px 0 0"></span></p>
+      </div>
+      <div class="kpi" data-kpi="outstanding">
+        <p class="kpi__l"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>Outstanding</p>
+        <span class="kpi__v" data-kpi-value><span class="sk sk--head" style="width:74%;height:26px;margin:2px 0 0"></span></span>
+        <p class="kpi__d" data-kpi-delta><span class="sk sk--line" style="width:60%;margin:4px 0 0"></span></p>
+      </div>
+      <div class="kpi" data-kpi="attendance">
+        <p class="kpi__l"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg>Attendance today</p>
+        <span class="kpi__v" data-kpi-value><span class="sk sk--head" style="width:74%;height:26px;margin:2px 0 0"></span></span>
+        <p class="kpi__d" data-kpi-delta><span class="sk sk--line" style="width:60%;margin:4px 0 0"></span></p>
+      </div>
+  </div>
+
+  <div class="grid grid--2 mt">
+    <section class="card" data-panel="collections">
+      <div class="card__h">
+        <div>
+          <h2>Fee collection</h2>
+          <p>Daily M-Pesa and bank receipts, last 14 days</p>
+        </div>
+        
+      </div>
+      <div class="card__b">
+        <div data-region="loading"><span class="sk sk--chart"></span></div>
+        <div data-region="content" hidden>
+          <svg class="chart" id="collections-chart" viewBox="0 0 720 240" role="img"
+               aria-label="Daily fee collections for the last fourteen days"></svg>
+        </div>
+        <div data-region="empty" hidden>
+          <div class="empty">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V6M16 20v-8M22 20h-20"/></svg></span>
+            <b>No receipts in this window</b>
+            <p>Nothing has been collected in the last fourteen days. Once payments land they appear here the same day.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card__f"><span data-bind="chart-total">—</span><span data-bind="chart-peak">—</span></div>
+    </section>
+
+    <section class="card" data-panel="attention">
+      <div class="card__h">
+        <div>
+          <h2>Needs attention</h2>
+          <p>Work sitting between you and the end of term</p>
+        </div>
+        
+      </div>
+      <div class="card__b card__b--flush">
+        <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+        <div data-region="content" hidden><div class="stack" id="attention-list"></div></div>
+        <div data-region="empty" hidden>
+          <div class="empty">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg></span>
+            <b>Nothing outstanding</b>
+            <p>Results are verified, report cards are published and no waiver is waiting on you.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid grid--2 mt">
+    <section class="card" data-panel="arrears">
+      <div class="card__h">
+        <div>
+          <h2>Arrears by class</h2>
+          <p>Highest outstanding balance first</p>
+        </div>
+        
+      </div>
+      <div class="card__b card__b--flush">
+        <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+        <div data-region="content" hidden>
+          <div class="tbl-scroll">
+            <table class="tbl">
+              <caption class="vh">Outstanding fee balances by class, highest first</caption>
+              <thead><tr>
+                <th scope="col">Class</th><th scope="col" class="r">Owing</th>
+                <th scope="col" class="r">Outstanding</th><th scope="col">Share of arrears</th>
+                <th scope="col"><span class="vh">Actions</span></th>
+              </tr></thead>
+              <tbody id="arrears-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div data-region="empty" hidden>
+          <div class="empty">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg></span>
+            <b>Every invoice is cleared</b>
+            <p>No class is carrying an outstanding balance this term.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card__f"><span data-bind="arrears-total">—</span><a href="defaulters.html" class="tlink">Open the defaulters list<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+    </section>
+
+    <section class="card" data-panel="register">
+      <div class="card__h">
+        <div>
+          <h2>Register status today</h2>
+          <p>Who has marked, and who has not</p>
+        </div>
+        
+      </div>
+      <div class="card__b card__b--flush">
+        <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+        <div data-region="content" hidden>
+          <div class="tbl-scroll">
+            <table class="tbl">
+              <caption class="vh">Attendance register status for every class today</caption>
+              <thead><tr>
+                <th scope="col">Class</th><th scope="col">Status</th>
+                <th scope="col">Marked by</th><th scope="col" class="r">Present</th><th scope="col" class="r">Absent</th>
+              </tr></thead>
+              <tbody id="register-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div data-region="empty" hidden>
+          <div class="empty empty--bad">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+            <b>No register marked today</b>
+            <p>Not one class has submitted attendance. Chase the class teachers before the morning is out.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card__f"><span data-bind="register-summary">—</span></div>
+    </section>
+  </div>
+
+  <div class="grid mt">
+    <section class="card" data-panel="payments">
+      <div class="card__h">
+        <div>
+          <h2>Recent payments</h2>
+          <p>The last ten receipts, newest first</p>
+        </div>
+        
+      </div>
+      <div class="card__b card__b--flush">
+        <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+        <div data-region="content" hidden>
+          <div class="tbl-scroll">
+            <table class="tbl">
+              <caption class="vh">The ten most recent fee payments</caption>
+              <thead><tr>
+                <th scope="col">Code</th><th scope="col">Student</th><th scope="col">Class</th>
+                <th scope="col" class="r">Amount</th><th scope="col" class="r">Received</th>
+              </tr></thead>
+              <tbody id="payment-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div data-region="empty" hidden>
+          <div class="empty">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></span>
+            <b>No payments yet this term</b>
+            <p>Receipts appear here the moment a parent pays on the paybill.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card__f"><a href="payments.html" class="tlink">Open the payments ledger<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+    </section>
+  </div>
+
+  <div class="grid mt">
+    <section class="card" data-panel="actions" data-state="content">
+      <div class="card__h">
+        <div>
+          <h2>Quick actions</h2>
+          <p>The four things a head does most often</p>
+        </div>
+        
+      </div>
+      <div class="card__b" data-region="content">
+        <div class="qa">
+          <button type="button" data-modal-open="modal-invoices" data-action="modal-invoices">
+            <span class="qa__ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 12v6M9 15h6"/></svg></span>
+            <span><b>Bulk-generate invoices</b><span>Raise a whole term in one action</span></span>
+          </button>
+          <button type="button" data-modal-open="modal-register" data-action="modal-register">
+            <span class="qa__ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg></span>
+            <span><b>Mark a register</b><span>Catch up a class that has not marked</span></span>
+          </button>
+          <button type="button" data-modal-open="modal-student" data-action="modal-student">
+            <span class="qa__ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="3.2"/><path d="M3.5 19a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M22 11h-6"/></svg></span>
+            <span><b>Add a student</b><span>Admit a pupil mid-term</span></span>
+          </button>
+          <button type="button" data-modal-open="modal-publish" data-action="modal-publish">
+            <span class="qa__ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="m9 15 2 2 4-4"/></svg></span>
+            <span><b>Publish report cards</b><span>Release a signed-off class to guardians</span></span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="scrim" id="modal-invoices" role="dialog" aria-modal="true" aria-labelledby="modal-invoices-t">
+  <div class="modal">
+    <form id="modal-invoices-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-invoices-t">Bulk-generate invoices</h2>
+          <p>Raises one invoice per active pupil from the class fee structure.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="gen-term">Term</label>
+            <select id="gen-term" name="term" aria-describedby="gen-term-err"><option value="">Select a term…</option></select>
+            <p class="err" id="gen-term-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="gen-classes">Classes</label>
+            <select id="gen-classes" name="classes" multiple size="6" aria-describedby="gen-classes-err"></select>
+            <p class="err" id="gen-classes-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="gen-due">Due date</label>
+            <input type="date" id="gen-due" name="due_date" value="2026-09-18" aria-describedby="gen-due-err">
+            <p class="err" id="gen-due-err" role="alert"></p>
+          </div>
+          <p class="modal__note">Pupils who already have an invoice for the term are skipped, so running this twice is safe.</p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Generate invoices</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-register" role="dialog" aria-modal="true" aria-labelledby="modal-register-t">
+  <div class="modal">
+    <form id="modal-register-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-register-t">Mark a register</h2>
+          <p>Use this to catch up a class whose teacher has not submitted.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="reg-class">Class</label>
+            <select id="reg-class" name="class" aria-describedby="reg-class-err"><option value="">Select a class…</option></select>
+            <p class="err" id="reg-class-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="reg-date">Date</label>
+            <input type="date" id="reg-date" name="date" aria-describedby="reg-date-err">
+            <p class="err" id="reg-date-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="reg-teacher">Marked by</label>
+            <select id="reg-teacher" name="teacher" aria-describedby="reg-teacher-err"><option value="">Select a member of staff…</option></select>
+            <p class="err" id="reg-teacher-err" role="alert"></p>
+          </div>
+          <p class="modal__note">Every mark is stamped with the name above and the time it was submitted.</p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Open the register</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-student" role="dialog" aria-modal="true" aria-labelledby="modal-student-t">
+  <div class="modal">
+    <form id="modal-student-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-student-t">Add a student</h2>
+          <p>Admits a pupil onto the roll from today. An admission number is issued automatically.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="stu-name">Full name</label>
+            <input type="text" id="stu-name" name="name" placeholder="Amina Ouma" aria-describedby="stu-name-err">
+            <p class="err" id="stu-name-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="stu-class">Class</label>
+            <select id="stu-class" name="class" aria-describedby="stu-class-err"><option value="">Select a class…</option></select>
+            <p class="err" id="stu-class-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="stu-guardian">Primary guardian</label>
+            <input type="text" id="stu-guardian" name="guardian" placeholder="Mary Ouma" aria-describedby="stu-guardian-err">
+            <p class="err" id="stu-guardian-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="stu-phone">Guardian phone</label>
+            <input type="tel" id="stu-phone" name="phone" inputmode="tel" placeholder="0712 345 678" aria-describedby="stu-phone-err">
+            <p class="err" id="stu-phone-err" role="alert"></p>
+          </div>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Admit student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-publish" role="dialog" aria-modal="true" aria-labelledby="modal-publish-t">
+  <div class="modal">
+    <form id="modal-publish-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-publish-t">Publish report cards</h2>
+          <p>Publishing makes the cards visible to guardians. Drafts stay hidden until you do.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="pub-class">Class</label>
+            <select id="pub-class" name="class" aria-describedby="pub-class-err"><option value="">Select a class…</option></select>
+            <p class="err" id="pub-class-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="pub-exam">Exam</label>
+            <select id="pub-exam" name="exam" aria-describedby="pub-exam-err"><option value="">Select an exam…</option></select>
+            <p class="err" id="pub-exam-err" role="alert"></p>
+          </div>
+          <p class="modal__note">Only cards whose marks are verified will publish. Anything still unverified stays in draft.</p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Publish to guardians</button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="sidescrim" id="sidescrim" hidden></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="../assets/js/data/demo-data.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/shell.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/dashboard.js"></script>
+</body>
+</html>

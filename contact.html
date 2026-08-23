@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact Shule — book a 20-minute demo</title>
+<meta name="description" content="Book a 20-minute Shule demo for your school, or reach the Nairobi team by phone or email. We reply to every enquiry within one working day.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/contact.css">
+</head>
+<body>
+
+<div class="ticker">
+  <b>New</b> &nbsp;Configurable CBC grading bands and M-Pesa auto-reconciliation are live · <a href="features.html#grading">See what shipped</a>
+</div>
+
+<header class="nav" id="nav">
+  <div class="wrap nav__in">
+    <a href="index.html" class="logo">
+      <span class="logo__m"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="features.html">Features</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html" aria-current="page">Contact</a>
+    </nav>
+    <div class="nav__right">
+      <a href="login.html" class="btn btn--ghost btn--sm">Log in</a>
+      <a href="contact.html" class="btn btn--dark btn--sm">Book a demo</a>
+      <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+  <div class="drawer" id="drawer">
+    <a href="index.html">Home</a><a href="features.html">Features</a><a href="pricing.html">Pricing</a><a href="contact.html" aria-current="page">Contact</a><a href="login.html">Log in</a>
+  </div>
+</header>
+
+<section class="phead">
+  <div class="wrap">
+    <p class="crumb"><a href="index.html">Home</a><span>/</span>Contact</p>
+    <h1>Book a demo. <em>Twenty minutes.</em></h1>
+    <p class="lede">A real screen share, not a slide deck. Tell us roughly what your school looks like and we will load a sample of your own student list so you are looking at your school, not ours.</p>
+  </div>
+</section>
+
+<div class="wrap cx">
+  <div class="rv">
+    <div class="formcard" id="form-panel">
+      <h2>Tell us about your school</h2>
+      <p>We reply to every enquiry, usually the same working day. Nothing here commits you to anything.</p>
+
+      <form id="demo-form" novalidate>
+        <div class="fgrid">
+          <div class="field">
+            <label for="school">School name</label>
+            <input type="text" id="school" name="school" aria-describedby="school-err" autocomplete="organization" placeholder="Kilimani Junior Academy">
+            <p class="err" id="school-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="name">Your name</label>
+            <input type="text" id="name" name="name" aria-describedby="name-err" autocomplete="name" placeholder="Jane Wanjiru">
+            <p class="err" id="name-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="role">Your role</label>
+            <select id="role" name="role" aria-describedby="role-err"><option value="">Select a role…</option><option value="head">Head teacher / Principal</option><option value="deputy">Deputy head</option><option value="bursar">Bursar / Accounts</option><option value="director">Director / Board member</option><option value="admin">School administrator</option><option value="ict">ICT / Systems</option><option value="other">Something else</option></select>
+            <p class="err" id="role-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" aria-describedby="email-err" autocomplete="email" placeholder="jane@school.co.ke">
+            <p class="err" id="email-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="phone">Phone number</label>
+            <input type="tel" id="phone" name="phone" aria-describedby="phone-err" autocomplete="tel" inputmode="tel" placeholder="0712 345 678">
+            <p class="err" id="phone-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="pupils">Pupils enrolled</label>
+            <input type="number" id="pupils" name="pupils" aria-describedby="pupils-err" min="1" max="20000" step="1" inputmode="numeric" placeholder="600">
+            <p class="err" id="pupils-err" role="alert"></p>
+          </div>
+          <div class="field span2">
+            <label for="current-system">What you use today</label>
+            <select id="current-system" name="current-system" aria-describedby="current-system-err"><option value="">Select one…</option><option value="paper">Paper registers and files</option><option value="excel">Excel or Google Sheets</option><option value="desktop">A desktop system in the office</option><option value="cloud">Another cloud school system</option><option value="mixed">A mix of the above</option><option value="none">Nothing at the moment</option></select>
+            <p class="err" id="current-system-err" role="alert"></p>
+          </div>
+          <div class="field span2">
+            <label for="message">Anything we should know before the call <span class="opt">(optional)</span></label>
+            <textarea id="message" name="message" aria-describedby="message-err" placeholder="Two campuses, about 40% of parents pay in instalments, and we close the term on 8 December."></textarea>
+            <p class="err" id="message-err" role="alert"></p>
+          </div>
+        </div>
+
+        <p class="formerr" id="form-error" role="alert"></p>
+
+        <div class="fsubmit">
+          <button type="submit" class="btn btn--solid">Request a demo
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <p>No card, no trial clock, and we will not add you to a mailing list.</p>
+        </div>
+      </form>
+    </div>
+
+    <div class="done" id="done-panel" hidden>
+      <div class="done__ico">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>
+      </div>
+      <h2>Request received</h2>
+      <p>Thank you — we have your details and someone from the Nairobi team will be in touch within one working day to fix a time.</p>
+      <p>If it is urgent, call <a href="tel:+254700000000" style="color:var(--orange);font-weight:500">+254 700 000 000</a> and ask for the schools team.</p>
+      <dl>
+        <dt>School</dt><dd id="done-school">—</dd>
+        <dt>Contact</dt><dd id="done-name">—</dd>
+        <dt>Email</dt><dd id="done-email">—</dd>
+        <dt>Phone</dt><dd id="done-phone">—</dd>
+        <dt>Pupils</dt><dd id="done-pupils">—</dd>
+      </dl>
+      <p style="margin-top:24px"><button type="button" class="btn btn--ghost btn--sm" id="again">Send another request</button></p>
+    </div>
+  </div>
+
+  <aside class="rv">
+    <div class="reach">
+      <div class="reach__c">
+        <h3>Phone</h3>
+        <a href="tel:+254700000000">+254 700 000 000</a>
+        <p>Monday to Friday, 8.00am–5.30pm EAT. Saturday mornings during admissions season.</p>
+      </div>
+      <div class="reach__c">
+        <h3>Email</h3>
+        <a href="mailto:hello@shule.co.ke">hello@shule.co.ke</a>
+        <p>For support on a live account, use <a href="mailto:support@shule.co.ke" style="display:inline;font-size:inherit">support@shule.co.ke</a>.</p>
+      </div>
+      <div class="reach__c">
+        <h3>Office</h3>
+        <address>Shule Limited<br>Riverside Drive, Westlands<br>Nairobi, Kenya</address>
+        <p>Visits by appointment — we are usually out at schools.</p>
+      </div>
+      <div class="reach__sla">
+        <h3>What happens next</h3>
+        <p>Three steps, no sales sequence.</p>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>We reply within <b>one working day</b> to fix a time.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>A 20-minute screen share, with a sample of your own register loaded.</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>A written quote against your enrolment, valid for 60 days.</span></li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="cta rv">
+      <p class="eyebrow" style="margin-bottom:12px">Not ready to talk?</p>
+      <h2>Read the module breakdown <em>first.</em></h2>
+      <p class="lede" style="margin-bottom:26px">Fourteen modules, what each one actually does, and where the boundaries are. No form in the way.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <a href="features.html" class="btn btn--solid">Explore the modules
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="pricing.html" class="btn btn--ghost">See pricing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__g">
+      <div>
+        <a href="index.html" class="logo">
+      <span class="logo__m"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+        <p class="foot__p">School management for Kenyan schools. Fees, academics and the back office in one system.</p>
+      </div>
+      <div><h3>Product</h3><ul>
+        <li><a href="features.html">Features</a></li><li><a href="pricing.html">Pricing</a></li>
+        <li><a href="pricing.html#calculator">Fee-recovery calculator</a></li><li><a href="login.html">Log in</a></li></ul></div>
+      <div><h3>Modules</h3><ul>
+        <li><a href="features.html#students">Students</a></li><li><a href="features.html#fees">Fees &amp; M-Pesa</a></li>
+        <li><a href="features.html#exams">Exams &amp; results</a></li><li><a href="features.html#report-cards">Report cards</a></li></ul></div>
+      <div><h3>Company</h3><ul>
+        <li><a href="contact.html">Contact</a></li><li><a href="contact.html">Book a demo</a></li>
+        <li><a href="pricing.html#faq">FAQ</a></li><li><a href="contact.html">Careers</a></li></ul></div>
+      <div><h3>Legal</h3><ul>
+        <li><a href="contact.html">Privacy</a></li><li><a href="contact.html">Terms</a></li>
+        <li><a href="contact.html">Data protection</a></li><li><a href="contact.html">Status</a></li></ul></div>
+    </div>
+    <div class="colo">
+      <span>© 2026 Shule. All rights reserved.</span>
+      <span>Nairobi, Kenya · hello@shule.co.ke</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/site.js"></script>
+<script src="assets/js/contact.js"></script>
+</body>
+</html>

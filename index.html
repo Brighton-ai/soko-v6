@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shule — School management for Kenyan schools</title>
+<meta name="description" content="Fees, attendance, exams, report cards and parent communication in one system. M-Pesa fee collection, configurable grading, and a full school back office.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/theme.css">
+</head>
+<body>
+
+<div class="ticker">
+  <b>New</b> &nbsp;Configurable CBC grading bands and M-Pesa auto-reconciliation are live · <a href="features.html#grading">See what shipped</a>
+</div>
+
+<header class="nav" id="nav">
+  <div class="wrap nav__in">
+    <a href="index.html" class="logo">
+      <span class="logo__m"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html" aria-current="page">Home</a>
+      <a href="features.html">Features</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav__right">
+      <a href="login.html" class="btn btn--ghost btn--sm">Log in</a>
+      <a href="contact.html" class="btn btn--dark btn--sm">Book a demo</a>
+      <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+  <div class="drawer" id="drawer">
+    <a href="index.html" aria-current="page">Home</a><a href="features.html">Features</a><a href="pricing.html">Pricing</a><a href="contact.html">Contact</a><a href="login.html">Log in</a>
+  </div>
+</header>
+
+<!-- ══════════ HERO ══════════ -->
+<section class="hero">
+  <div class="wrap hero__grid">
+    <div class="rv">
+      <p class="eyebrow">School management system</p>
+      <h1>Collect every shilling. <em>Account for every child.</em></h1>
+      <p class="lede">Shule runs the whole school on one system — fee collection over M-Pesa, daily attendance, exams and report cards, boarding, transport and the back office. Built for Kenyan schools, priced per pupil.</p>
+      <div class="hero__cta">
+        <a href="#demo" class="btn btn--solid">Book a 20-minute demo
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#modules" class="btn btn--ghost">Explore the modules</a>
+      </div>
+      <div class="hero__proof">
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Free data migration</span>
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Live in under two weeks</span>
+        <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>No per-teacher licence</span>
+      </div>
+    </div>
+
+    <div class="rv">
+      <div class="shot">
+        <div class="shot__bar"><i></i><i></i><i></i><span>Shule · Fee collection · Term 2 2026</span></div>
+        <svg viewBox="0 0 620 400" role="img" aria-label="Fee collection dashboard showing collected fees, outstanding balance and daily M-Pesa collections">
+          <rect width="620" height="400" fill="#fff"/>
+          <rect x="20" y="20" width="184" height="76" rx="10" fill="#FCFAF8" stroke="#EBE6E0"/>
+          <text x="36" y="46" font-family="Inter,sans-serif" font-size="11" fill="#8A8C94">Collected this term</text>
+          <text x="36" y="74" font-family="Poppins,sans-serif" font-size="22" font-weight="600" fill="#141417">KES 8.42M</text>
+          <rect x="218" y="20" width="184" height="76" rx="10" fill="#FCFAF8" stroke="#EBE6E0"/>
+          <text x="234" y="46" font-family="Inter,sans-serif" font-size="11" fill="#8A8C94">Outstanding</text>
+          <text x="234" y="74" font-family="Poppins,sans-serif" font-size="22" font-weight="600" fill="#F4731E">KES 1.13M</text>
+          <rect x="416" y="20" width="184" height="76" rx="10" fill="#FCFAF8" stroke="#EBE6E0"/>
+          <text x="432" y="46" font-family="Inter,sans-serif" font-size="11" fill="#8A8C94">Collection rate</text>
+          <text x="432" y="74" font-family="Poppins,sans-serif" font-size="22" font-weight="600" fill="#2F9E6B">88.2%</text>
+
+          <rect x="20" y="112" width="380" height="266" rx="10" fill="#fff" stroke="#EBE6E0"/>
+          <text x="36" y="138" font-family="Poppins,sans-serif" font-size="12" font-weight="600" fill="#141417">Daily M-Pesa collections</text>
+          <g stroke="#EBE6E0" stroke-width="1"><path d="M36 300h348M36 260h348M36 220h348M36 180h348"/></g>
+          <g fill="#FDEBDD">
+            <rect x="52" y="228" width="26" height="72" rx="4"/><rect x="96" y="196" width="26" height="104" rx="4"/>
+            <rect x="140" y="244" width="26" height="56" rx="4"/><rect x="184" y="168" width="26" height="132" rx="4"/>
+            <rect x="272" y="212" width="26" height="88" rx="4"/><rect x="316" y="252" width="26" height="48" rx="4"/>
+          </g>
+          <rect x="228" y="148" width="26" height="152" rx="4" fill="#F4731E"/>
+          <text x="222" y="140" font-family="Poppins,sans-serif" font-size="10" font-weight="600" fill="#141417">KES 612k</text>
+          <path d="M36 300h348" stroke="#DFD9D2" stroke-width="1.5"/>
+          <g font-family="Inter,sans-serif" font-size="9.5" fill="#8A8C94" text-anchor="middle">
+            <text x="65" y="318">Mon</text><text x="109" y="318">Tue</text><text x="153" y="318">Wed</text>
+            <text x="197" y="318">Thu</text><text x="241" y="318">Fri</text><text x="285" y="318">Sat</text><text x="329" y="318">Sun</text>
+          </g>
+          <text x="36" y="352" font-family="Inter,sans-serif" font-size="10.5" fill="#63656E">Paybill 522533 · auto-matched to 412 invoices</text>
+
+          <rect x="416" y="112" width="184" height="266" rx="10" fill="#fff" stroke="#EBE6E0"/>
+          <text x="432" y="138" font-family="Poppins,sans-serif" font-size="12" font-weight="600" fill="#141417">Top arrears</text>
+          <g font-family="Inter,sans-serif" font-size="10.5">
+            <text x="432" y="166" fill="#33333B">Grade 7 East</text><text x="584" y="166" fill="#141417" text-anchor="end" font-weight="600">312k</text>
+            <rect x="432" y="174" width="152" height="5" rx="2.5" fill="#F1EDE8"/><rect x="432" y="174" width="132" height="5" rx="2.5" fill="#F4731E"/>
+            <text x="432" y="204" fill="#33333B">Form 2 Blue</text><text x="584" y="204" fill="#141417" text-anchor="end" font-weight="600">241k</text>
+            <rect x="432" y="212" width="152" height="5" rx="2.5" fill="#F1EDE8"/><rect x="432" y="212" width="102" height="5" rx="2.5" fill="#F4731E"/>
+            <text x="432" y="242" fill="#33333B">Grade 5 West</text><text x="584" y="242" fill="#141417" text-anchor="end" font-weight="600">188k</text>
+            <rect x="432" y="250" width="152" height="5" rx="2.5" fill="#F1EDE8"/><rect x="432" y="250" width="80" height="5" rx="2.5" fill="#F4731E"/>
+            <text x="432" y="280" fill="#33333B">Form 4 Gold</text><text x="584" y="280" fill="#141417" text-anchor="end" font-weight="600">143k</text>
+            <rect x="432" y="288" width="152" height="5" rx="2.5" fill="#F1EDE8"/><rect x="432" y="288" width="61" height="5" rx="2.5" fill="#F4731E"/>
+          </g>
+          <rect x="432" y="318" width="152" height="34" rx="8" fill="#141417"/>
+          <text x="508" y="340" font-family="Poppins,sans-serif" font-size="11" font-weight="500" fill="#fff" text-anchor="middle">Send 96 reminders</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap strip__in">
+    <b>M-PESA DARAJA</b><em>·</em><b>KRA eTIMS</b><em>·</em><b>CBC &amp; 8-4-4 GRADING</b><em>·</em>
+    <b>PAYE · NHIF · NSSF · HELB</b><em>·</em><b>BULK SMS</b>
+  </div>
+</div>
+
+<section class="section" style="padding-block:64px">
+  <div class="wrap">
+    <div class="metrics rv">
+      <div class="metric"><b class="num" data-c="83">0</b><span>API endpoints powering the module</span></div>
+      <div class="metric"><b class="num" data-c="34">0</b><span>Purpose-built database tables</span></div>
+      <div class="metric"><b class="num" data-c="14">0</b><span>Areas of school life covered</span></div>
+      <div class="metric"><b class="num" data-c="3">0</b><span>Automated reminders per overdue invoice</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ MODULES ══════════ -->
+<section class="section" id="modules" style="background:var(--paper);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="center rv" style="margin-bottom:48px">
+      <p class="eyebrow">What's inside</p>
+      <div class="rule"></div>
+      <h2 class="h2">Fourteen modules. One student record.</h2>
+      <p class="lede" style="margin-top:16px">Everything below writes to the same student, the same term, the same ledger. Nothing is re-keyed, and the bursar's book never drifts from the class register.</p>
+    </div>
+
+    <div class="mods rv">
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19a6.5 6.5 0 0 1 13 0"/><path d="M16.5 6.2a3.2 3.2 0 0 1 0 6M18 13.6a6.5 6.5 0 0 1 3.5 5.4"/></svg></div>
+        <h3>Students &amp; guardians</h3>
+        <p>Admission numbers, class placement, many guardians per child with primary and emergency flags, and a scholarship amount on the record.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg></div>
+        <h3>Fees &amp; invoicing</h3>
+        <p>Itemised fee structures per class and term, bulk invoice generation, part payments, running balances and automatic receipts.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg></div>
+        <h3>Attendance</h3>
+        <p>Mark a class in one pass, with notes and an audit trail of who marked it. Absentee lists and guardian alerts follow automatically.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg></div>
+        <h3>Exams &amp; results</h3>
+        <p>Exams bound to a grading scale, per-subject entry with teacher comments, and a verification step before anything reaches a parent.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h3"/></svg></div>
+        <h3>Report cards</h3>
+        <p>Mean score, grade, class position out of class size, teacher and principal comments. Draft, publish, then export as PDF.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2.6 6.6L21 9.3l-5 4.4 1.5 6.8L12 17l-5.5 3.5L8 13.7l-5-4.4 6.4-.7z"/></svg></div>
+        <h3>Grading scales</h3>
+        <p>Define your own bands — grade, range, points and remark. Run 8-4-4 marks and CBC performance levels side by side.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>
+        <h3>Timetable</h3>
+        <p>Build the school day from period slots, then view it by class or by teacher. Reassign a period when a teacher is away.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></div>
+        <h3>Teachers &amp; subjects</h3>
+        <p>Subject catalogue, teacher records and the assignment table binding a teacher to a subject in a specific class.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H8l-4 3z"/><path d="M8 9h8M8 13h5"/></svg></div>
+        <h3>Communication</h3>
+        <p>Announcements, the events calendar, fee reminders and absentee alerts — sent by SMS or email, all logged against the student.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6a3 3 0 0 1 3 3v11a2.5 2.5 0 0 0-2.5-2.5H4Z"/><path d="M20 5h-6a3 3 0 0 0-3 3v11a2.5 2.5 0 0 1 2.5-2.5H20Z"/></svg></div>
+        <h3>Library</h3>
+        <p>Book catalogue, borrowing, returns and an overdue list that ties straight back to the student record.</p>
+        <span class="mod__tag">Add-on</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V7a2 2 0 0 1 2-2h9v12H3z"/><path d="M14 9h4l3 4v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></div>
+        <h3>Transport</h3>
+        <p>Routes, stops and student assignment, with the transport charge folded into the same termly invoice.</p>
+        <span class="mod__tag">Add-on</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6M3 21h18"/></svg></div>
+        <h3>Boarding</h3>
+        <p>Hostels by gender, rooms with capacity and monthly fee, allocation and check-out with occupancy always current.</p>
+        <span class="mod__tag">Add-on</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+        <h3>Discipline</h3>
+        <p>Incident records against a student, visible to the class teacher and carried into the report card conversation.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+      <div class="mod">
+        <div class="mod__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M21 3l-9 9M11 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6"/></svg></div>
+        <h3>Transfers &amp; promotion</h3>
+        <p>Promote a class at year end, transfer a pupil out, and keep the full movement history on file.</p>
+        <span class="mod__tag">Core</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FEES ══════════ -->
+<section class="section" id="fees">
+  <div class="wrap dive">
+    <div class="rv">
+      <p class="eyebrow">Fee collection</p>
+      <div class="rule"></div>
+      <h2 class="h2">The bursar's office, automated</h2>
+      <p class="lede" style="margin-top:16px">Most schools don't lose fees to fraud. They lose them to follow-up that never happens. Shule does the following up.</p>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Bulk-generate a whole term.</b> Build the fee structure once per class, then raise every invoice for the term in a single action.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>M-Pesa payments match themselves.</b> Payments land against the right invoice and the balance updates the moment the parent pays.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Three reminders, sent without you.</b> A nightly job finds every overdue invoice and chases it up to three times, counting each attempt.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Every payment posts to the ledger.</b> Fees hit the general ledger as a balanced double entry, so your books are always closable.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Bursaries handled properly.</b> Waivers go through request and approval, so nobody quietly writes off a term.</span></li>
+      </ul>
+      <a href="#demo" class="tlink" style="margin-top:24px">See the fee workflow in a demo
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+
+    <div class="dive__art rv">
+      <div class="shot">
+        <div class="shot__bar"><i></i><i></i><i></i><span>Invoices · Grade 7 East · Term 2</span></div>
+        <table class="mock-table">
+          <thead><tr><th>Student</th><th>Invoiced</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Amina Ouma <span style="color:var(--body-2)">· ADM/2419</span></td><td class="mono">42,000</td><td class="mono">42,000</td><td class="mono">—</td><td><span class="pill pill--ok">Cleared</span></td></tr>
+            <tr><td>Brian Kiptoo <span style="color:var(--body-2)">· ADM/2451</span></td><td class="mono">42,000</td><td class="mono">30,000</td><td class="mono" style="color:var(--orange-600)">12,000</td><td><span class="pill pill--due">Part paid</span></td></tr>
+            <tr><td>Cynthia Wairimu <span style="color:var(--body-2)">· ADM/2488</span></td><td class="mono">42,000</td><td class="mono">42,000</td><td class="mono">—</td><td><span class="pill pill--ok">Cleared</span></td></tr>
+            <tr><td>David Ochieng <span style="color:var(--body-2)">· ADM/2502</span></td><td class="mono">42,000</td><td class="mono">—</td><td class="mono" style="color:#B4373B">42,000</td><td><span class="pill pill--late">3 reminders</span></td></tr>
+            <tr><td>Esther Nafula <span style="color:var(--body-2)">· ADM/2517</span></td><td class="mono">28,000</td><td class="mono">28,000</td><td class="mono">—</td><td><span class="pill pill--ok">Bursary</span></td></tr>
+          </tbody>
+        </table>
+        <div style="padding:14px 16px;border-top:1px solid var(--line);background:var(--paper);display:flex;justify-content:space-between;font-size:12px;color:var(--body)">
+          <span>38 of 44 cleared</span><span class="mono" style="color:var(--ink)">Outstanding: KES 54,000</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ ACADEMICS ══════════ -->
+<section class="section" id="academics" style="background:var(--paper);border-block:1px solid var(--line)">
+  <div class="wrap dive dive--flip">
+    <div class="rv">
+      <p class="eyebrow">Academics</p>
+      <div class="rule"></div>
+      <h2 class="h2">From mark sheet to report card without retyping</h2>
+      <p class="lede" style="margin-top:16px">Subject teachers enter marks. The system does the grading, the ranking, the mean and the PDF.</p>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Your grading, not ours.</b> Define bands with grade, range, points and remark — whatever your school actually uses.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Marks are verified before release.</b> Entry and verification are separate steps with separate names against them.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Positions calculated for you.</b> Class position out of class size, mean score, and a full merit list per exam.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Draft, then publish.</b> Report cards stay invisible to parents until the head signs them off. Then they're a PDF.</span></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span><b>Class analysis on tap.</b> Mean, highest, lowest and subject breakdown, ready for the departmental meeting.</span></li>
+      </ul>
+    </div>
+
+    <div class="dive__art rv">
+      <div class="shot">
+        <div class="shot__bar"><i></i><i></i><i></i><span>Report card · Amina Ouma · Grade 7 East</span></div>
+        <svg viewBox="0 0 560 400" role="img" aria-label="Report card preview showing subject grades, mean score and class position">
+          <rect width="560" height="400" fill="#fff"/>
+          <rect x="0" y="0" width="560" height="66" fill="#FDF6F0"/>
+          <text x="28" y="32" font-family="Poppins,sans-serif" font-size="15" font-weight="600" fill="#141417">Amina Ouma</text>
+          <text x="28" y="52" font-family="Inter,sans-serif" font-size="11" fill="#63656E">ADM/2419 · Grade 7 East · Term 2, 2026</text>
+          <rect x="432" y="20" width="100" height="30" rx="8" fill="#F4731E"/>
+          <text x="482" y="40" font-family="Poppins,sans-serif" font-size="11" font-weight="600" fill="#fff" text-anchor="middle">PUBLISHED</text>
+          <g font-family="Inter,sans-serif" font-size="10.5">
+            <text x="28" y="94" fill="#8A8C94">SUBJECT</text><text x="330" y="94" fill="#8A8C94" text-anchor="end">SCORE</text>
+            <text x="400" y="94" fill="#8A8C94" text-anchor="end">GRADE</text><text x="532" y="94" fill="#8A8C94" text-anchor="end">REMARK</text>
+          </g>
+          <path d="M28 102h504" stroke="#EBE6E0"/>
+          <g font-family="Inter,sans-serif" font-size="11.5" fill="#33333B">
+            <text x="28" y="126">Mathematics</text><text x="330" y="126" text-anchor="end" font-weight="600" fill="#141417">84</text>
+            <text x="400" y="126" text-anchor="end" font-weight="600" fill="#F4731E">A-</text><text x="532" y="126" text-anchor="end" fill="#63656E">Very good</text>
+            <text x="28" y="156">English</text><text x="330" y="156" text-anchor="end" font-weight="600" fill="#141417">78</text>
+            <text x="400" y="156" text-anchor="end" font-weight="600" fill="#F4731E">B+</text><text x="532" y="156" text-anchor="end" fill="#63656E">Good</text>
+            <text x="28" y="186">Kiswahili</text><text x="330" y="186" text-anchor="end" font-weight="600" fill="#141417">81</text>
+            <text x="400" y="186" text-anchor="end" font-weight="600" fill="#F4731E">A-</text><text x="532" y="186" text-anchor="end" fill="#63656E">Very good</text>
+            <text x="28" y="216">Integrated Science</text><text x="330" y="216" text-anchor="end" font-weight="600" fill="#141417">73</text>
+            <text x="400" y="216" text-anchor="end" font-weight="600" fill="#F4731E">B</text><text x="532" y="216" text-anchor="end" fill="#63656E">Improving</text>
+            <text x="28" y="246">Social Studies</text><text x="330" y="246" text-anchor="end" font-weight="600" fill="#141417">88</text>
+            <text x="400" y="246" text-anchor="end" font-weight="600" fill="#F4731E">A</text><text x="532" y="246" text-anchor="end" fill="#63656E">Excellent</text>
+          </g>
+          <g stroke="#F3F0EC"><path d="M28 138h504M28 168h504M28 198h504M28 228h504"/></g>
+          <path d="M28 262h504" stroke="#DFD9D2" stroke-width="1.5"/>
+          <rect x="28" y="280" width="156" height="62" rx="9" fill="#FCFAF8" stroke="#EBE6E0"/>
+          <text x="44" y="302" font-family="Inter,sans-serif" font-size="10" fill="#8A8C94">Mean score</text>
+          <text x="44" y="326" font-family="Poppins,sans-serif" font-size="18" font-weight="600" fill="#141417">80.8</text>
+          <rect x="202" y="280" width="156" height="62" rx="9" fill="#FCFAF8" stroke="#EBE6E0"/>
+          <text x="218" y="302" font-family="Inter,sans-serif" font-size="10" fill="#8A8C94">Class position</text>
+          <text x="218" y="326" font-family="Poppins,sans-serif" font-size="18" font-weight="600" fill="#F4731E">4 / 44</text>
+          <rect x="376" y="280" width="156" height="62" rx="9" fill="#FCFAF8" stroke="#EBE6E0"/>
+          <text x="392" y="302" font-family="Inter,sans-serif" font-size="10" fill="#8A8C94">Overall grade</text>
+          <text x="392" y="326" font-family="Poppins,sans-serif" font-size="18" font-weight="600" fill="#141417">A-</text>
+          <text x="28" y="368" font-family="Inter,sans-serif" font-size="10.5" fill="#8A8C94">CLASS TEACHER</text>
+          <text x="28" y="386" font-family="Inter,sans-serif" font-size="11.5" fill="#33333B">A steady term. Push on Integrated Science next term.</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PARENTS / DARK ══════════ -->
+<section class="section dark">
+  <div class="wrap">
+    <div class="center rv" style="max-width:700px;margin:0 auto">
+      <p class="eyebrow">Parents</p>
+      <div class="rule"></div>
+      <h2 class="h2">Parents get a link. Not a login they'll forget.</h2>
+      <p class="lede" style="margin-top:16px;color:rgba(255,255,255,.66)">Every guardian gets a secure, expiring link to their child's fee statement, attendance and latest results. No app store, no password reset queue at the front office.</p>
+    </div>
+    <div class="flows rv">
+      <div class="flow"><b>01</b><h3>Invoice raised</h3><p>The term's invoice is generated and the guardian is notified with the balance and the paybill number.</p></div>
+      <div class="flow"><b>02</b><h3>Parent pays on M-Pesa</h3><p>Payment is matched to the invoice automatically. The balance drops in real time.</p></div>
+      <div class="flow"><b>03</b><h3>Receipt issued</h3><p>A receipt is raised against the invoice and the entry is posted to the general ledger.</p></div>
+      <div class="flow"><b>04</b><h3>Statement stays live</h3><p>The guardian link keeps showing the running statement, attendance record and published results.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ WHO ══════════ -->
+<section class="section">
+  <div class="wrap">
+    <div class="center rv" style="margin-bottom:46px">
+      <p class="eyebrow">Who it's for</p>
+      <div class="rule"></div>
+      <h2 class="h2">Sized for the school you actually run</h2>
+    </div>
+    <div class="who rv">
+      <div class="who__c">
+        <div class="who__h"><h3>Primary schools</h3><p>Day schools from 120 pupils upward.</p></div>
+        <ul class="who__b">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Configurable CBC grading bands</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Fee collection over M-Pesa</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Daily attendance and SMS alerts</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Termly report cards as PDF</li>
+        </ul>
+      </div>
+      <div class="who__c">
+        <div class="who__h"><h3>Secondary &amp; boarding</h3><p>Where hostels, transport and streams get complicated.</p></div>
+        <ul class="who__b">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Everything in Primary</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Hostel allocation and occupancy</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Transport routes billed on the invoice</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Merit lists and stream analysis</li>
+        </ul>
+      </div>
+      <div class="who__c">
+        <div class="who__h"><h3>School groups</h3><p>Several campuses under one board.</p></div>
+        <ul class="who__b">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Multiple schools on one account</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Consolidated collection reporting</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Payroll across all campuses</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Board-ready financial statements</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ BACK OFFICE ══════════ -->
+<section class="section" style="background:var(--paper);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="center rv" style="margin-bottom:44px">
+      <p class="eyebrow">Included, not extra</p>
+      <div class="rule"></div>
+      <h2 class="h2">The back office comes with it</h2>
+      <p class="lede" style="margin-top:16px">A school is a business. Activating Shule activates the finance and people modules alongside it, at no additional cost.</p>
+    </div>
+    <div class="ints rv">
+      <div class="int"><div class="int__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><b>Invoicing</b><span>Suppliers &amp; eTIMS</span></div>
+      <div class="int"><div class="int__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></div><b>HR</b><span>Staff records</span></div>
+      <div class="int"><div class="int__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="3"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div><b>Payroll</b><span>PAYE · NHIF · NSSF</span></div>
+      <div class="int"><div class="int__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/></svg></div><b>Banking</b><span>Feeds &amp; reconciliation</span></div>
+      <div class="int"><div class="int__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V12M10 20V6M16 20v-5M22 20V9"/></svg></div><b>Reports</b><span>Statements &amp; exports</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PRICING ══════════ -->
+<section class="section" id="pricing">
+  <div class="wrap">
+    <div class="center rv" style="margin-bottom:46px">
+      <p class="eyebrow">Pricing</p>
+      <div class="rule"></div>
+      <h2 class="h2">Per pupil, per term. Nothing per teacher.</h2>
+      <p class="lede" style="margin-top:16px">Parent accounts are free and unlimited. Migration of your existing register is free on every plan.</p>
+    </div>
+    <div class="plans rv">
+      <div class="plan">
+        <h3>Starter</h3>
+        <div class="plan__p">KES 90<small> / pupil / term</small></div>
+        <p style="font-size:13.2px">Day schools up to 300 pupils.</p>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Students, fees &amp; attendance</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Exams &amp; report cards</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Guardian portal links</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Email support</li>
+        </ul>
+        <a href="#demo" class="btn btn--ghost btn--full btn--sm">Book a demo</a>
+      </div>
+      <div class="plan plan--hot">
+        <h3>School</h3>
+        <div class="plan__p">KES 150<small> / pupil / term</small></div>
+        <p style="font-size:13.2px">The full system for a growing campus.</p>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Everything in Starter</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>M-Pesa auto-reconciliation</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Payroll, banking &amp; reports</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Timetable &amp; cover planning</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>2,000 SMS credits per term</li>
+        </ul>
+        <a href="#demo" class="btn btn--solid btn--full btn--sm">Book a demo</a>
+      </div>
+      <div class="plan">
+        <h3>Group</h3>
+        <div class="plan__p">Custom</div>
+        <p style="font-size:13.2px">Multi-campus school networks.</p>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Everything in School</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Consolidated group reporting</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Dedicated onboarding manager</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>Priority support line</li>
+        </ul>
+        <a href="#demo" class="btn btn--ghost btn--full btn--sm">Talk to sales</a>
+      </div>
+    </div>
+
+    <div class="addons rv">
+      <b>Add-ons</b>
+      <span>Boarding &amp; hostels — KES 40 / boarder / term</span>
+      <span>Transport — KES 30 / rider / term</span>
+      <span>Library — KES 20 / pupil / term</span>
+      <span>Extra SMS — KES 0.80 each</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FAQ ══════════ -->
+<section class="section" id="faq" style="background:var(--paper);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="center rv" style="margin-bottom:40px">
+      <p class="eyebrow">Questions</p>
+      <div class="rule"></div>
+      <h2 class="h2">The things heads ask first</h2>
+    </div>
+    <div class="faq rv">
+      <details open>
+        <summary>How long does setup take?
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <p>Most schools are live in under two weeks. Send us your student register in whatever form it exists — a spreadsheet, an export from your old system — and we map and import it. Fee structures and grading bands are configured with you in one session.</p>
+      </details>
+      <details>
+        <summary>What if a parent has no smartphone?
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <p>Everything critical works over SMS. Fee reminders, balances, absence alerts and results notifications are sent as text messages. The guardian portal link opens in any mobile browser and needs no app or account.</p>
+      </details>
+      <details>
+        <summary>Do we have to move our bank or paybill?
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <p>No. Shule connects to your existing paybill or till and reconciles payments against invoices. Funds settle to your account exactly as they do today.</p>
+      </details>
+      <details>
+        <summary>Does it handle CBC as well as 8-4-4?
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <p>Grading scales are fully configurable, so both run side by side. You define the bands — grade, score range, points and remark — and the system applies them. Full CBC strand and sub-strand assessment is on the near-term roadmap.</p>
+      </details>
+      <details>
+        <summary>Who owns the data?
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <p>The school does. You can export students, fees, results and ledger entries at any time in standard formats. If you leave, you leave with everything.</p>
+      </details>
+      <details>
+        <summary>What happens when a teacher leaves mid-term?
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <p>Marks and attendance already entered stay attached to the record with the original entry name against them. Reassign the subject to another teacher and the class carries on. Nothing is lost with the person.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CTA ══════════ -->
+<section class="section" id="demo">
+  <div class="wrap">
+    <div class="cta rv">
+      <p class="eyebrow" style="margin-bottom:12px">Book a demo</p>
+      <h2>See your own fee book in Shule <em>before you decide.</em></h2>
+      <p class="lede" style="margin-bottom:26px">Twenty minutes, a real screen share, and we'll load a sample of your actual student list so you're looking at your school — not ours.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <a href="contact.html" class="btn btn--solid">Book a demo
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="tel:+254700000000" class="btn btn--ghost">Call +254 700 000 000</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__g">
+      <div>
+        <a href="index.html" class="logo">
+      <span class="logo__m"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+        <p class="foot__p">School management for Kenyan schools. Fees, academics and the back office in one system.</p>
+      </div>
+      <div><h3>Product</h3><ul>
+        <li><a href="features.html">Features</a></li><li><a href="pricing.html">Pricing</a></li>
+        <li><a href="pricing.html#calculator">Fee-recovery calculator</a></li><li><a href="login.html">Log in</a></li></ul></div>
+      <div><h3>Modules</h3><ul>
+        <li><a href="features.html#students">Students</a></li><li><a href="features.html#fees">Fees &amp; M-Pesa</a></li>
+        <li><a href="features.html#exams">Exams &amp; results</a></li><li><a href="features.html#report-cards">Report cards</a></li></ul></div>
+      <div><h3>Company</h3><ul>
+        <li><a href="contact.html">Contact</a></li><li><a href="contact.html">Book a demo</a></li>
+        <li><a href="pricing.html#faq">FAQ</a></li><li><a href="contact.html">Careers</a></li></ul></div>
+      <div><h3>Legal</h3><ul>
+        <li><a href="contact.html">Privacy</a></li><li><a href="contact.html">Terms</a></li>
+        <li><a href="contact.html">Data protection</a></li><li><a href="contact.html">Status</a></li></ul></div>
+    </div>
+    <div class="colo">
+      <span>© 2026 Shule. All rights reserved.</span>
+      <span>Nairobi, Kenya · hello@shule.co.ke</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/site.js"></script>
+</body>
+</html>

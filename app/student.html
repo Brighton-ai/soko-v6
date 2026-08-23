@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student record — Shule</title>
+<meta name="description" content="One pupil at Riverside Academy: profile, guardians, fee history, attendance calendar, exam results and discipline log in six tabs.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/theme.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body class="app-body" data-role="admin" data-page="student">
+
+<div class="app">
+<aside class="side" id="side">
+  <div class="side__top">
+    <a href="../index.html" class="logo">
+      <span class="logo__m"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+  </div>
+  <nav class="side__scroll" id="sidenav" aria-label="Sections">
+      <div class="navg" data-group="overview">
+        <p class="navg__t">Overview</p>
+        <ul>
+          <li><a href="dashboard.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.6"/><rect x="14" y="3" width="7" height="5" rx="1.6"/><rect x="14" y="12" width="7" height="9" rx="1.6"/><rect x="3" y="16" width="7" height="5" rx="1.6"/></svg><span>Dashboard</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="people">
+        <p class="navg__t">People</p>
+        <ul>
+          <li><a href="students.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M16.5 6.4a3 3 0 0 1 0 5.6M18 14a6 6 0 0 1 3 5"/></svg><span>Students</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M9 9v11"/></svg><span>Classes & streams</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.6 2.2 3 5 3s5-1.4 5-3v-5"/></svg><span>Teachers</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="fees">
+        <p class="navg__t">Fees</p>
+        <ul>
+          <li><a href="invoices.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg><span>Invoices</span></a></li>
+          <li><a href="payments.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg><span>Payments</span></a></li>
+          <li><a href="defaulters.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg><span>Defaulters</span></a></li>
+          <li><a href="fee-structures.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V9M10 20V4M16 20v-8M22 20h-20"/></svg><span>Fee structures</span></a></li>
+          <li><a href="waivers.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="academics">
+        <p class="navg__t">Academics</p>
+        <ul>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg><span>Exams</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V12M10 20V6M16 20v-9M22 20h-20"/><circle cx="10" cy="6" r="1.6"/></svg><span>Results</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 16h6M9 12h3"/></svg><span>Report cards</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.4 6 6.1.5-4.7 4 1.5 6L12 16.3 6.7 19.5l1.5-6-4.7-4 6.1-.5z"/></svg><span>Grading scales</span><span class="navg__soon">Step 4</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="daily">
+        <p class="navg__t">Daily</p>
+        <ul>
+          <li><a href="#" data-step="4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg><span>Attendance</span><span class="navg__soon">Step 4</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>Timetable</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="facilities">
+        <p class="navg__t">Facilities</p>
+        <ul>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6M3 21h18"/></svg><span>Boarding</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17V7a2 2 0 0 1 2-2h9v12H3z"/><path d="M14 9h4l3 4v4h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg><span>Transport</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6a2.6 2.6 0 0 1 2 2.6V19a2.2 2.2 0 0 0-2.2-2.2H4Z"/><path d="M20 5h-6a2.6 2.6 0 0 0-2 2.6V19a2.2 2.2 0 0 1 2.2-2.2H20Z"/></svg><span>Library</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="communication">
+        <p class="navg__t">Communication</p>
+        <ul>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v13H8l-4 3z"/><path d="M8 9h8M8 13h5"/></svg><span>Announcements</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/></svg><span>Events</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="admin">
+        <p class="navg__t">Admin</p>
+        <ul>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 14 3.5-4 3 3L19 7"/></svg><span>Reports</span><span class="navg__soon">Step 5</span></a></li>
+          <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg><span>Settings</span><span class="navg__soon">Step 5</span></a></li>
+        </ul>
+      </div>
+  </nav>
+  <div class="side__end">
+    <div class="sidecard">
+      <b>Term 2 · 2026</b>
+      <p>Closes Friday 7 August. 240 pupils on roll.</p>
+      <a href="#" data-step="5" class="btn btn--ghost btn--sm btn--full">Switch term</a>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+<header class="top">
+  <button class="top__menu" id="sidetoggle" aria-label="Open menu" aria-expanded="false" aria-controls="side"><span></span></button>
+  <div class="top__school">
+    <span data-bind="school-name">Riverside Academy</span>
+    <small data-bind="term-name">Term 2 2026 · Nairobi</small>
+  </div>
+  <div class="search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <label class="vh" for="app-search">Search students, invoices and classes</label>
+    <input type="search" id="app-search" name="q" placeholder="Search pupils, invoices, classes…" autocomplete="off">
+  </div>
+  <button class="iconbtn" id="notifs" aria-label="Notifications, 3 unread">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    <span class="iconbtn__dot" id="notif-dot"></span>
+  </button>
+  <button class="who" id="usermenu" aria-expanded="false" aria-haspopup="true" aria-controls="usermenu-panel">
+    <span class="who__av" data-bind="user-initials">JW</span>
+    <span class="who__n"><span data-bind="user-name">Jane Wanjiru</span><small data-bind="user-role">School admin</small></span>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div class="menu" id="usermenu-panel" role="menu" aria-labelledby="usermenu">
+    <div class="menu__h">
+      <b data-bind="user-name">Jane Wanjiru</b>
+      <span data-bind="user-email">jane.wanjiru@riverside.ac.ke</span>
+    </div>
+    <a href="#" data-step="5" role="menuitem">Profile &amp; password</a>
+    <a href="#" data-step="5" role="menuitem">School settings</a>
+    <button type="button" role="menuitem" id="reset-demo">Reset demo data</button>
+    <button type="button" role="menuitem" id="signout">Sign out</button>
+  </div>
+</header>
+
+<main class="content">
+  <p class="crumb" style="margin-bottom:14px;font-size:12px;color:var(--body-2)">
+    <a href="students.html" style="font-family:var(--f-display);font-weight:500">Students</a>
+    <span style="margin:0 6px;color:var(--line-2)">/</span><span data-bind="crumb">Record</span>
+  </p>
+
+  <div id="loading">
+    <section class="card"><div class="card__b">
+      <span class="sk sk--head"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span>
+    </div></section>
+  </div>
+
+  <div id="notfound" hidden>
+    <section class="card">
+      <div class="card__b">
+        <div class="empty empty--bad">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+            <b>No pupil with that id</b>
+            <p>The link you followed points at a record that is not on the roll. It may have been removed, or the address may have been mistyped. <a href="students.html" style="color:var(--orange);font-weight:500">Back to the roll</a>.</p>
+          </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="record" hidden>
+    <div class="rec">
+      <span class="rec__av" data-bind="initials">—</span>
+      <div class="rec__id">
+        <h1 data-bind="name">—</h1>
+        <p class="rec__meta">
+          <span data-bind="admission">—</span><span class="sep">·</span>
+          <span data-bind="class">—</span><span class="sep">·</span>
+          <span data-bind="status-tag"></span>
+        </p>
+      </div>
+      <div class="rec__act">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-open="modal-edit">Edit</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="promote-one">Promote</button>
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-open="modal-transfer">Transfer out</button>
+      </div>
+    </div>
+    <div class="rec__wrap">
+    <div class="tabs" role="tablist" aria-label="Student record">
+      <button type="button" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" data-tab="overview">Overview<span class="tabs__n" data-tab-count="overview"></span></button>
+      <button type="button" role="tab" id="tab-guardians" aria-controls="panel-guardians" aria-selected="false" data-tab="guardians">Guardians<span class="tabs__n" data-tab-count="guardians"></span></button>
+      <button type="button" role="tab" id="tab-fees" aria-controls="panel-fees" aria-selected="false" data-tab="fees">Fees<span class="tabs__n" data-tab-count="fees"></span></button>
+      <button type="button" role="tab" id="tab-attendance" aria-controls="panel-attendance" aria-selected="false" data-tab="attendance">Attendance<span class="tabs__n" data-tab-count="attendance"></span></button>
+      <button type="button" role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false" data-tab="results">Results<span class="tabs__n" data-tab-count="results"></span></button>
+      <button type="button" role="tab" id="tab-discipline" aria-controls="panel-discipline" aria-selected="false" data-tab="discipline">Discipline<span class="tabs__n" data-tab-count="discipline"></span></button>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
+      <div class="card__b">
+        <dl class="dgrid" id="profile"></dl>
+        <div class="qstats" id="quickstats"></div>
+      </div>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="panel-guardians" aria-labelledby="tab-guardians" hidden>
+      <div class="card__b">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <p style="font-size:12.6px">Exactly one guardian is primary. Making another primary clears the old one.</p>
+          <button type="button" class="btn btn--solid btn--sm" id="add-guardian"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Add guardian</button>
+        </div>
+        <div class="gcards" id="guardian-cards"></div>
+      </div>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="panel-fees" aria-labelledby="tab-fees" hidden>
+      <div class="card__b card__b--flush">
+        <div class="qstats" style="border:0;border-bottom:1px solid var(--line);border-radius:0" id="fee-stats"></div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <caption class="vh">Invoice history for this pupil</caption>
+          <thead><tr><th scope="col">Term</th><th scope="col" class="r">Invoiced</th><th scope="col" class="r">Paid</th><th scope="col" class="r">Balance</th><th scope="col">Due date</th><th scope="col">Status</th><th scope="col" class="r">Reminders</th><th scope="col"></th></tr></thead>
+          <tbody id="fee-rows"></tbody>
+        </table>
+      </div>
+        <div style="padding:14px 16px;border-top:1px solid var(--line)">
+          <h2 style="font-family:var(--f-display);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--body-2);margin-bottom:10px">Receipts</h2>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <caption class="vh">Payments received from this pupil</caption>
+          <thead><tr><th scope="col">Date</th><th scope="col" class="r">Amount</th><th scope="col">Method</th><th scope="col">Reference</th><th scope="col"></th></tr></thead>
+          <tbody id="payment-rows"></tbody>
+        </table>
+      </div>
+        </div>
+      </div>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="panel-attendance" aria-labelledby="tab-attendance" hidden>
+      <div class="card__b">
+        <div class="qstats" style="margin:0 0 18px" id="att-stats"></div>
+        <p style="font-size:12.6px;margin-bottom:12px">The last 60 school days, oldest first.</p>
+        <div class="cal" id="calendar"></div>
+        <div class="callegend">
+          <span><i class="present"></i>Present</span><span><i class="late"></i>Late</span>
+          <span><i class="absent"></i>Absent</span><span><i class="excused"></i>Excused</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="panel-results" aria-labelledby="tab-results" hidden>
+      <div class="card__b card__b--flush">
+        <div id="results-by-exam"></div>
+      </div>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="panel-discipline" aria-labelledby="tab-discipline" hidden>
+      <div class="card__b card__b--flush">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--line)">
+          <p style="font-size:12.6px">Visible to the class teacher, the deputy and the head only.</p>
+          <button type="button" class="btn btn--solid btn--sm" data-modal-open="modal-incident"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Record incident</button>
+        </div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <caption class="vh">Discipline incidents for this pupil</caption>
+          <thead><tr><th scope="col">Date</th><th scope="col">Category</th><th scope="col">What happened</th><th scope="col">Action taken</th><th scope="col">Recorded by</th></tr></thead>
+          <tbody id="discipline-rows"></tbody>
+        </table>
+      </div>
+      </div>
+    </div>
+    </div>
+  </div>
+</main>
+
+<div class="scrim" id="modal-edit" role="dialog" aria-modal="true" aria-labelledby="modal-edit-t">
+  <div class="modal">
+    <form id="modal-edit-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-edit-t">Edit pupil</h2>
+          <p>Changes are written straight to the record.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="ed-name">Full name</label>
+            <input type="text" id="ed-name" name="name" aria-describedby="ed-name-err">
+            <p class="err" id="ed-name-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="ed-class">Class</label>
+            <select id="ed-class" name="class" aria-describedby="ed-class-err"></select>
+            <p class="err" id="ed-class-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="ed-dob">Date of birth</label>
+            <input type="date" id="ed-dob" name="dob" aria-describedby="ed-dob-err">
+            <p class="err" id="ed-dob-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="ed-scholarship">Scholarship held on the record (KES) <span class="opt">(optional)</span></label>
+            <input type="number" id="ed-scholarship" name="scholarship" aria-describedby="ed-scholarship-err" min="0" step="500">
+            <p class="err" id="ed-scholarship-err" role="alert"></p>
+          </div>
+        <p class="formerr" data-form-error role="alert"></p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-guardian" role="dialog" aria-modal="true" aria-labelledby="modal-guardian-t">
+  <div class="modal">
+    <form id="modal-guardian-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-guardian-t">Guardian</h2>
+          <p>Every pupil keeps at least one guardian on file.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="gd-name">Full name</label>
+            <input type="text" id="gd-name" name="name" aria-describedby="gd-name-err" placeholder="Mary Ouma">
+            <p class="err" id="gd-name-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="gd-relationship">Relationship</label>
+            <select id="gd-relationship" name="relationship" aria-describedby="gd-relationship-err"><option>Mother</option><option>Father</option><option>Aunt</option><option>Uncle</option><option>Grandmother</option><option>Grandfather</option><option>Guardian</option></select>
+            <p class="err" id="gd-relationship-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="gd-phone">Phone</label>
+            <input type="tel" id="gd-phone" name="phone" aria-describedby="gd-phone-err" inputmode="tel" placeholder="0712 345 678">
+            <p class="err" id="gd-phone-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="gd-email">Email <span class="opt">(optional)</span></label>
+            <input type="email" id="gd-email" name="email" aria-describedby="gd-email-err">
+            <p class="err" id="gd-email-err" role="alert"></p>
+          </div>
+          <div class="check"><input type="checkbox" id="gd-primary" name="primary"><label for="gd-primary">Primary guardian — fee reminders and results go here</label></div>
+          <div class="check"><input type="checkbox" id="gd-emergency" name="emergency"><label for="gd-emergency">Emergency contact</label></div>
+        <p class="formerr" data-form-error role="alert"></p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Save guardian</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-pay" role="dialog" aria-modal="true" aria-labelledby="modal-pay-t">
+  <div class="modal">
+    <form id="modal-pay-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-pay-t">Record a payment</h2>
+          <p>Posts a receipt against the invoice and a balanced entry to the general ledger.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal__b">
+          <div class="modal__note" id="pay-context">—</div>
+          <div class="field">
+            <label for="pay-amount">Amount (KES)</label>
+            <input type="number" id="pay-amount" name="amount" aria-describedby="pay-amount-err" min="1" step="1" inputmode="numeric">
+            <p class="err" id="pay-amount-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="pay-method">Method</label>
+            <select id="pay-method" name="method" aria-describedby="pay-method-err"><option value="mpesa">M-Pesa</option><option value="cash">Cash</option><option value="bank">Bank transfer</option></select>
+            <p class="err" id="pay-method-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="pay-reference">Reference</label>
+            <input type="text" id="pay-reference" name="reference" aria-describedby="pay-reference-err" placeholder="M-Pesa code or slip number">
+            <p class="err" id="pay-reference-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="pay-date">Date received</label>
+            <input type="date" id="pay-date" name="paid_at" aria-describedby="pay-date-err">
+            <p class="err" id="pay-date-err" role="alert"></p>
+          </div>
+        <p class="formerr" data-form-error role="alert"></p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Record payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-receipt" role="dialog" aria-modal="true" aria-labelledby="modal-receipt-t">
+  <div class="modal" style="max-width:640px">
+    <form id="modal-receipt-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-receipt-t">Receipt</h2>
+          <p>A printable record of the payment.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal__b">
+          <div id="receipt-body"></div>
+        <p class="formerr" data-form-error role="alert"></p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Close</button>
+        <button type="button" class="btn btn--solid btn--sm" id="print-receipt">Print receipt</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-incident" role="dialog" aria-modal="true" aria-labelledby="modal-incident-t">
+  <div class="modal">
+    <form id="modal-incident-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-incident-t">Record an incident</h2>
+          <p>A plain record of what happened. No scoring — the judgement stays with the school.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="in-date">Date</label>
+            <input type="date" id="in-date" name="date" aria-describedby="in-date-err">
+            <p class="err" id="in-date-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="in-category">Category</label>
+            <select id="in-category" name="category" aria-describedby="in-category-err"><option value="lateness">Lateness</option><option value="uniform">Uniform</option><option value="homework">Homework</option><option value="conduct">Conduct</option><option value="property">School property</option><option value="bullying">Bullying</option><option value="absconding">Absconding</option></select>
+            <p class="err" id="in-category-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="in-note">What happened</label>
+            <textarea id="in-note" name="note" rows="3" aria-describedby="in-note-err"></textarea>
+            <p class="err" id="in-note-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="in-action">Action taken</label>
+            <select id="in-action" name="action" aria-describedby="in-action-err"><option>Verbal warning</option><option>Guardian called</option><option>Detention — one hour</option><option>Referred to the deputy</option><option>Written warning on file</option><option>Community service — two days</option></select>
+            <p class="err" id="in-action-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="in-severity">Severity</label>
+            <select id="in-severity" name="severity" aria-describedby="in-severity-err"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+            <p class="err" id="in-severity-err" role="alert"></p>
+          </div>
+        <p class="formerr" data-form-error role="alert"></p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Save incident</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-transfer" role="dialog" aria-modal="true" aria-labelledby="modal-transfer-t">
+  <div class="modal">
+    <form id="modal-transfer-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-transfer-t">Transfer out</h2>
+          <p>The record is kept in full — fees, results and attendance stay on file. The pupil is marked transferred.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="tr-destination">Destination school</label>
+            <input type="text" id="tr-destination" name="destination" aria-describedby="tr-destination-err" placeholder="St Mary’s Academy, Nakuru">
+            <p class="err" id="tr-destination-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="tr-date">Date of transfer</label>
+            <input type="date" id="tr-date" name="date" aria-describedby="tr-date-err">
+            <p class="err" id="tr-date-err" role="alert"></p>
+          </div>
+        <p class="formerr" data-form-error role="alert"></p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Transfer out</button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="sidescrim" id="sidescrim" hidden></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="../assets/js/data/demo-data.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/shell.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/student.js"></script>
+</body>
+</html>

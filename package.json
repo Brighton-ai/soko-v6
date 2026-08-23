@@ -1,0 +1,25 @@
+{
+  "name": "shule",
+  "version": "0.1.0",
+  "description": "Shule — school management for Kenyan schools. Marketing site.",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brighton-ai/soko-v6.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Brighton-ai/soko-v6/issues"
+  },
+  "homepage": "https://github.com/Brighton-ai/soko-v6#readme",
+  "devDependencies": {
+    "cheerio": "^1.2.0",
+    "jsdom": "^30.0.1"
+  },
+  "private": true
+}

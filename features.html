@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Features — every Shule module in detail</title>
+<meta name="description" content="The fourteen Shule modules in full: students, fees and M-Pesa, attendance, exams, report cards, grading, timetable, library, transport, boarding and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/features.css">
+</head>
+<body>
+
+<div class="ticker">
+  <b>New</b> &nbsp;Configurable CBC grading bands and M-Pesa auto-reconciliation are live · <a href="features.html#grading">See what shipped</a>
+</div>
+
+<header class="nav" id="nav">
+  <div class="wrap nav__in">
+    <a href="index.html" class="logo">
+      <span class="logo__m"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="features.html" aria-current="page">Features</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav__right">
+      <a href="login.html" class="btn btn--ghost btn--sm">Log in</a>
+      <a href="contact.html" class="btn btn--dark btn--sm">Book a demo</a>
+      <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+  <div class="drawer" id="drawer">
+    <a href="index.html">Home</a><a href="features.html" aria-current="page">Features</a><a href="pricing.html">Pricing</a><a href="contact.html">Contact</a><a href="login.html">Log in</a>
+  </div>
+</header>
+
+<section class="phead">
+  <div class="wrap">
+    <p class="crumb"><a href="index.html">Home</a><span>/</span>Features</p>
+    <h1>Fourteen modules. <em>One student record.</em></h1>
+    <p class="lede">Everything below writes to the same pupil, the same term and the same ledger. Nothing is re-keyed, and the bursar's book never drifts from the class register.</p>
+  </div>
+</section>
+
+<div class="wrap fx">
+  <aside>
+    <nav class="toc" id="toc" aria-label="Modules on this page">
+      <p class="toc__t">On this page</p>
+      <ol>
+        <li><a href="#students">Students</a></li>
+        <li><a href="#fees">Fees &amp; invoicing</a></li>
+        <li><a href="#attendance">Attendance</a></li>
+        <li><a href="#exams">Exams &amp; results</a></li>
+        <li><a href="#report-cards">Report cards</a></li>
+        <li><a href="#grading">Grading scales</a></li>
+        <li><a href="#timetable">Timetable</a></li>
+        <li><a href="#teachers">Teachers &amp; subjects</a></li>
+        <li><a href="#communication">Communication</a></li>
+        <li><a href="#library">Library</a></li>
+        <li><a href="#transport">Transport</a></li>
+        <li><a href="#boarding">Boarding &amp; hostels</a></li>
+        <li><a href="#discipline">Discipline</a></li>
+        <li><a href="#transfers">Transfers &amp; promotion</a></li>
+      </ol>
+      <div class="toc__foot">
+        <a href="contact.html" class="btn btn--solid btn--sm btn--full">Book a demo</a>
+      </div>
+    </nav>
+  </aside>
+
+  <div>
+      <section class="mo rv" id="students">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19a6.5 6.5 0 0 1 13 0"/><path d="M16.5 6.2a3.2 3.2 0 0 1 0 6M18 13.6a6.5 6.5 0 0 1 3.5 5.4"/></svg></span>
+          <span class="mo__n">Module 01</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Students &amp; guardians</h2>
+        <p>The student record is the spine of the system. Everything else in Shule — an invoice, a mark, an absence, a hostel bed, a bus seat — hangs off it, which is why it is the first thing we set up and the last thing we let anyone edit casually.</p>
+        <p>A child is admitted with an admission number, a date of birth, a gender, a class placement and a stream. From that moment the record carries a status: active, transferred, graduated or withdrawn. Nothing is deleted, because a school that deletes a pupil loses the fee history, the exam history and the audit trail along with them.</p>
+        <p>Guardians are separate records linked to the child, not fields on it, so a pupil can have a mother, a father, an uncle paying the fees and a neighbour listed for emergencies. One guardian is flagged primary — that is who fee reminders and results notifications go to — and any of them can be flagged for emergency contact.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Admission number, class and stream on every record</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Many guardians per child, with primary and emergency flags</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Scholarship or bursary amount held on the record</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Status lifecycle: active, transferred, graduated, withdrawn</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Photo, date of birth, gender, medical notes</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Full history retained — records are archived, never deleted</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Bulk import from a spreadsheet during migration</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Search by name, admission number or guardian phone</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Migration is free on every plan. Send us the register in whatever shape it exists — a spreadsheet, a printout, an export from the system you are leaving — and we map it into Shule before you go live.</div>
+      </section>
+      <section class="mo rv" id="fees">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/></svg></span>
+          <span class="mo__n">Module 02</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Fees, invoicing &amp; M-Pesa</h2>
+        <p>Most schools do not lose fees to fraud. They lose them to follow-up that never happens: the bursar knows Grade 7 East is behind, but chasing forty-four families by phone is a week of work nobody has. Shule does the following up.</p>
+        <p>You build a fee structure once per class per term — tuition, lunch, activity, exam, transport, boarding, each as its own line — and then raise every invoice for the whole term in a single action. Part payments are normal here, so an invoice carries an amount invoiced, an amount paid and a running balance that updates the moment money lands.</p>
+        <p>M-Pesa payments reconcile themselves. Shule connects to your existing paybill or till through the Daraja API, matches the incoming payment to the right invoice, issues a receipt and posts a balanced double entry to the general ledger. You do not move your bank, and funds settle exactly as they do today.</p>
+        <p>Overdue invoices are chased by a nightly job, up to three times per invoice, and every attempt is counted against the invoice so nobody is chased four times and nobody is missed. Bursaries and waivers go through a request-and-approval step, so no one quietly writes off a term.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Itemised fee structures per class and per term</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Bulk invoice generation for an entire term</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>M-Pesa auto-reconciliation via the Daraja API</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Part payments with live running balances</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Automatic receipts against every payment</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Three automated reminders per overdue invoice</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Bursary and waiver approval workflow</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Every payment posted to the general ledger</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> A school of 600 pupils carrying 18% arrears is sitting on roughly KES 2.4M a year. Recovering a third of that pays for the subscription many times over — the calculator on the pricing page runs the numbers against your own figures.</div>
+      </section>
+      <section class="mo rv" id="attendance">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg></span>
+          <span class="mo__n">Module 03</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Attendance</h2>
+        <p>Attendance is marked class by class in one pass. The teacher opens the register for their class and the day, marks present, absent, late or excused, adds a note where one is needed, and submits. It is designed to be done from a phone at the front of a classroom in under a minute.</p>
+        <p>Every mark carries the name of who made it and when, which matters more than it sounds. When a parent calls in March asking why their child was marked absent in February, the answer is on the record rather than in somebody's memory.</p>
+        <p>Absence triggers the rest of the system on its own. The day's absentee list is generated for the deputy, guardians of absent pupils are alerted by SMS, and the term's attendance percentage flows straight into the report card without anyone counting register lines by hand.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Mark a whole class in a single pass</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Present, absent, late and excused states</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Per-pupil notes on any mark</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Audit trail: who marked it, and when</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Daily absentee list for the deputy head</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Automatic SMS alerts to guardians of absent pupils</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Termly attendance percentage carried to the report card</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Per-class and per-pupil attendance history</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Attendance data is the earliest reliable warning of a pupil about to drop out. Shule surfaces sustained absence patterns per class rather than leaving them buried in a register.</div>
+      </section>
+      <section class="mo rv" id="exams">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg></span>
+          <span class="mo__n">Module 04</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Exams &amp; results</h2>
+        <p>An exam in Shule is a named assessment bound to a term, a set of classes and a grading scale — opener, mid-term, end-term, mock, or anything else your school runs. Binding the grading scale to the exam is deliberate: it means a mid-term marked out of 40 and an end-term marked out of 100 both grade correctly without anyone rescaling by hand.</p>
+        <p>Subject teachers enter marks for their own subjects only, with a comment per pupil where they want one. Entry and verification are separate steps carried out by different people: the subject teacher enters, the head of department or class teacher verifies, and only verified marks are eligible to appear on a report card.</p>
+        <p>Once marks are in, the arithmetic is the system's job. Mean scores, grades, class positions out of class size, subject means and merit lists are all computed, and a full class analysis — mean, highest, lowest, distribution by grade — is ready for the departmental meeting without a spreadsheet.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Exams bound to a term, classes and a grading scale</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Per-subject mark entry, scoped to the teacher's own subjects</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Teacher comment per pupil per subject</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Separate entry and verification steps, with names against each</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Automatic grade, mean score and class position</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Merit lists per exam, per class and per stream</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Class analysis: mean, highest, lowest, grade distribution</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Nothing reaches a parent until it is verified</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Marks stay attached to the record with the original entry name against them. If a teacher leaves mid-term, reassign the subject and the class carries on — nothing is lost with the person.</div>
+      </section>
+      <section class="mo rv" id="report-cards">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h3"/></svg></span>
+          <span class="mo__n">Module 05</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Report cards</h2>
+        <p>A report card in Shule is generated, not typed. It pulls verified marks for the term, applies the grading scale, computes the mean and the class position out of class size, folds in the attendance percentage, and leaves the class teacher and the head with the only two things that actually need a human: their comments.</p>
+        <p>Report cards are drafted first and published second. A draft is invisible to parents no matter how many times a guardian refreshes their link. When the head signs off, the card publishes, the guardian is notified, and a PDF is available for printing or download in the school's own layout.</p>
+        <p>Because the card is generated from the same records as everything else, it cannot drift. The mean on the report card is the mean in the exam module, and the attendance figure is the register — not a number someone retyped at eleven o'clock the night before closing day.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Generated from verified marks — no retyping</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Mean score, overall grade and class position out of class size</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Attendance percentage carried in from the register</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Class teacher and principal comment fields</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Draft and publish states, with parent visibility gated on publish</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>PDF export in the school's own layout</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Guardians notified the moment a card is published</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Full history of every term's card on the pupil record</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Heads tell us closing day is the pinch point: five hundred cards, three days, one printer. Bulk-generating a whole class turns that into an afternoon.</div>
+      </section>
+      <section class="mo rv" id="grading">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2.6 6.6L21 9.3l-5 4.4 1.5 6.8L12 17l-5.5 3.5L8 13.7l-5-4.4 6.4-.7z"/></svg></span>
+          <span class="mo__n">Module 06</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Grading scales</h2>
+        <p>Kenyan schools do not agree on grading, and they should not have to. Shule ships no opinion about your bands. You define them — grade, score range, points and remark — and the system applies exactly what you defined.</p>
+        <p>That makes running 8-4-4 marks and CBC performance levels side by side straightforward rather than a workaround. A secondary stream can grade A to E on points while a junior school class is assessed on performance levels, in the same school, in the same term, on the same report card run.</p>
+        <p>Scales are versioned. When the school changes its bands, historical exams keep grading against the scale that was in force when they were sat, so last year's results do not silently change shape because this year's policy did.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Fully configurable bands: grade, range, points, remark</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Multiple scales live at once, per class or per exam</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>8-4-4 letter grades and CBC performance levels side by side</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Scales versioned so historic results stay stable</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Points-based aggregation for secondary streams</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Remarks flow through to the report card automatically</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Preview a scale against a real mark sheet before saving</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>CBC strand and sub-strand assessment on the near-term roadmap</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> If your school uses a scale we have not seen, that is not a support ticket. It is four fields and a save.</div>
+      </section>
+      <section class="mo rv" id="timetable">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
+          <span class="mo__n">Module 07</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Timetable</h2>
+        <p>The timetable is built from period slots — the shape of your school day, including breaks, games and preps — and then filled by assigning a subject and a teacher to each slot for each class. The same underlying grid is then readable two ways.</p>
+        <p>Viewed by class, it is the timetable that goes on the classroom wall. Viewed by teacher, it is the personal schedule that tells a teacher where they are at eleven o'clock on Wednesday. Both come from the same data, so they cannot contradict each other.</p>
+        <p>When a teacher is away, you reassign the affected periods and the cover shows up on the covering teacher's own view immediately. Clashes — the same teacher in two rooms at once — are caught at the point of assignment rather than at the point of confusion.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Define period slots, including breaks, games and prep</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Assign subject and teacher per slot, per class</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>View by class or by teacher from the same grid</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Clash detection on teacher double-booking</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Reassign periods for cover when a teacher is away</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Printable class and staff timetables</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Room assignment per period where rooms are tracked</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Term-by-term timetables kept on file</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Cover planning is where a timetable earns its keep. Reassigning a period takes seconds and the covering teacher sees it on their own schedule at once.</div>
+      </section>
+      <section class="mo rv" id="teachers">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+          <span class="mo__n">Module 08</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Teachers &amp; subjects</h2>
+        <p>The subject catalogue is the school's list of what it teaches, with a code and a category against each entry. Teacher records hold the staff details, the TSC number where there is one, contact information and the class a teacher is class teacher of.</p>
+        <p>The two are joined by an assignment: this teacher teaches this subject to this class, this term. That single table is what scopes the rest of the system. A subject teacher sees mark entry only for their own assignments, a class teacher sees their own register, and nobody sees a class they do not teach.</p>
+        <p>Because assignment is data rather than permission settings buried in an admin screen, changing who teaches what is one edit — and access follows automatically.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Subject catalogue with codes and categories</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Teacher records with TSC number and contact details</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Assignment table binding teacher, subject and class</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Class teacher designation per class</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Access scoped by assignment, not by manual permissions</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Teacher workload view across all assignments</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Staff records shared with the HR and payroll modules</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Reassign a subject in one edit when staffing changes</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> There is no per-teacher licence. Add every member of staff without watching a meter — the subscription is priced per pupil, per term, and nothing else.</div>
+      </section>
+      <section class="mo rv" id="communication">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H8l-4 3z"/><path d="M8 9h8M8 13h5"/></svg></span>
+          <span class="mo__n">Module 09</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Communication</h2>
+        <p>Communication in Shule is not a separate address book that goes stale. Every message is addressed from the live student and guardian records and logged back against the pupil, so the school can always answer what was sent, to whom, and when.</p>
+        <p>Announcements and the events calendar cover the whole-school traffic — closing dates, prize giving, a change to the exam week. Targeted messages cover the rest: a class, a stream, the guardians of every pupil with an outstanding balance, or a single family.</p>
+        <p>Most of the volume, though, is automatic. Fee reminders, absence alerts and results notifications go out on their own from the fees, attendance and report card modules. Everything critical works over plain SMS, because a parent with a feature phone is still a parent who needs to know their child was not in school today.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Announcements and a school events calendar</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Bulk SMS and email to any audience segment</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Automatic fee reminders from the invoicing module</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Automatic absentee alerts from the register</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Results-published notifications to guardians</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Every message logged against the student record</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Delivery status per recipient</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>SMS credits included, with per-message top-up available</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> The School plan includes 2,000 SMS credits per term. Extra messages are KES 0.80 each, billed only for what you send.</div>
+      </section>
+      <section class="mo rv" id="library">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6a3 3 0 0 1 3 3v11a2.5 2.5 0 0 0-2.5-2.5H4Z"/><path d="M20 5h-6a3 3 0 0 0-3 3v11a2.5 2.5 0 0 1 2.5-2.5H20Z"/></svg></span>
+          <span class="mo__n">Module 10</span>
+          <span class="mo__tag">Add-on</span>
+        </div>
+        <h2>Library</h2>
+        <p>The library module runs a school library at the scale schools actually have: a few thousand titles, a stock of set texts issued class by class, and a persistent problem with books that leave and do not come back.</p>
+        <p>Books are catalogued with title, author, ISBN, category and the number of copies held. Borrowing and returning are recorded against the pupil's own record, which means an overdue book is visible in the same place as an unpaid invoice or an absence — not in a separate ledger in the librarian's office.</p>
+        <p>The overdue list ties straight back to the student, so a reminder to return a book can go out through the same communication module that chases everything else.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Catalogue with title, author, ISBN, category and copies</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Borrow and return recorded against the pupil record</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Due dates with an automatic overdue list</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Reminders sent through the communication module</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Per-pupil borrowing history</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Set-text issue and collection by class</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Lost-book charges raised onto the termly invoice</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Stock counts and category reporting</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Add-on: KES 20 per pupil per term.</div>
+      </section>
+      <section class="mo rv" id="transport">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V7a2 2 0 0 1 2-2h9v12H3z"/><path d="M14 9h4l3 4v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></span>
+          <span class="mo__n">Module 11</span>
+          <span class="mo__tag">Add-on</span>
+        </div>
+        <h2>Transport</h2>
+        <p>School transport is a billing problem as much as a logistics one. Shule holds routes, the stops along each route, the vehicle and driver assigned, and which pupils ride which route from which stop.</p>
+        <p>The reason it lives inside the same system rather than beside it is the invoice. A pupil assigned to a route has the transport charge folded into the same termly invoice as tuition — one bill for the family, one balance to chase, one payment to reconcile.</p>
+        <p>Change a pupil's route or drop them off transport mid-term and the billing follows, so the bursar is never reconciling a bus list against a fee book by hand.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Routes with named stops and distances</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Vehicle and driver assigned per route</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Pupil assignment to a route and a pick-up stop</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Transport charge folded into the termly invoice</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Mid-term route changes reflected in billing</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Per-route rider lists for the transport officer</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Capacity tracking per vehicle</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Guardian notified of route or stop changes</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Add-on: KES 30 per rider per term.</div>
+      </section>
+      <section class="mo rv" id="boarding">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6M3 21h18"/></svg></span>
+          <span class="mo__n">Module 12</span>
+          <span class="mo__tag">Add-on</span>
+        </div>
+        <h2>Boarding &amp; hostels</h2>
+        <p>Hostels are held by gender, with rooms underneath them carrying a capacity and a monthly fee. Allocating a boarder to a room checks the capacity, and occupancy updates the moment an allocation or a check-out is recorded — so the occupancy figure on screen is the one in the building.</p>
+        <p>Check-in and check-out are both recorded events rather than edits, which means the school can reconstruct who was in which room in which term. For a boarding school that is not administrative tidiness; it is the answer to a question a parent or an inspector may eventually ask.</p>
+        <p>Boarding fees are raised on the same invoice as everything else, prorated where a boarder joins or leaves mid-term.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Hostels held by gender, with rooms and capacities</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Monthly boarding fee per room type</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Allocation with capacity checking</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Check-in and check-out recorded as events</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Live occupancy per hostel and per room</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Boarding fees billed on the termly invoice</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Proration for mid-term arrivals and departures</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Historic occupancy reconstructable per term</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Add-on: KES 40 per boarder per term.</div>
+      </section>
+      <section class="mo rv" id="discipline">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+          <span class="mo__n">Module 13</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Discipline</h2>
+        <p>Discipline records are incidents attached to a pupil: what happened, when, who reported it, what action was taken and who took it. They are deliberately plain records rather than a scoring system, because a school's disciplinary judgement is not something software should be automating.</p>
+        <p>What the module does provide is continuity. The class teacher sees the pattern rather than the last incident, the head sees the history before a meeting with parents, and the record carries into the report card conversation with context instead of anecdote.</p>
+        <p>Access is restricted. Discipline records are visible to the class teacher, the deputy and the head — not to every member of staff with a login.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Incident records attached to the pupil</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Date, description, reporter and action taken</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Severity and category for pattern reporting</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Visible to class teacher, deputy and head only</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Full history on the student record</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Guardian notification where the school chooses to send one</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Follow-up actions with an owner and a due date</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Carried into the report card conversation as context</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> No automatic scoring, no behaviour points. The judgement stays with the school; Shule keeps the record straight.</div>
+      </section>
+      <section class="mo rv" id="transfers">
+        <div class="mo__k">
+          <span class="mo__ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M21 3l-9 9M11 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6"/></svg></span>
+          <span class="mo__n">Module 14</span>
+          <span class="mo__tag">Core</span>
+        </div>
+        <h2>Transfers &amp; promotion</h2>
+        <p>At the end of the academic year a whole class is promoted in one action: Grade 6 becomes Grade 7, streams carry across or get reassigned, and repeats are marked as exceptions rather than handled by editing five hundred records individually.</p>
+        <p>Transfers out are recorded rather than deleted. A pupil who leaves gets a transfer record with the destination school and the date, and their fee history, results and attendance stay on file — which is what makes issuing a transfer certificate or answering a query two years later possible at all.</p>
+        <p>The whole movement history sits on the pupil record: admitted, promoted, promoted, streamed, transferred. It is the paper trail the school would otherwise be keeping in a hardcover book.</p>
+        <ul class="caps">
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Promote an entire class in one action at year end</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Repeats and exceptions handled without bulk editing</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Stream reassignment during promotion</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Transfer-out records with destination and date</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Records archived, never deleted</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Transfer certificate generation</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Full movement history on every pupil record</span></li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg><span>Re-admission of a returning pupil onto the original record</span></li>
+        </ul>
+        <div class="mo__note"><b>In practice.</b> Year-end rollover is the single most error-prone hour in a school office. It should be one confirmed action, and here it is.</div>
+      </section>
+  </div>
+</div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="cta rv">
+      <p class="eyebrow" style="margin-bottom:12px">Every module, every plan tier</p>
+      <h2>Activating Shule activates <em>the back office too.</em></h2>
+      <p class="lede" style="margin-bottom:26px">Invoicing and suppliers, HR and staff records, payroll with PAYE, NHIF and NSSF, banking reconciliation and board-ready reports come with the school system at no additional cost.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <a href="pricing.html" class="btn btn--solid">See pricing
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="contact.html" class="btn btn--ghost">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__g">
+      <div>
+        <a href="index.html" class="logo">
+      <span class="logo__m"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+        <p class="foot__p">School management for Kenyan schools. Fees, academics and the back office in one system.</p>
+      </div>
+      <div><h3>Product</h3><ul>
+        <li><a href="features.html">Features</a></li><li><a href="pricing.html">Pricing</a></li>
+        <li><a href="pricing.html#calculator">Fee-recovery calculator</a></li><li><a href="login.html">Log in</a></li></ul></div>
+      <div><h3>Modules</h3><ul>
+        <li><a href="features.html#students">Students</a></li><li><a href="features.html#fees">Fees &amp; M-Pesa</a></li>
+        <li><a href="features.html#exams">Exams &amp; results</a></li><li><a href="features.html#report-cards">Report cards</a></li></ul></div>
+      <div><h3>Company</h3><ul>
+        <li><a href="contact.html">Contact</a></li><li><a href="contact.html">Book a demo</a></li>
+        <li><a href="pricing.html#faq">FAQ</a></li><li><a href="contact.html">Careers</a></li></ul></div>
+      <div><h3>Legal</h3><ul>
+        <li><a href="contact.html">Privacy</a></li><li><a href="contact.html">Terms</a></li>
+        <li><a href="contact.html">Data protection</a></li><li><a href="contact.html">Status</a></li></ul></div>
+    </div>
+    <div class="colo">
+      <span>© 2026 Shule. All rights reserved.</span>
+      <span>Nairobi, Kenya · hello@shule.co.ke</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/site.js"></script>
+<script src="assets/js/features.js"></script>
+</body>
+</html>
