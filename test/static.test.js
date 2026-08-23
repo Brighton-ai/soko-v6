@@ -19,17 +19,21 @@ const PAGES = ['index.html', 'features.html', 'pricing.html', 'contact.html', 'l
 const APP_PAGES = [
   'app/dashboard.html', 'app/students.html', 'app/student.html',
   'app/invoices.html', 'app/payments.html', 'app/defaulters.html',
-  'app/waivers.html', 'app/fee-structures.html'
+  'app/waivers.html', 'app/fee-structures.html',
+  'app/grading-scales.html', 'app/attendance.html', 'app/exams.html',
+  'app/results.html', 'app/report-cards.html'
 ];
 
-/** Pages step 3 built. None of them may still be marked as unbuilt anywhere. */
-const STEP3_PAGES = [
+/** Pages built by steps 3 and 4. None may still be marked as unbuilt anywhere. */
+const BUILT_PAGES = [
   'students.html', 'student.html', 'invoices.html', 'payments.html',
-  'defaulters.html', 'waivers.html', 'fee-structures.html'
+  'defaulters.html', 'waivers.html', 'fee-structures.html',
+  'grading-scales.html', 'attendance.html', 'exams.html',
+  'results.html', 'report-cards.html'
 ];
 
 /** Steps still to come. An href="#" must name one of these. */
-const FUTURE_STEPS = ['4', '5'];
+const FUTURE_STEPS = ['5'];
 
 /** Every page in the repo, marketing and app alike. */
 const ALL_PAGES = [...PAGES, ...APP_PAGES];
@@ -309,22 +313,23 @@ describe('Links', () => {
     assert.deepEqual(bad, [], `Dead links that do not declare themselves:\n  ${bad.join('\n  ')}`);
   });
 
-  it('nothing is still marked data-step="3" — step 3 is built', () => {
+  it('nothing is still marked for a step that has already shipped', () => {
     const stale = [];
     for (const page of ALL_PAGES) {
       const $ = load(page);
-      $('[data-step="3"]').each((_, el) => {
-        stale.push(`${page}: "${$(el).text().trim().replace(/\s+/g, ' ').slice(0, 40)}" is still marked data-step="3"`);
+      $('[data-step="3"], [data-step="4"]').each((_, el) => {
+        const step = $(el).attr('data-step');
+        stale.push(`${page}: "${$(el).text().trim().replace(/\s+/g, ' ').slice(0, 40)}" is still marked data-step="${step}"`);
       });
     }
-    assert.deepEqual(stale, [], `These items claim step 3 will build them, but step 3 is done:\n  ${stale.join('\n  ')}`);
+    assert.deepEqual(stale, [], `These items point at a step that is already done:\n  ${stale.join('\n  ')}`);
   });
 
-  it('every page step 3 built is reachable from the sidebar', () => {
+  it('every built page is reachable from the sidebar', () => {
     const $ = load('app/dashboard.html');
     const hrefs = $('.side .navg a').toArray().map((el) => $(el).attr('href'));
     // student.html is reached from a row on students.html, not from the nav
-    const navPages = STEP3_PAGES.filter((p) => p !== 'student.html');
+    const navPages = BUILT_PAGES.filter((p) => p !== 'student.html');
     const missing = navPages.filter((p) => !hrefs.includes(p));
     assert.deepEqual(missing, [], `Built pages with no sidebar link: ${missing.join(', ')}. Sidebar has: ${hrefs.filter(Boolean).join(', ')}`);
   });
@@ -337,7 +342,7 @@ describe('Links', () => {
       step: $(el).attr('data-step')
     }));
     const live = links.filter((l) => l.href !== '#');
-    assert.ok(live.length >= 7, `The sidebar has ${live.length} live destinations; step 3 should have opened up at least seven.`);
+    assert.ok(live.length >= 12, `The sidebar has ${live.length} live destinations; steps 3 and 4 should have opened up at least twelve.`);
     const dangling = live.filter((l) => !exists(`app/${l.href}`)).map((l) => `${l.text} -> ${l.href}`);
     assert.deepEqual(dangling, [], `Sidebar links pointing at pages that do not exist: ${dangling.join(', ')}`);
     const unmarked = links.filter((l) => l.href === '#' && !FUTURE_STEPS.includes(l.step)).map((l) => l.text);

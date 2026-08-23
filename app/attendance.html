@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Waivers — Shule</title>
-<meta name="description" content="Bursary and hardship fee waivers at Riverside Academy: approve or reject requests, with approval reducing the invoice balance once.">
+<title>Attendance — Shule</title>
+<meta name="description" content="Take a class register or review attendance at Riverside Academy: present, absent and late per pupil, term percentages and the daily absentee list.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="../assets/css/theme.css">
 <link rel="stylesheet" href="../assets/css/app.css">
 </head>
-<body class="app-body" data-role="admin" data-page="waivers">
+<body class="app-body" data-role="admin" data-page="attendance">
 
 <div class="app">
 <aside class="side" id="side">
@@ -44,7 +44,7 @@
           <li><a href="payments.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg><span>Payments</span></a></li>
           <li><a href="defaulters.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg><span>Defaulters</span></a></li>
           <li><a href="fee-structures.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V9M10 20V4M16 20v-8M22 20h-20"/></svg><span>Fee structures</span></a></li>
-          <li><a href="waivers.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
+          <li><a href="waivers.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
         </ul>
       </div>
       <div class="navg" data-group="academics">
@@ -59,7 +59,7 @@
       <div class="navg" data-group="daily">
         <p class="navg__t">Daily</p>
         <ul>
-          <li><a href="attendance.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg><span>Attendance</span></a></li>
+          <li><a href="attendance.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg><span>Attendance</span></a></li>
           <li><a href="#" data-step="5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>Timetable</span><span class="navg__soon">Step 5</span></a></li>
         </ul>
       </div>
@@ -131,108 +131,111 @@
 <main class="content">
   <div class="phd">
     <div>
-      <h1>Waivers</h1>
-      <p>Bursary and hardship requests waiting on a decision</p>
+      <h1>Attendance</h1>
+      <p>Take the register, or look back over the term</p>
     </div>
     <div class="phd__act"></div>
   </div>
 
-  <div class="qstats" style="margin:0 0 16px">
-    <div class="qstat"><span>Pending</span><b data-bind="pending-count">—</b></div>
-    <div class="qstat"><span>Pending value</span><b data-bind="pending-value">—</b></div>
-    <div class="qstat"><span>Approved this term</span><b data-bind="approved-count">—</b></div>
-    <div class="qstat"><span>Approved value</span><b data-bind="approved-value">—</b></div>
+  <div class="modes" role="tablist" aria-label="Attendance mode">
+    <button type="button" role="tab" id="mode-register" aria-controls="panel-register" aria-selected="true" data-mode="register">Take the register</button>
+    <button type="button" role="tab" id="mode-report" aria-controls="panel-report" aria-selected="false" data-mode="report">Report</button>
   </div>
 
-  <section class="card" data-panel="waivers">
+  <div class="tabpanel" role="tabpanel" id="panel-register" aria-labelledby="mode-register">
+    <section class="card" data-panel="register">
     <div class="filters">
-      <div class="field filters__grow">
-        <label for="f-search">Search</label>
-        <input type="search" id="f-search" name="search" placeholder="Pupil name…" autocomplete="off">
+      <div class="field">
+        <label for="r-class">Class</label>
+        <select id="r-class" name="class"></select>
       </div>
       <div class="field">
-        <label for="f-status">Status</label>
-        <select id="f-status" name="status">
-          <option value="">All</option>
-          <option value="pending" selected>Pending</option><option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        <label for="r-date">Date</label>
+        <input type="date" id="r-date" name="date">
       </div>
-      <div class="filters__end"><span class="filters__n" data-bind="result-count">—</span></div>
+      <div class="field">
+        <label for="r-teacher">Marked by</label>
+        <select id="r-teacher" name="teacher"></select>
+      </div>
+      <div class="filters__end"><button type="button" class="btn btn--ghost btn--sm" id="mark-all">Mark all present</button></div>
     </div>
   <div class="card__b card__b--flush">
-    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
     <div data-region="content" hidden>
+      <div class="tally" id="tally"></div>
       <div class="tbl-scroll">
         <table class="tbl">
-          <caption class="vh">Bursary and hardship requests</caption>
-          <thead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Reason</th><th scope="col" class="r">Amount</th><th scope="col">Requested by</th><th scope="col">Requested</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
-          <tbody id="rows"></tbody>
+          <caption class="vh">Today’s register for the selected class</caption>
+          <thead><tr><th scope="col">Pupil</th><th scope="col">Adm. no</th><th scope="col">Present</th><th scope="col">Absent</th><th scope="col">Late</th><th scope="col">Note</th></tr></thead>
+          <tbody id="roll"></tbody>
         </table>
+      </div>
+      <div class="regfoot">
+        <p id="reg-state" class="sub"></p>
+        <button type="button" class="btn btn--solid btn--sm" id="submit-register">Submit register</button>
       </div>
     </div>
     <div data-region="empty" hidden><div class="empty">
             <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg></span>
-            <b>No requests here</b>
-            <p>Nothing is waiting on a decision with those filters.</p>
+            <b>Nobody on this roll</b>
+            <p>That class has no active pupils, so there is no register to take.</p>
           </div></div>
   </div>
 </section>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" id="panel-report" aria-labelledby="mode-report" hidden>
+    <section class="card" data-panel="report">
+    <div class="filters">
+      <div class="field">
+        <label for="p-class">Class</label>
+        <select id="p-class" name="class"><option value="">All classes</option></select>
+      </div>
+      <div class="field">
+        <label for="p-from">From</label>
+        <input type="date" id="p-from" name="from">
+      </div>
+      <div class="field">
+        <label for="p-to">To</label>
+        <input type="date" id="p-to" name="to">
+      </div>
+      <div class="filters__end"><span class="filters__n" data-bind="report-count">—</span></div>
+    </div>
+  <div class="card__b card__b--flush">
+    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+    <div data-region="content" hidden>
+      <div class="qstats" style="border-radius:0;border-left:0;border-right:0;border-top:0" id="rep-stats"></div>
+      <div class="tbl-scroll">
+        <table class="tbl grid-tbl">
+          <caption class="vh">Attendance by pupil and day over the selected range</caption>
+          <thead><tr id="grid-head"></tr></thead>
+          <tbody id="grid-rows"></tbody>
+        </table>
+      </div>
+      <div class="absentees">
+        <div class="absentees__h">
+          <h2>Absentees</h2>
+          <div class="field"><label class="vh" for="a-date">Absentee date</label>
+            <input type="date" id="a-date" name="absentee_date"></div>
+        </div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <caption class="vh">Pupils absent on the selected day</caption>
+          <thead><tr><th scope="col">Pupil</th><th scope="col">Class</th><th scope="col">Status</th><th scope="col">Note</th><th scope="col">Guardian</th></tr></thead>
+          <tbody id="absentee-rows"></tbody>
+        </table>
+      </div>
+      </div>
+    </div>
+    <div data-region="empty" hidden><div class="empty">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg></span>
+            <b>No attendance in that range</b>
+            <p>Widen the dates, or pick a class whose register has been taken.</p>
+          </div></div>
+  </div>
+</section>
+  </div>
 </main>
-
-<div class="scrim" id="modal-approve" role="dialog" aria-modal="true" aria-labelledby="modal-approve-t">
-  <div class="modal">
-    <form id="modal-approve-form" novalidate>
-      <div class="modal__h">
-        <div>
-          <h2 id="modal-approve-t">Approve this waiver</h2>
-          <p>Approving reduces the pupil’s invoice by the waiver amount and posts a bursary entry to the ledger.</p>
-        </div>
-        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-      <div class="modal__b">
-          <div class="modal__note" id="approve-context">—</div>
-          <div class="field">
-            <label for="approve-reason">Note <span class="opt">(optional)</span></label>
-            <input type="text" id="approve-reason" name="reason" aria-describedby="approve-reason-err" placeholder="Board minute 14/2026">
-            <p class="err" id="approve-reason-err" role="alert"></p>
-          </div>
-        <p class="formerr" data-form-error role="alert"></p>
-      </div>
-      <div class="modal__f">
-        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn--solid btn--sm">Approve and apply</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="scrim" id="modal-reject" role="dialog" aria-modal="true" aria-labelledby="modal-reject-t">
-  <div class="modal">
-    <form id="modal-reject-form" novalidate>
-      <div class="modal__h">
-        <div>
-          <h2 id="modal-reject-t">Reject this waiver</h2>
-          <p>The person who requested it will be told what the reason was, so make it useful.</p>
-        </div>
-        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-      <div class="modal__b">
-          <div class="modal__note" id="reject-context">—</div>
-          <div class="field">
-            <label for="reject-reason">Reason for rejection</label>
-            <textarea id="reject-reason" name="reason" rows="3" aria-describedby="reject-reason-err" placeholder="Household income above the bursary threshold for this term."></textarea>
-            <p class="err" id="reject-reason-err" role="alert"></p>
-          </div>
-        <p class="formerr" data-form-error role="alert"></p>
-      </div>
-      <div class="modal__f">
-        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn--solid btn--sm">Reject request</button>
-      </div>
-    </form>
-  </div>
-</div>
 </div>
 </div>
 
@@ -244,6 +247,6 @@
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/shell.js"></script>
 <script src="../assets/js/ui.js"></script>
-<script src="../assets/js/waivers.js"></script>
+<script src="../assets/js/attendance.js"></script>
 </body>
 </html>

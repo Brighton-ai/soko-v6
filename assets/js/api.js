@@ -251,6 +251,110 @@
     return BACKEND.rejectWaiver(schoolId, waiverId, payload);
   }
   // ════════════════════════════════════════════════════════════════════
+  // GRADING SCALES
+  // ════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/grading-scales
+  async function listGradingScaleRows(schoolId, opts) {
+    return BACKEND.listGradingScaleRows(schoolId, opts);
+  }
+  // POST /api/school/{school_id}/grading-scales
+  async function createGradingScale(schoolId, payload) {
+    return BACKEND.createGradingScale(schoolId, payload);
+  }
+  // PUT /api/school/{school_id}/grading-scales/{scale_id}
+  async function updateGradingScale(schoolId, scaleId, payload) {
+    return BACKEND.updateGradingScale(schoolId, scaleId, payload);
+  }
+  // DELETE /api/school/{school_id}/grading-scales/{scale_id}
+  async function deleteGradingScale(schoolId, scaleId) {
+    return BACKEND.deleteGradingScale(schoolId, scaleId);
+  }
+  // PUT /api/school/{school_id}/grading-scales/{scale_id}/default
+  async function setDefaultGradingScale(schoolId, scaleId) {
+    return BACKEND.setDefaultGradingScale(schoolId, scaleId);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // ATTENDANCE
+  // ════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/classes/{class_id}/register
+  async function getClassRegister(schoolId, classId, opts) {
+    return BACKEND.getClassRegister(schoolId, classId, opts);
+  }
+  // GET /api/school/{school_id}/attendance/report
+  async function getAttendanceReport(schoolId, opts) {
+    return BACKEND.getAttendanceReport(schoolId, opts);
+  }
+  // GET /api/school/{school_id}/attendance/absentees
+  async function getAbsentees(schoolId, opts) {
+    return BACKEND.getAbsentees(schoolId, opts);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // EXAMS AND RESULTS
+  // ════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/exams
+  async function listExamRows(schoolId, opts) {
+    return BACKEND.listExamRows(schoolId, opts);
+  }
+  // POST /api/school/{school_id}/exams
+  async function createExam(schoolId, payload) {
+    return BACKEND.createExam(schoolId, payload);
+  }
+  // PATCH /api/school/{school_id}/exams/{exam_id}
+  async function updateExam(schoolId, examId, payload) {
+    return BACKEND.updateExam(schoolId, examId, payload);
+  }
+  // GET /api/school/{school_id}/exams/{exam_id}/mark-sheet
+  async function getMarkSheet(schoolId, examId, opts) {
+    return BACKEND.getMarkSheet(schoolId, examId, opts);
+  }
+  // PUT /api/school/{school_id}/exams/{exam_id}/results
+  async function saveExamResults(schoolId, examId, payload) {
+    return BACKEND.saveExamResults(schoolId, examId, payload);
+  }
+  // POST /api/school/{school_id}/exams/{exam_id}/results/verify
+  async function verifyExamResults(schoolId, examId, payload) {
+    return BACKEND.verifyExamResults(schoolId, examId, payload);
+  }
+  // GET /api/school/{school_id}/exams/{exam_id}/analysis
+  async function getClassAnalysis(schoolId, examId, opts) {
+    return BACKEND.getClassAnalysis(schoolId, examId, opts);
+  }
+  // GET /api/school/{school_id}/exams/{exam_id}/merit-list
+  async function getMeritList(schoolId, examId, opts) {
+    return BACKEND.getMeritList(schoolId, examId, opts);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // REPORT CARDS
+  // ════════════════════════════════════════════════════════════════════
+
+  // POST /api/school/{school_id}/report-cards/generate
+  async function generateReportCards(schoolId, payload) {
+    return BACKEND.generateReportCards(schoolId, payload);
+  }
+  // GET /api/school/{school_id}/report-cards
+  async function listReportCardRows(schoolId, opts) {
+    return BACKEND.listReportCardRows(schoolId, opts);
+  }
+  // GET /api/school/{school_id}/report-cards/{card_id}
+  async function getReportCard(schoolId, cardId) {
+    return BACKEND.getReportCard(schoolId, cardId);
+  }
+  // PATCH /api/school/{school_id}/report-cards/{card_id}
+  async function updateReportCard(schoolId, cardId, payload) {
+    return BACKEND.updateReportCard(schoolId, cardId, payload);
+  }
+  // POST /api/school/{school_id}/report-cards/publish
+  async function publishReportCardsFor(schoolId, payload) {
+    return BACKEND.publishReportCardsFor(schoolId, payload);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
   // ADAPTER PASS-THROUGHS
   // Not routes. These exist because the demo runs without a server: the
   // store has to be resettable and inspectable. In step 5 they go with
@@ -315,9 +419,33 @@
     approveWaiver: approveWaiver,
     rejectWaiver: rejectWaiver,
 
+    listGradingScaleRows: listGradingScaleRows,
+    createGradingScale: createGradingScale,
+    updateGradingScale: updateGradingScale,
+    deleteGradingScale: deleteGradingScale,
+    setDefaultGradingScale: setDefaultGradingScale,
+    getClassRegister: getClassRegister,
+    getAttendanceReport: getAttendanceReport,
+    getAbsentees: getAbsentees,
+    listExamRows: listExamRows,
+    createExam: createExam,
+    updateExam: updateExam,
+    getMarkSheet: getMarkSheet,
+    saveExamResults: saveExamResults,
+    verifyExamResults: verifyExamResults,
+    getClassAnalysis: getClassAnalysis,
+    getMeritList: getMeritList,
+    generateReportCards: generateReportCards,
+    listReportCardRows: listReportCardRows,
+    getReportCard: getReportCard,
+    updateReportCard: updateReportCard,
+    publishReportCardsFor: publishReportCardsFor,
+
     // constants the backend owns; re-exported so pages read one source
     CSV_COLUMNS: BACKEND.CSV_COLUMNS,
     MAX_REMINDERS: BACKEND.MAX_REMINDERS,
+    EXAM_TYPES: BACKEND.EXAM_TYPES,
+    validateBands: BACKEND.validateBands,
     STORE_KEY: BACKEND.STORE_KEY,
 
     // demo-only adapter hooks

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Waivers — Shule</title>
-<meta name="description" content="Bursary and hardship fee waivers at Riverside Academy: approve or reject requests, with approval reducing the invoice balance once.">
+<title>Report cards — Shule</title>
+<meta name="description" content="Report cards at Riverside Academy: generate for a class, review positions and comments, and publish only once every mark is verified.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="../assets/css/theme.css">
 <link rel="stylesheet" href="../assets/css/app.css">
 </head>
-<body class="app-body" data-role="admin" data-page="waivers">
+<body class="app-body" data-role="admin" data-page="report-cards">
 
 <div class="app">
 <aside class="side" id="side">
@@ -44,7 +44,7 @@
           <li><a href="payments.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg><span>Payments</span></a></li>
           <li><a href="defaulters.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg><span>Defaulters</span></a></li>
           <li><a href="fee-structures.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V9M10 20V4M16 20v-8M22 20h-20"/></svg><span>Fee structures</span></a></li>
-          <li><a href="waivers.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
+          <li><a href="waivers.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
         </ul>
       </div>
       <div class="navg" data-group="academics">
@@ -52,7 +52,7 @@
         <ul>
           <li><a href="exams.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg><span>Exams</span></a></li>
           <li><a href="results.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V12M10 20V6M16 20v-9M22 20h-20"/><circle cx="10" cy="6" r="1.6"/></svg><span>Results</span></a></li>
-          <li><a href="report-cards.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 16h6M9 12h3"/></svg><span>Report cards</span></a></li>
+          <li><a href="report-cards.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 16h6M9 12h3"/></svg><span>Report cards</span></a></li>
           <li><a href="grading-scales.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.4 6 6.1.5-4.7 4 1.5 6L12 16.3 6.7 19.5l1.5-6-4.7-4 6.1-.5z"/></svg><span>Grading scales</span></a></li>
         </ul>
       </div>
@@ -131,104 +131,67 @@
 <main class="content">
   <div class="phd">
     <div>
-      <h1>Waivers</h1>
-      <p>Bursary and hardship requests waiting on a decision</p>
+      <h1>Report cards</h1>
+      <p>Generate, review and publish — nothing goes to a guardian unverified</p>
     </div>
-    <div class="phd__act"></div>
+    <div class="phd__act"><button type="button" class="btn btn--ghost btn--sm" id="generate">Generate for class</button><button type="button" class="btn btn--solid btn--sm" id="publish">Publish class</button></div>
   </div>
 
-  <div class="qstats" style="margin:0 0 16px">
-    <div class="qstat"><span>Pending</span><b data-bind="pending-count">—</b></div>
-    <div class="qstat"><span>Pending value</span><b data-bind="pending-value">—</b></div>
-    <div class="qstat"><span>Approved this term</span><b data-bind="approved-count">—</b></div>
-    <div class="qstat"><span>Approved value</span><b data-bind="approved-value">—</b></div>
-  </div>
-
-  <section class="card" data-panel="waivers">
+  <section class="card" data-panel="cards">
     <div class="filters">
-      <div class="field filters__grow">
-        <label for="f-search">Search</label>
-        <input type="search" id="f-search" name="search" placeholder="Pupil name…" autocomplete="off">
+      <div class="field">
+        <label for="f-class">Class</label>
+        <select id="f-class" name="class"></select>
+      </div>
+      <div class="field">
+        <label for="f-exam">Exam</label>
+        <select id="f-exam" name="exam"></select>
       </div>
       <div class="field">
         <label for="f-status">Status</label>
-        <select id="f-status" name="status">
-          <option value="">All</option>
-          <option value="pending" selected>Pending</option><option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        <select id="f-status" name="status"><option value="">All</option><option value="draft">Draft</option><option value="published">Published</option></select>
       </div>
       <div class="filters__end"><span class="filters__n" data-bind="result-count">—</span></div>
     </div>
   <div class="card__b card__b--flush">
-    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
     <div data-region="content" hidden>
+      <div class="blocker" id="blocker" hidden></div>
       <div class="tbl-scroll">
         <table class="tbl">
-          <caption class="vh">Bursary and hardship requests</caption>
-          <thead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Reason</th><th scope="col" class="r">Amount</th><th scope="col">Requested by</th><th scope="col">Requested</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
+          <caption class="vh">Report cards for the selected class and exam</caption>
+          <thead><tr><th scope="col" class="r">Pos</th><th scope="col">Pupil</th><th scope="col" class="r">Subjects</th><th scope="col" class="r">Total</th><th scope="col" class="r">Average</th><th scope="col">Grade</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
     </div>
     <div data-region="empty" hidden><div class="empty">
             <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg></span>
-            <b>No requests here</b>
-            <p>Nothing is waiting on a decision with those filters.</p>
+            <b>No cards yet</b>
+            <p>Generate them for a class once its marks are in.</p>
           </div></div>
   </div>
 </section>
 </main>
 
-<div class="scrim" id="modal-approve" role="dialog" aria-modal="true" aria-labelledby="modal-approve-t">
-  <div class="modal">
-    <form id="modal-approve-form" novalidate>
+<div class="scrim" id="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-card-t">
+  <div class="modal" style="max-width:640px">
+    <form id="modal-card-form" novalidate>
       <div class="modal__h">
         <div>
-          <h2 id="modal-approve-t">Approve this waiver</h2>
-          <p>Approving reduces the pupil’s invoice by the waiver amount and posts a bursary entry to the ledger.</p>
+          <h2 id="modal-card-t">Report card</h2>
+          <p>Draft cards are visible here and nowhere else.</p>
         </div>
         <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <div class="modal__b">
-          <div class="modal__note" id="approve-context">—</div>
-          <div class="field">
-            <label for="approve-reason">Note <span class="opt">(optional)</span></label>
-            <input type="text" id="approve-reason" name="reason" aria-describedby="approve-reason-err" placeholder="Board minute 14/2026">
-            <p class="err" id="approve-reason-err" role="alert"></p>
-          </div>
+          <div id="card-body"></div>
         <p class="formerr" data-form-error role="alert"></p>
       </div>
       <div class="modal__f">
-        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn--solid btn--sm">Approve and apply</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="scrim" id="modal-reject" role="dialog" aria-modal="true" aria-labelledby="modal-reject-t">
-  <div class="modal">
-    <form id="modal-reject-form" novalidate>
-      <div class="modal__h">
-        <div>
-          <h2 id="modal-reject-t">Reject this waiver</h2>
-          <p>The person who requested it will be told what the reason was, so make it useful.</p>
-        </div>
-        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-      <div class="modal__b">
-          <div class="modal__note" id="reject-context">—</div>
-          <div class="field">
-            <label for="reject-reason">Reason for rejection</label>
-            <textarea id="reject-reason" name="reason" rows="3" aria-describedby="reject-reason-err" placeholder="Household income above the bursary threshold for this term."></textarea>
-            <p class="err" id="reject-reason-err" role="alert"></p>
-          </div>
-        <p class="formerr" data-form-error role="alert"></p>
-      </div>
-      <div class="modal__f">
-        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn--solid btn--sm">Reject request</button>
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Close</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="save-comments">Save comments</button>
+        <button type="button" class="btn btn--solid btn--sm" id="print-card">Print</button>
       </div>
     </form>
   </div>
@@ -244,6 +207,6 @@
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/shell.js"></script>
 <script src="../assets/js/ui.js"></script>
-<script src="../assets/js/waivers.js"></script>
+<script src="../assets/js/report-cards.js"></script>
 </body>
 </html>

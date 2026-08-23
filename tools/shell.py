@@ -1,0 +1,196 @@
+"""
+Shule — app shell generator.
+
+The sidebar and topbar are duplicated into every page under app/ because the
+tests read them out of the served HTML; there is no build step and the pages in
+the repo are the pages that ship. This module is the one place that markup is
+written, so a new page cannot be born already drifted.
+
+    python3 tools/build_pages.py       # restamps the shell into every app page
+
+test/static.test.js compares the shells byte-for-byte and fails on any
+divergence, so this file is a convenience, not a dependency: the served pages
+remain the source of truth.
+"""
+
+ICONS = {
+ 'dashboard':'<rect x="3" y="3" width="7" height="9" rx="1.6"/><rect x="14" y="3" width="7" height="5" rx="1.6"/><rect x="14" y="12" width="7" height="9" rx="1.6"/><rect x="3" y="16" width="7" height="5" rx="1.6"/>',
+ 'students':'<circle cx="9" cy="8" r="3"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M16.5 6.4a3 3 0 0 1 0 5.6M18 14a6 6 0 0 1 3 5"/>',
+ 'classes':'<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M9 9v11"/>',
+ 'teachers':'<path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.6 2.2 3 5 3s5-1.4 5-3v-5"/>',
+ 'invoices':'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+ 'payments':'<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/>',
+ 'defaulters':'<path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/>',
+ 'structures':'<path d="M4 20V9M10 20V4M16 20v-8M22 20h-20"/>',
+ 'waivers':'<path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/>',
+ 'exams':'<path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/>',
+ 'results':'<path d="M4 20V12M10 20V6M16 20v-9M22 20h-20"/><circle cx="10" cy="6" r="1.6"/>',
+ 'reports':'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 16h6M9 12h3"/>',
+ 'grading':'<path d="m12 3 2.4 6 6.1.5-4.7 4 1.5 6L12 16.3 6.7 19.5l1.5-6-4.7-4 6.1-.5z"/>',
+ 'attendance':'<rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/>',
+ 'timetable':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+ 'boarding':'<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6M3 21h18"/>',
+ 'transport':'<path d="M3 17V7a2 2 0 0 1 2-2h9v12H3z"/><path d="M14 9h4l3 4v4h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/>',
+ 'library':'<path d="M4 5h6a2.6 2.6 0 0 1 2 2.6V19a2.2 2.2 0 0 0-2.2-2.2H4Z"/><path d="M20 5h-6a2.6 2.6 0 0 0-2 2.6V19a2.2 2.2 0 0 1 2.2-2.2H20Z"/>',
+ 'announcements':'<path d="M4 4h16v13H8l-4 3z"/><path d="M8 9h8M8 13h5"/>',
+ 'events':'<rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/>',
+ 'analytics':'<path d="M3 3v18h18"/><path d="m7 14 3.5-4 3 3L19 7"/>',
+ 'settings':'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+}
+
+def ico(key, size=15):
+    return ('<svg width="%d" height="%d" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+            'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">%s</svg>'
+            % (size, size, ICONS[key]))
+
+# group key, label, [(text, icon, href-or-future-step)]
+# This list is the served admin sidebar and must stay in step with
+# ROLE_NAV.admin in assets/js/shell.js — a test compares the two.
+GROUPS = [
+ ('overview','Overview',[('Dashboard','dashboard','dashboard.html')]),
+ ('people','People',[('Students','students','students.html'),
+                     ('Classes & streams','classes','5'),
+                     ('Teachers','teachers','5')]),
+ ('fees','Fees',[('Invoices','invoices','invoices.html'),
+                 ('Payments','payments','payments.html'),
+                 ('Defaulters','defaulters','defaulters.html'),
+                 ('Fee structures','structures','fee-structures.html'),
+                 ('Waivers','waivers','waivers.html')]),
+ ('academics','Academics',[('Exams','exams','exams.html'),
+                           ('Results','results','results.html'),
+                           ('Report cards','reports','report-cards.html'),
+                           ('Grading scales','grading','grading-scales.html')]),
+ ('daily','Daily',[('Attendance','attendance','attendance.html'),
+                   ('Timetable','timetable','5')]),
+ ('facilities','Facilities',[('Boarding','boarding','5'),('Transport','transport','5'),('Library','library','5')]),
+ ('communication','Communication',[('Announcements','announcements','5'),('Events','events','5')]),
+ ('admin','Admin',[('Reports','analytics','5'),('Settings','settings','5')]),
+]
+
+LOGO_SVG = ('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" '
+            'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/>'
+            '<path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg>')
+
+
+def sidebar(current):
+    """current: the app-relative filename of the page, e.g. 'dashboard.html'."""
+    out = []
+    for key, label, items in GROUPS:
+        lis = []
+        for text, icon_key, target in items:
+            if target.endswith('.html'):
+                cur = ' aria-current="page"' if target == current else ''
+                a = '<a href="%s"%s>%s<span>%s</span></a>' % (target, cur, ico(icon_key), text)
+            else:
+                a = ('<a href="#" data-step="%s">%s<span>%s</span>'
+                     '<span class="navg__soon">Step %s</span></a>' % (target, ico(icon_key), text, target))
+            lis.append('          <li>%s</li>' % a)
+        out.append(
+          '      <div class="navg" data-group="' + key + '">\n'
+          '        <p class="navg__t">' + label + '</p>\n'
+          '        <ul>\n' + "\n".join(lis) + '\n        </ul>\n'
+          '      </div>')
+    return (
+        '<aside class="side" id="side">\n'
+        '  <div class="side__top">\n'
+        '    <a href="../index.html" class="logo">\n'
+        '      <span class="logo__m">' + LOGO_SVG + '</span>\n'
+        '      Shule<i>.</i>\n'
+        '    </a>\n'
+        '  </div>\n'
+        '  <nav class="side__scroll" id="sidenav" aria-label="Sections">\n'
+        + "\n".join(out) + '\n'
+        '  </nav>\n'
+        '  <div class="side__end">\n'
+        '    <div class="sidecard">\n'
+        '      <b>Term 2 · 2026</b>\n'
+        '      <p>Closes Friday 7 August. 240 pupils on roll.</p>\n'
+        '      <a href="#" data-step="5" class="btn btn--ghost btn--sm btn--full">Switch term</a>\n'
+        '    </div>\n'
+        '  </div>\n'
+        '</aside>')
+
+
+def topbar():
+    return '''<header class="top">
+  <button class="top__menu" id="sidetoggle" aria-label="Open menu" aria-expanded="false" aria-controls="side"><span></span></button>
+  <div class="top__school">
+    <span data-bind="school-name">Riverside Academy</span>
+    <small data-bind="term-name">Term 2 2026 · Nairobi</small>
+  </div>
+  <div class="search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <label class="vh" for="app-search">Search students, invoices and classes</label>
+    <input type="search" id="app-search" name="q" placeholder="Search pupils, invoices, classes…" autocomplete="off">
+  </div>
+  <button class="iconbtn" id="notifs" aria-label="Notifications, 3 unread">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    <span class="iconbtn__dot" id="notif-dot"></span>
+  </button>
+  <button class="who" id="usermenu" aria-expanded="false" aria-haspopup="true" aria-controls="usermenu-panel">
+    <span class="who__av" data-bind="user-initials">JW</span>
+    <span class="who__n"><span data-bind="user-name">Jane Wanjiru</span><small data-bind="user-role">School admin</small></span>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div class="menu" id="usermenu-panel" role="menu" aria-labelledby="usermenu">
+    <div class="menu__h">
+      <b data-bind="user-name">Jane Wanjiru</b>
+      <span data-bind="user-email">jane.wanjiru@riverside.ac.ke</span>
+    </div>
+    <a href="#" data-step="5" role="menuitem">Profile &amp; password</a>
+    <a href="#" data-step="5" role="menuitem">School settings</a>
+    <button type="button" role="menuitem" id="reset-demo">Reset demo data</button>
+    <button type="button" role="menuitem" id="signout">Sign out</button>
+  </div>
+</header>'''
+
+
+def head(title, desc, page_css=None):
+    css = '<link rel="stylesheet" href="../assets/css/theme.css">\n<link rel="stylesheet" href="../assets/css/app.css">'
+    if page_css:
+        css += '\n<link rel="stylesheet" href="../assets/css/%s.css">' % page_css
+    return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{desc}">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+{css}
+</head>'''
+
+
+SCRIPTS = ['../assets/js/data/demo-data.js', '../assets/js/demo-backend.js',
+           '../assets/js/api.js', '../assets/js/shell.js', '../assets/js/ui.js']
+
+
+def page(filename, title, desc, content, page_js=None, page_css=None):
+    scripts = list(SCRIPTS)
+    if page_js:
+        scripts.append('../assets/js/%s.js' % page_js)
+    return "\n".join([
+        head(title, desc, page_css),
+        '<body class="app-body" data-role="admin" data-page="%s">' % filename.replace('.html', ''),
+        '',
+        '<div class="app">',
+        sidebar(filename),
+        '',
+        '<div class="main">',
+        topbar(),
+        '',
+        content.strip(),
+        '</div>',
+        '</div>',
+        '',
+        '<div class="sidescrim" id="sidescrim" hidden></div>',
+        '<div class="toasts" id="toasts" role="status" aria-live="polite"></div>',
+        '',
+        "\n".join('<script src="%s"></script>' % s for s in scripts),
+        '</body>',
+        '</html>',
+        ''
+    ])

@@ -452,42 +452,71 @@
     });
   });
 
-  // ── grading scale ─────────────────────────────────────────────────────
-  var gradingScale = {
-    id: 'grd-cbc-2026', school_id: SCHOOL_ID,
-    name: 'Riverside CBC bands 2026',
-    is_default: true,
-    effective_from: '2026-01-06',
-    bands: [
-      { grade: 'A',  min: 80, max: 100, points: 12, remark: 'Exceeding expectation' },
-      { grade: 'A-', min: 75, max: 79,  points: 11, remark: 'Exceeding expectation' },
-      { grade: 'B+', min: 70, max: 74,  points: 10, remark: 'Meeting expectation' },
-      { grade: 'B',  min: 65, max: 69,  points: 9,  remark: 'Meeting expectation' },
-      { grade: 'B-', min: 60, max: 64,  points: 8,  remark: 'Meeting expectation' },
-      { grade: 'C+', min: 55, max: 59,  points: 7,  remark: 'Approaching expectation' },
-      { grade: 'C',  min: 50, max: 54,  points: 6,  remark: 'Approaching expectation' },
-      { grade: 'C-', min: 45, max: 49,  points: 5,  remark: 'Approaching expectation' },
-      { grade: 'D+', min: 40, max: 44,  points: 4,  remark: 'Below expectation' },
-      { grade: 'D',  min: 30, max: 39,  points: 3,  remark: 'Below expectation' },
-      { grade: 'E',  min: 0,  max: 29,  points: 2,  remark: 'Well below expectation' }
-    ]
-  };
-  function gradeFor(score) {
-    for (var i = 0; i < gradingScale.bands.length; i++) {
-      var b = gradingScale.bands[i];
+  // ── grading scales ────────────────────────────────────────────────────
+  // Bands must tile 0..max_score with no gap and no overlap. A school that
+  // defines 0–39, 40–49 and 51–59 has a hole at 50, and a pupil who scores 50
+  // gets no grade at all — so the editor refuses to save until it is clean.
+  var gradingScales = [
+    {
+      id: 'grd-844', school_id: SCHOOL_ID,
+      name: 'Riverside 8-4-4 letter grades',
+      description: 'Eleven letter bands with points, used for the secondary streams and every summative exam.',
+      max_score: 100, is_default: true, effective_from: '2026-01-06',
+      bands: [
+        { grade: 'E',  min: 0,  max: 29,  points: 1,  remark: 'Well below expectation' },
+        { grade: 'D',  min: 30, max: 39,  points: 2,  remark: 'Below expectation' },
+        { grade: 'D+', min: 40, max: 44,  points: 3,  remark: 'Below expectation' },
+        { grade: 'C-', min: 45, max: 49,  points: 4,  remark: 'Approaching expectation' },
+        { grade: 'C',  min: 50, max: 54,  points: 5,  remark: 'Approaching expectation' },
+        { grade: 'C+', min: 55, max: 59,  points: 6,  remark: 'Approaching expectation' },
+        { grade: 'B-', min: 60, max: 64,  points: 7,  remark: 'Meeting expectation' },
+        { grade: 'B',  min: 65, max: 69,  points: 8,  remark: 'Meeting expectation' },
+        { grade: 'B+', min: 70, max: 74,  points: 9,  remark: 'Meeting expectation' },
+        { grade: 'A-', min: 75, max: 79,  points: 10, remark: 'Exceeding expectation' },
+        { grade: 'A',  min: 80, max: 100, points: 11, remark: 'Exceeding expectation' }
+      ]
+    },
+    {
+      id: 'grd-cbc', school_id: SCHOOL_ID,
+      name: 'CBC performance levels',
+      description: 'The four competency-based levels, for junior school formative assessment.',
+      max_score: 100, is_default: false, effective_from: '2026-01-06',
+      bands: [
+        { grade: 'BE', min: 0,  max: 39,  points: 1, remark: 'Below expectation' },
+        { grade: 'AE', min: 40, max: 59,  points: 2, remark: 'Approaching expectation' },
+        { grade: 'ME', min: 60, max: 79,  points: 3, remark: 'Meeting expectation' },
+        { grade: 'EE', min: 80, max: 100, points: 4, remark: 'Exceeding expectation' }
+      ]
+    }
+  ];
+  var gradingScale = gradingScales[0];        // the default, kept for readability below
+
+  function bandFor(scale, score) {
+    for (var i = 0; i < scale.bands.length; i++) {
+      var b = scale.bands[i];
       if (score >= b.min && score <= b.max) return b;
     }
-    return gradingScale.bands[gradingScale.bands.length - 1];
+    return scale.bands[0];
   }
+  function gradeFor(score) { return bandFor(gradingScale, score); }
 
   // ── exams and results ─────────────────────────────────────────────────
   var exams = [
     { id: 'exm-t2-mid', school_id: SCHOOL_ID, term_id: TERM_ID, name: 'Mid-term Exam',
-      sat_on: '2026-06-25', out_of: 100, grading_scale_id: gradingScale.id,
-      class_ids: classes.map(function (c) { return c.id; }), status: 'marks_entered', results_entered: true },
+      type: 'midterm', starts_on: '2026-06-22', ends_on: '2026-06-25', sat_on: '2026-06-25',
+      max_score: 100, grading_scale_id: 'grd-844',
+      class_ids: classes.map(function (c) { return c.id; }),
+      status: 'marks_entered', results_entered: true },
     { id: 'exm-t2-end', school_id: SCHOOL_ID, term_id: TERM_ID, name: 'End-term Exam',
-      sat_on: '2026-08-04', out_of: 100, grading_scale_id: gradingScale.id,
-      class_ids: classes.map(function (c) { return c.id; }), status: 'scheduled', results_entered: false }
+      type: 'endterm', starts_on: '2026-08-04', ends_on: '2026-08-06', sat_on: '2026-08-04',
+      max_score: 100, grading_scale_id: 'grd-844',
+      class_ids: classes.map(function (c) { return c.id; }),
+      status: 'scheduled', results_entered: false },
+    { id: 'exm-t2-cat', school_id: SCHOOL_ID, term_id: TERM_ID, name: 'Junior School CAT 2',
+      type: 'cat', starts_on: '2026-07-14', ends_on: '2026-07-15', sat_on: '2026-07-15',
+      max_score: 40, grading_scale_id: 'grd-cbc',
+      class_ids: ['cls-g7e', 'cls-g7w', 'cls-g8e', 'cls-g9e'],
+      status: 'scheduled', results_entered: false }
   ];
 
   var examResults = [];
@@ -511,26 +540,72 @@
         entered_by: asg ? asg.teacher_id : null,
         // three of the eight classes are still waiting on HoD verification
         verified: ['cls-g7w', 'cls-g8e', 'cls-g9e'].indexOf(c.id) === -1,
-        verified_by: null,
+        verified_by: ['cls-g7w', 'cls-g8e', 'cls-g9e'].indexOf(c.id) === -1 ? 'tch-06' : null,
+        verified_at: ['cls-g7w', 'cls-g8e', 'cls-g9e'].indexOf(c.id) === -1 ? '2026-07-08' : null,
+        max_score: 100,
         comment: chance(0.12) ? pick(['Improving steadily', 'Needs more practice', 'Excellent effort', 'Must revise consistently']) : null
       });
     });
   });
 
   // ── report cards ──────────────────────────────────────────────────────
-  var reportCards = students.map(function (s) {
-    var mine = examResults.filter(function (r) { return r.student_id === s.id; });
-    var mean = mine.length ? mine.reduce(function (n, r) { return n + r.score; }, 0) / mine.length : 0;
-    var allVerified = mine.every(function (r) { return r.verified; });
-    return {
-      id: 'rpt-' + s.id + '-' + TERM_ID,
-      school_id: SCHOOL_ID, term_id: TERM_ID, exam_id: 'exm-t2-mid',
-      student_id: s.id, class_id: s.class_id,
-      mean_score: Math.round(mean * 10) / 10,
-      grade: gradeFor(Math.round(mean)).grade,
-      status: allVerified ? 'published' : 'draft',
-      published_on: allVerified ? '2026-07-10' : null
-    };
+  // Positions are dense-ranked by average descending: ties share a position and
+  // the next distinct average takes the position after it, so a class of 30 with
+  // one tie at the top runs 1, 1, 2, 3 rather than 1, 1, 3, 4.
+  var TEACHER_REMARKS = [
+    'A steady term. Keep the reading going over the holiday.',
+    'Much improved on last term — the effort is showing.',
+    'Capable, but needs to hand work in on time.',
+    'Quiet and consistent. Should speak up more in class.',
+    'Strong in the sciences; give the languages the same attention.'
+  ];
+  var HEAD_REMARKS = [
+    'A promising report. Well done.',
+    'Solid work. Push on next term.',
+    'There is more here than the marks show. Keep at it.',
+    'Pleasing progress across the board.'
+  ];
+
+  var reportCards = [];
+  classes.forEach(function (c) {
+    var roll = studentsIn(c.id);
+    var cards = roll.map(function (s) {
+      var mine = examResults.filter(function (r) { return r.student_id === s.id && r.exam_id === 'exm-t2-mid'; });
+      var total = mine.reduce(function (n, r) { return n + r.score; }, 0);
+      var average = mine.length ? total / mine.length : 0;
+      return {
+        id: 'rpt-' + s.id + '-' + TERM_ID,
+        school_id: SCHOOL_ID, term_id: TERM_ID, exam_id: 'exm-t2-mid',
+        student_id: s.id, class_id: c.id,
+        subject_count: mine.length,
+        total_marks: total,
+        average: Math.round(average * 10) / 10,
+        mean_score: Math.round(average * 10) / 10,   // the dashboard's older name
+        grade: bandFor(gradingScale, Math.round(average)).grade,
+        points: mine.reduce(function (n, r) { return n + r.points; }, 0),
+        position: null, class_size: roll.length,
+        teacher_comment: pick(TEACHER_REMARKS),
+        principal_comment: pick(HEAD_REMARKS),
+        status: mine.length && mine.every(function (r) { return r.verified; }) ? 'published' : 'draft',
+        published_at: null,
+        published_by: null
+      };
+    });
+
+    // dense rank on the rounded average, so what is printed is what is ranked
+    var ordered = cards.slice().sort(function (a, b) { return b.average - a.average; });
+    var position = 0, previous = null;
+    ordered.forEach(function (card) {
+      if (previous === null || card.average !== previous) { position += 1; previous = card.average; }
+      card.position = position;
+    });
+    cards.forEach(function (card) {
+      if (card.status === 'published') {
+        card.published_at = '2026-07-10T16:00:00+03:00';
+        card.published_by = 'tch-06';
+      }
+    });
+    reportCards = reportCards.concat(cards);
   });
 
   // ── fee waivers ───────────────────────────────────────────────────────
@@ -668,6 +743,7 @@
     accounts: ACCOUNTS,
     journal_lines: journalLines,
     grading_scale: gradingScale,
+    grading_scales: gradingScales,
     announcements: announcements,
     events: events
   };

@@ -559,29 +559,56 @@
   }
 
   // POST /api/school/{school_id}/classes/{class_id}/attendance
+  /**
+   * UPSERT, not insert. Submitting a register that already exists updates the
+   * marks in place — one record per pupil per class per date, always. Marking
+   * the same register twice must leave the record count unchanged.
+   */
   function markAttendance(schoolId, classId, payload) {
-    if (!payload || !payload.date) return reject(422, 'A date is required to mark a register.');
+    if (!payload || !payload.date) return reject(422, 'A register needs a date.');
     if (!payload.records || !payload.records.length) return reject(422, 'No attendance records supplied.');
     var d = db();
-    var existing = d.attendance.filter(function (a) {
-      return a.class_id === classId && a.date === payload.date;
-    });
-    if (existing.length) {
-      return reject(409, 'The register for this class was already marked on ' + payload.date + '.');
+    if (!byId(d.classes, classId)) return reject(404, 'No class ' + classId);
+    if (payload.date > d.today) return reject(422, 'That date is in the future — a register cannot be marked ahead of the day.');
+
+    var VALID = ['present', 'absent', 'late', 'excused'];
+    var bad = payload.records.filter(function (r) { return VALID.indexOf(r.status) === -1; });
+    if (bad.length) {
+      return reject(422, 'Every pupil needs a mark of present, absent, late or excused — ' +
+        bad.length + ' ' + (bad.length === 1 ? 'is' : 'are') + ' unmarked.');
     }
-    var seq = d.attendance.length;
+
+    var index = {};
+    d.attendance.forEach(function (a) {
+      if (a.class_id === classId && a.date === payload.date) index[a.student_id] = a;
+    });
+
+    var markedAt = payload.date + 'T' + (payload.time || '08:20') + ':00+03:00';
+    var created = 0, updated = 0;
     payload.records.forEach(function (r) {
-      d.attendance.push({
-        id: 'att-' + String(++seq).padStart(6, '0'),
-        school_id: schoolId, term_id: d.current_term_id,
-        student_id: r.student_id, class_id: classId,
-        date: payload.date, status: r.status, note: r.note || null,
-        marked_by: payload.markedBy || null,
-        marked_at: payload.date + 'T08:20:00+03:00'
-      });
+      var existing = index[r.student_id];
+      if (existing) {
+        existing.status = r.status;
+        existing.note = r.note || null;
+        existing.marked_by = payload.markedBy || existing.marked_by;
+        existing.marked_at = markedAt;
+        updated++;
+      } else {
+        d.attendance.push({
+          id: 'att-' + String(d.attendance.length + 1).padStart(6, '0'),
+          school_id: schoolId, term_id: d.current_term_id,
+          student_id: r.student_id, class_id: classId,
+          date: payload.date, status: r.status, note: r.note || null,
+          marked_by: payload.markedBy || null,
+          marked_at: markedAt
+        });
+        created++;
+      }
     });
     persist();
-    return resolve({ class_id: classId, date: payload.date, marked: payload.records.length });
+    return resolve({ class_id: classId, date: payload.date,
+                     marked: payload.records.length, created: created, updated: updated,
+                     was_update: updated > 0 && created === 0 });
   }
 
   // ══════════════════════════════════════════════════════════════════════
@@ -635,7 +662,7 @@
 
   // GET /api/school/{school_id}/grading-scales
   function listGradingScales(schoolId) {
-    return resolve([db().grading_scale].filter(function (g) { return g.school_id === schoolId; }));
+    return resolve(db().grading_scales.filter(function (g) { return g.school_id === schoolId; }));
   }
 
   // ══════════════════════════════════════════════════════════════════════
@@ -1648,6 +1675,911 @@
     return resolve(w);
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // Grading scales
+  // ══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Bands must tile 0..max_score exactly: no gap, no overlap, nothing outside.
+   * A school that writes 0–39, 40–49, 51–59 has a hole at 50, and a pupil who
+   * scores 50 gets no grade at all. This is the check that stops that shipping,
+   * and it names the exact score that falls through.
+   */
+  function validateBands(bands, maxScore) {
+    if (!bands || !bands.length) return 'A scale needs at least one band.';
+    var max = Number(maxScore);
+    if (!(max > 0)) return 'The maximum score must be greater than zero.';
+
+    for (var i = 0; i < bands.length; i++) {
+      var b = bands[i];
+      var where = 'Band ' + (i + 1) + (b.grade ? ' (' + b.grade + ')' : '');
+      if (!String(b.grade || '').trim()) return where + ' has no grade.';
+      if (!isFinite(Number(b.min)) || !isFinite(Number(b.max))) return where + ' needs a numeric range.';
+      if (Number(b.min) > Number(b.max)) {
+        return where + ' runs backwards: min ' + b.min + ' is above max ' + b.max + '.';
+      }
+      if (Number(b.min) < 0) return where + ' starts below zero.';
+      if (Number(b.max) > max) return where + ' ends at ' + b.max + ', above the maximum score of ' + max + '.';
+      if (!isFinite(Number(b.points))) return where + ' has no points value.';
+      if (!String(b.remark || '').trim()) return where + ' has no remark.';
+    }
+
+    var seen = {};
+    for (var g = 0; g < bands.length; g++) {
+      var grade = String(bands[g].grade).trim().toUpperCase();
+      if (seen[grade]) return 'The grade "' + bands[g].grade + '" appears twice. Each band needs its own grade.';
+      seen[grade] = true;
+    }
+
+    var sorted = bands.slice().sort(function (a, b2) { return Number(a.min) - Number(b2.min); });
+    if (Number(sorted[0].min) !== 0) {
+      return 'The lowest band starts at ' + sorted[0].min + ', so scores 0 to ' +
+        (Number(sorted[0].min) - 1) + ' fall through with no grade. The lowest band must start at 0.';
+    }
+    for (var j = 1; j < sorted.length; j++) {
+      var prev = sorted[j - 1], cur = sorted[j];
+      var expected = Number(prev.max) + 1;
+      if (Number(cur.min) > expected) {
+        var lo = expected, hi = Number(cur.min) - 1;
+        return 'Gap between ' + prev.grade + ' (ends ' + prev.max + ') and ' + cur.grade +
+          ' (starts ' + cur.min + '): ' + (lo === hi ? 'a score of ' + lo + ' gets' : 'scores ' + lo + ' to ' + hi + ' get') +
+          ' no grade at all.';
+      }
+      if (Number(cur.min) < expected) {
+        return 'Overlap between ' + prev.grade + ' (' + prev.min + '–' + prev.max + ') and ' +
+          cur.grade + ' (' + cur.min + '–' + cur.max + '): ' +
+          'scores ' + cur.min + ' to ' + Math.min(Number(prev.max), Number(cur.max)) + ' match both bands.';
+      }
+    }
+    var top = sorted[sorted.length - 1];
+    if (Number(top.max) !== max) {
+      return 'The highest band ends at ' + top.max + ' but the scale runs to ' + max +
+        ', so scores ' + (Number(top.max) + 1) + ' to ' + max + ' get no grade.';
+    }
+    return null;
+  }
+
+  /** The band a score falls in. Nothing else may decide a grade. */
+  function bandFor(scale, score) {
+    var n = Number(score);
+    for (var i = 0; i < scale.bands.length; i++) {
+      var b = scale.bands[i];
+      if (n >= Number(b.min) && n <= Number(b.max)) return b;
+    }
+    return null;
+  }
+
+  function scaleById(scaleId) {
+    return db().grading_scales.filter(function (g) { return g.id === scaleId; })[0] || null;
+  }
+
+  // GET /api/school/{school_id}/grading-scales
+  function listGradingScaleRows(schoolId, opts) {
+    opts = opts || {};
+    var d = db();
+    var rows = d.grading_scales.filter(function (g) { return g.school_id === schoolId; });
+    return resolve(rows.map(function (g) {
+      var bound = d.exams.filter(function (e) { return e.grading_scale_id === g.id; });
+      var resultCount = d.exam_results.filter(function (r) {
+        return bound.some(function (e) { return e.id === r.exam_id; });
+      }).length;
+      return Object.assign({}, g, {
+        exam_count: bound.length,
+        exam_names: bound.map(function (e) { return e.name; }),
+        result_count: resultCount,
+        band_count: g.bands.length,
+        tiles: validateBands(g.bands, g.max_score) === null
+      });
+    }));
+  }
+
+  // POST /api/school/{school_id}/grading-scales
+  function createGradingScale(schoolId, payload) {
+    if (!payload || !String(payload.name || '').trim()) return reject(422, 'Give the scale a name.');
+    var problem = validateBands(payload.bands, payload.maxScore);
+    if (problem) return reject(422, problem);
+    var d = db();
+    var dupe = d.grading_scales.filter(function (g) {
+      return g.school_id === schoolId && g.name.toLowerCase() === String(payload.name).trim().toLowerCase();
+    })[0];
+    if (dupe) return reject(409, 'There is already a scale called "' + payload.name.trim() + '".');
+
+    var scale = {
+      id: 'grd-' + String(d.grading_scales.length + 1).padStart(3, '0'),
+      school_id: schoolId,
+      name: String(payload.name).trim(),
+      description: payload.description || null,
+      max_score: Number(payload.maxScore),
+      is_default: false,
+      effective_from: payload.effectiveFrom || d.today,
+      bands: normaliseBands(payload.bands)
+    };
+    d.grading_scales.push(scale);
+    persist();
+    return resolve(scale);
+  }
+  function normaliseBands(bands) {
+    return bands.map(function (b) {
+      return {
+        grade: String(b.grade).trim(), min: Number(b.min), max: Number(b.max),
+        points: Number(b.points), remark: String(b.remark).trim()
+      };
+    }).sort(function (a, b) { return a.min - b.min; });
+  }
+
+  // PUT /api/school/{school_id}/grading-scales/{scale_id}
+  function updateGradingScale(schoolId, scaleId, payload) {
+    var d = db();
+    var scale = byId(d.grading_scales, scaleId);
+    if (!scale) return reject(404, 'No grading scale ' + scaleId);
+    if (!payload || !String(payload.name || '').trim()) return reject(422, 'Give the scale a name.');
+    var max = payload.maxScore != null ? Number(payload.maxScore) : scale.max_score;
+    var problem = validateBands(payload.bands, max);
+    if (problem) return reject(422, problem);
+
+    scale.name = String(payload.name).trim();
+    if (payload.description !== undefined) scale.description = payload.description || null;
+    scale.max_score = max;
+    scale.bands = normaliseBands(payload.bands);
+
+    // an edited scale regrades everything already marked against it
+    var regraded = regradeAgainst(schoolId, scale);
+    persist();
+    return resolve({ scale: scale, regraded: regraded });
+  }
+
+  /** Re-derives grade and points for every result whose exam binds to this scale. */
+  function regradeAgainst(schoolId, scale) {
+    var d = db();
+    var examIds = d.exams.filter(function (e) { return e.grading_scale_id === scale.id; })
+      .map(function (e) { return e.id; });
+    var n = 0;
+    d.exam_results.forEach(function (r) {
+      if (examIds.indexOf(r.exam_id) === -1) return;
+      var band = bandFor(scale, r.score);
+      if (!band) return;
+      if (r.grade !== band.grade || r.points !== band.points) n++;
+      r.grade = band.grade; r.points = band.points; r.remark = band.remark;
+    });
+    return n;
+  }
+
+  // DELETE /api/school/{school_id}/grading-scales/{scale_id}
+  function deleteGradingScale(schoolId, scaleId) {
+    var d = db();
+    var scale = byId(d.grading_scales, scaleId);
+    if (!scale) return reject(404, 'No grading scale ' + scaleId);
+    if (scale.is_default) {
+      return reject(409, 'That is the default scale. Make another scale the default before deleting this one.');
+    }
+    var bound = d.exams.filter(function (e) { return e.grading_scale_id === scaleId; });
+    if (bound.length) {
+      return reject(409, 'Cannot delete this scale: ' + bound.length + ' exam' + (bound.length === 1 ? '' : 's') +
+        ' grade against it (' + bound.map(function (e) { return e.name; }).join(', ') +
+        '). Point those exams at another scale first.');
+    }
+    d.grading_scales = d.grading_scales.filter(function (g) { return g.id !== scaleId; });
+    persist();
+    return resolve({ deleted: scaleId });
+  }
+
+  // PUT /api/school/{school_id}/grading-scales/{scale_id}/default
+  function setDefaultGradingScale(schoolId, scaleId) {
+    var d = db();
+    if (!byId(d.grading_scales, scaleId)) return reject(404, 'No grading scale ' + scaleId);
+    d.grading_scales.forEach(function (g) { g.is_default = g.id === scaleId; });
+    d.grading_scale = byId(d.grading_scales, scaleId);
+    persist();
+    return resolve(d.grading_scales);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Attendance — register and report
+  // ══════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/classes/{class_id}/register?date=
+  function getClassRegister(schoolId, classId, opts) {
+    opts = opts || {};
+    var d = db();
+    var date = opts.date || d.today;
+    var cls = byId(d.classes, classId);
+    if (!cls) return reject(404, 'No class ' + classId);
+
+    var marks = {};
+    d.attendance.forEach(function (a) {
+      if (a.class_id === classId && a.date === date) marks[a.student_id] = a;
+    });
+    var teacher = byId(d.teachers, cls.class_teacher_id);
+    var roll = d.students
+      .filter(function (s) { return s.class_id === classId && s.status === 'active'; })
+      .sort(function (a, b) { return a.name.localeCompare(b.name); })
+      .map(function (s) {
+        var m = marks[s.id];
+        return {
+          student_id: s.id, name: s.name, admission_no: s.admission_no, gender: s.gender,
+          status: m ? m.status : null, note: m ? m.note : null, record_id: m ? m.id : null
+        };
+      });
+    var first = roll.filter(function (r) { return r.record_id; })[0];
+    var existing = first ? d.attendance.filter(function (a) { return a.id === first.record_id; })[0] : null;
+    return resolve({
+      class_id: classId, class_name: cls.full_name, date: date,
+      roll: roll, roll_size: roll.length,
+      already_marked: !!first,
+      marked_by: existing ? existing.marked_by : null,
+      marked_by_name: existing ? (byId(d.teachers, existing.marked_by) || {}).name || '—' : null,
+      marked_at: existing ? existing.marked_at : null,
+      class_teacher_id: cls.class_teacher_id,
+      class_teacher_name: teacher ? teacher.name : null
+    });
+  }
+
+  // GET /api/school/{school_id}/attendance/report?class_id=&from=&to=
+  function getAttendanceReport(schoolId, opts) {
+    opts = opts || {};
+    var d = db();
+    var to = opts.to || d.today;
+    var from = opts.from || shiftDay(to, -27);
+    var rows = d.attendance.filter(function (a) {
+      return a.school_id === schoolId && a.date >= from && a.date <= to &&
+             (!opts.classId || a.class_id === opts.classId);
+    });
+    var dates = rows.map(function (a) { return a.date; })
+      .filter(function (v, i, arr) { return arr.indexOf(v) === i; }).sort();
+
+    var students = d.students.filter(function (s) {
+      return s.school_id === schoolId && (!opts.classId || s.class_id === opts.classId) && s.status === 'active';
+    }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+    var byStudent = {};
+    rows.forEach(function (a) {
+      (byStudent[a.student_id] = byStudent[a.student_id] || {})[a.date] = a.status;
+    });
+
+    var grid = students.map(function (s) {
+      var mine = byStudent[s.id] || {};
+      var marked = dates.filter(function (day) { return mine[day]; });
+      var here = marked.filter(function (day) { return mine[day] === 'present' || mine[day] === 'late'; }).length;
+      var cls = byId(d.classes, s.class_id);
+      return {
+        student_id: s.id, name: s.name, admission_no: s.admission_no,
+        class_id: s.class_id, class_name: cls ? cls.full_name : '—',
+        days: dates.map(function (day) { return { date: day, status: mine[day] || null }; }),
+        marked: marked.length,
+        present: marked.filter(function (day) { return mine[day] === 'present'; }).length,
+        late: marked.filter(function (day) { return mine[day] === 'late'; }).length,
+        absent: marked.filter(function (day) { return mine[day] === 'absent'; }).length,
+        excused: marked.filter(function (day) { return mine[day] === 'excused'; }).length,
+        percentage: marked.length ? here / marked.length * 100 : null
+      };
+    });
+
+    var totalMarked = rows.length;
+    var totalHere = rows.filter(function (a) { return a.status === 'present' || a.status === 'late'; }).length;
+    return resolve({
+      from: from, to: to, dates: dates, rows: grid,
+      records: totalMarked,
+      percentage: totalMarked ? totalHere / totalMarked * 100 : null,
+      class_id: opts.classId || null
+    });
+  }
+
+  // GET /api/school/{school_id}/attendance/absentees?date=
+  function getAbsentees(schoolId, opts) {
+    opts = opts || {};
+    var d = db();
+    var date = opts.date || d.today;
+    var rows = d.attendance.filter(function (a) {
+      return a.school_id === schoolId && a.date === date &&
+             (a.status === 'absent' || a.status === 'excused') &&
+             (!opts.classId || a.class_id === opts.classId);
+    }).map(function (a) {
+      var s = byId(d.students, a.student_id), c = byId(d.classes, a.class_id);
+      var g = d.guardians.filter(function (x) { return x.student_id === a.student_id && x.is_primary; })[0];
+      return {
+        student_id: a.student_id, name: s ? s.name : '—', admission_no: s ? s.admission_no : '—',
+        class_id: a.class_id, class_name: c ? c.full_name : '—',
+        status: a.status, note: a.note,
+        guardian_name: g ? g.name : '—', guardian_phone: g ? g.phone : '—'
+      };
+    });
+    rows.sort(function (a, b) { return a.class_name.localeCompare(b.class_name) || a.name.localeCompare(b.name); });
+    return resolve({ date: date, items: rows, total: rows.length });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Exams
+  // ══════════════════════════════════════════════════════════════════════
+
+  var EXAM_TYPES = ['opener', 'cat', 'midterm', 'endterm', 'mock'];
+
+  // GET /api/school/{school_id}/exams (with counts)
+  function listExamRows(schoolId, opts) {
+    opts = opts || {};
+    var d = db();
+    var rows = d.exams.filter(function (e) {
+      return e.school_id === schoolId && (!opts.termId || e.term_id === opts.termId);
+    }).map(function (e) {
+      var results = d.exam_results.filter(function (r) { return r.exam_id === e.id; });
+      var scale = scaleById(e.grading_scale_id);
+      var t = byId(d.terms, e.term_id);
+      return Object.assign({}, e, {
+        scale_name: scale ? scale.name : '—',
+        term_name: t ? t.name + ' ' + t.year : '—',
+        result_count: results.length,
+        unverified_count: results.filter(function (r) { return !r.verified; }).length,
+        class_count: e.class_ids.length,
+        locked: results.length > 0
+      });
+    });
+    rows.sort(function (a, b) { return a.starts_on < b.starts_on ? 1 : -1; });
+    return resolve(rows);
+  }
+
+  function validateExam(payload, d) {
+    if (!payload) return 'Nothing to save.';
+    if (!String(payload.name || '').trim()) return 'Give the exam a name.';
+    if (EXAM_TYPES.indexOf(payload.type) === -1) return 'Choose what kind of exam this is.';
+    if (!payload.termId) return 'Choose the term this exam belongs to.';
+    if (!payload.startsOn) return 'When does it start?';
+    if (!payload.endsOn) return 'When does it end?';
+    if (payload.endsOn < payload.startsOn) return 'The exam ends before it starts.';
+    if (!(Number(payload.maxScore) > 0)) return 'The maximum score must be greater than zero.';
+    if (!payload.gradingScaleId) return 'Bind the exam to a grading scale — that is what turns a mark into a grade.';
+    var scale = d.grading_scales.filter(function (g) { return g.id === payload.gradingScaleId; })[0];
+    if (!scale) return 'That grading scale does not exist.';
+    if (Number(payload.maxScore) > scale.max_score) {
+      return 'This exam is out of ' + payload.maxScore + ' but "' + scale.name +
+        '" only grades up to ' + scale.max_score + '. A top mark would fall outside every band.';
+    }
+    if (!payload.classIds || !payload.classIds.length) return 'Choose at least one class to sit it.';
+    return null;
+  }
+
+  // POST /api/school/{school_id}/exams
+  function createExam(schoolId, payload) {
+    var d = db();
+    var problem = validateExam(payload, d);
+    if (problem) return reject(422, problem);
+    var exam = {
+      id: 'exm-' + String(d.exams.length + 1).padStart(3, '0') + '-' + payload.type,
+      school_id: schoolId, term_id: payload.termId,
+      name: String(payload.name).trim(), type: payload.type,
+      starts_on: payload.startsOn, ends_on: payload.endsOn, sat_on: payload.startsOn,
+      max_score: Number(payload.maxScore),
+      grading_scale_id: payload.gradingScaleId,
+      class_ids: payload.classIds.slice(),
+      status: 'scheduled', results_entered: false
+    };
+    d.exams.push(exam);
+    persist();
+    return resolve(exam);
+  }
+
+  // PATCH /api/school/{school_id}/exams/{exam_id}
+  /**
+   * The grading scale is frozen once anything is marked. Changing it would
+   * silently regrade every result already entered and verified against the old
+   * bands — so it is blocked, with the count that makes the reason obvious.
+   */
+  function updateExam(schoolId, examId, payload) {
+    var d = db();
+    var exam = byId(d.exams, examId);
+    if (!exam) return reject(404, 'No exam ' + examId);
+    var merged = {
+      name: payload.name != null ? payload.name : exam.name,
+      type: payload.type != null ? payload.type : exam.type,
+      termId: payload.termId || exam.term_id,
+      startsOn: payload.startsOn || exam.starts_on,
+      endsOn: payload.endsOn || exam.ends_on,
+      maxScore: payload.maxScore != null ? payload.maxScore : exam.max_score,
+      gradingScaleId: payload.gradingScaleId || exam.grading_scale_id,
+      classIds: payload.classIds || exam.class_ids
+    };
+    var problem = validateExam(merged, d);
+    if (problem) return reject(422, problem);
+
+    var results = d.exam_results.filter(function (r) { return r.exam_id === examId; });
+    if (results.length && merged.gradingScaleId !== exam.grading_scale_id) {
+      var from = scaleById(exam.grading_scale_id), to = scaleById(merged.gradingScaleId);
+      return reject(409, 'Cannot move "' + exam.name + '" from "' + (from ? from.name : '?') +
+        '" to "' + (to ? to.name : '?') + '": ' + results.length + ' result' + (results.length === 1 ? '' : 's') +
+        ' are already marked against the old bands. Every grade on this exam would change under you. ' +
+        'Delete the results first, or create a new exam on the other scale.');
+    }
+    if (results.length && Number(merged.maxScore) !== exam.max_score) {
+      return reject(409, 'Cannot change the maximum score: ' + results.length + ' result' +
+        (results.length === 1 ? ' is' : 's are') + ' already marked out of ' + exam.max_score + '.');
+    }
+
+    exam.name = String(merged.name).trim();
+    exam.type = merged.type;
+    exam.term_id = merged.termId;
+    exam.starts_on = merged.startsOn;
+    exam.ends_on = merged.endsOn;
+    exam.sat_on = merged.startsOn;
+    exam.max_score = Number(merged.maxScore);
+    exam.grading_scale_id = merged.gradingScaleId;
+    exam.class_ids = merged.classIds.slice();
+    persist();
+    return resolve(exam);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Results — entry, verification, analysis
+  // ══════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/exams/{exam_id}/mark-sheet?class_id=&subject_id=
+  function getMarkSheet(schoolId, examId, opts) {
+    opts = opts || {};
+    var d = db();
+    var exam = byId(d.exams, examId);
+    if (!exam) return reject(404, 'No exam ' + examId);
+    if (!opts.classId) return reject(422, 'Choose a class.');
+    if (!opts.subjectId) return reject(422, 'Choose a subject.');
+    var scale = scaleById(exam.grading_scale_id);
+    if (!scale) return reject(422, 'This exam is bound to a grading scale that no longer exists.');
+
+    var existing = {};
+    d.exam_results.forEach(function (r) {
+      if (r.exam_id === examId && r.class_id === opts.classId && r.subject_id === opts.subjectId) {
+        existing[r.student_id] = r;
+      }
+    });
+    var roll = d.students
+      .filter(function (s) { return s.class_id === opts.classId && s.status === 'active'; })
+      .sort(function (a, b) { return a.name.localeCompare(b.name); })
+      .map(function (s) {
+        var r = existing[s.id];
+        var teacher = r ? byId(d.teachers, r.entered_by) : null;
+        var verifier = r && r.verified_by ? byId(d.teachers, r.verified_by) : null;
+        return {
+          student_id: s.id, name: s.name, admission_no: s.admission_no,
+          result_id: r ? r.id : null,
+          score: r ? r.score : null, grade: r ? r.grade : null, points: r ? r.points : null,
+          remark: r ? r.remark : null, comment: r ? r.comment : null,
+          verified: r ? !!r.verified : false,
+          entered_by: r ? r.entered_by : null,
+          entered_by_name: teacher ? teacher.name : null,
+          verified_by_name: verifier ? verifier.name : null
+        };
+      });
+    var cls = byId(d.classes, opts.classId);
+    var subject = byId(d.subjects, opts.subjectId);
+    var assignment = d.assignments.filter(function (a) {
+      return a.class_id === opts.classId && a.subject_id === opts.subjectId;
+    })[0];
+    var teacher = assignment ? byId(d.teachers, assignment.teacher_id) : null;
+    return resolve({
+      exam: exam, scale: scale,
+      class_id: opts.classId, class_name: cls ? cls.full_name : '—',
+      subject_id: opts.subjectId, subject_name: subject ? subject.name : '—',
+      teacher_id: teacher ? teacher.id : null,
+      teacher_name: teacher ? teacher.name : null,
+      max_score: exam.max_score,
+      roll: roll,
+      entered: roll.filter(function (r) { return r.score != null; }).length,
+      unverified: roll.filter(function (r) { return r.score != null && !r.verified; }).length
+    });
+  }
+
+  // PUT /api/school/{school_id}/exams/{exam_id}/results
+  /**
+   * Upserts a mark sheet. Grade and points are always derived here from the
+   * exam's bound scale — a caller cannot supply them, which is what keeps every
+   * stored grade honest against its score.
+   */
+  function saveExamResults(schoolId, examId, payload) {
+    var d = db();
+    var exam = byId(d.exams, examId);
+    if (!exam) return reject(404, 'No exam ' + examId);
+    if (!payload || !payload.classId || !payload.subjectId) {
+      return reject(422, 'A mark sheet needs a class and a subject.');
+    }
+    if (!payload.scores || !payload.scores.length) return reject(422, 'No marks to save.');
+    var scale = scaleById(exam.grading_scale_id);
+    if (!scale) return reject(422, 'This exam is bound to a grading scale that no longer exists.');
+
+    var bad = [];
+    payload.scores.forEach(function (row) {
+      if (row.score === null || row.score === '' || row.score === undefined) return;
+      var n = Number(row.score);
+      var s = byId(d.students, row.student_id);
+      var who = s ? s.name : row.student_id;
+      if (!isFinite(n)) { bad.push(who + ': "' + row.score + '" is not a number'); return; }
+      if (n < 0 || n > exam.max_score) {
+        bad.push(who + ': ' + n + ' is outside 0–' + exam.max_score);
+      }
+    });
+    if (bad.length) {
+      return reject(422, 'These marks are out of range and nothing was saved:\n' + bad.slice(0, 6).join('\n') +
+        (bad.length > 6 ? '\nand ' + (bad.length - 6) + ' more' : ''));
+    }
+
+    var created = 0, updated = 0, cleared = 0;
+    payload.scores.forEach(function (row) {
+      var existing = d.exam_results.filter(function (r) {
+        return r.exam_id === examId && r.class_id === payload.classId &&
+               r.subject_id === payload.subjectId && r.student_id === row.student_id;
+      })[0];
+
+      var blank = row.score === null || row.score === '' || row.score === undefined;
+      if (blank) {
+        if (existing) {
+          d.exam_results = d.exam_results.filter(function (r) { return r.id !== existing.id; });
+          cleared++;
+        }
+        return;
+      }
+      var score = Number(row.score);
+      var band = bandFor(scale, score);
+      if (!band) return;                    // validateBands guarantees this cannot happen
+
+      if (existing) {
+        existing.score = score;
+        existing.grade = band.grade;
+        existing.points = band.points;
+        existing.remark = band.remark;
+        existing.comment = row.comment != null ? row.comment : existing.comment;
+        existing.entered_by = payload.enteredBy || existing.entered_by;
+        // a changed mark is an unverified mark again
+        existing.verified = false;
+        existing.verified_by = null;
+        existing.verified_at = null;
+        updated++;
+      } else {
+        d.exam_results.push({
+          id: 'res-' + String(d.exam_results.length + 1 + created).padStart(6, '0') + '-' + row.student_id.slice(-4),
+          school_id: schoolId, term_id: exam.term_id, exam_id: examId,
+          student_id: row.student_id, class_id: payload.classId, subject_id: payload.subjectId,
+          score: score, grade: band.grade, points: band.points, remark: band.remark,
+          max_score: exam.max_score,
+          comment: row.comment || null,
+          entered_by: payload.enteredBy || null,
+          verified: false, verified_by: null, verified_at: null
+        });
+        created++;
+      }
+    });
+
+    exam.results_entered = d.exam_results.some(function (r) { return r.exam_id === examId; });
+    if (exam.results_entered && exam.status === 'scheduled') exam.status = 'marks_entered';
+    persist();
+    return resolve({ exam_id: examId, class_id: payload.classId, subject_id: payload.subjectId,
+                     created: created, updated: updated, cleared: cleared,
+                     saved: created + updated });
+  }
+
+  // POST /api/school/{school_id}/exams/{exam_id}/results/verify
+  /**
+   * Verification is a separate action under a different name: whoever entered a
+   * mark cannot be the one who signs it off, and the record says who did both.
+   */
+  function verifyExamResults(schoolId, examId, payload) {
+    payload = payload || {};
+    if (!payload.verifiedBy) return reject(422, 'Verification has to be signed — choose who is verifying.');
+    var d = db();
+    var exam = byId(d.exams, examId);
+    if (!exam) return reject(404, 'No exam ' + examId);
+
+    var rows = d.exam_results.filter(function (r) {
+      return r.exam_id === examId && !r.verified &&
+             (!payload.classId || r.class_id === payload.classId) &&
+             (!payload.subjectId || r.subject_id === payload.subjectId);
+    });
+    if (!rows.length) return reject(422, 'Nothing here is waiting on verification.');
+
+    var ownMarks = rows.filter(function (r) { return r.entered_by === payload.verifiedBy; });
+    if (ownMarks.length && !payload.allowSelf) {
+      return reject(409, 'Those marks were entered by the same person who is verifying them. ' +
+        'Entry and verification are separate steps with separate names against them — ' +
+        'ask a head of department to sign these off.');
+    }
+
+    rows.forEach(function (r) {
+      r.verified = true;
+      r.verified_by = payload.verifiedBy;
+      r.verified_at = payload.date || d.today;
+    });
+    persist();
+    return resolve({ exam_id: examId, verified: rows.length, verified_by: payload.verifiedBy });
+  }
+
+  // GET /api/school/{school_id}/exams/{exam_id}/analysis?class_id=
+  function getClassAnalysis(schoolId, examId, opts) {
+    opts = opts || {};
+    var d = db();
+    var exam = byId(d.exams, examId);
+    if (!exam) return reject(404, 'No exam ' + examId);
+    var rows = d.exam_results.filter(function (r) {
+      return r.exam_id === examId && (!opts.classId || r.class_id === opts.classId);
+    });
+    if (!rows.length) {
+      return resolve({ exam_id: examId, class_id: opts.classId || null, entries: 0,
+                       mean: null, highest: null, lowest: null, subjects: [], unverified: 0 });
+    }
+    var scores = rows.map(function (r) { return r.score; });
+    var subjectIds = rows.map(function (r) { return r.subject_id; })
+      .filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+    var subjects = subjectIds.map(function (id) {
+      var mine = rows.filter(function (r) { return r.subject_id === id; });
+      var sub = byId(d.subjects, id);
+      var vals = mine.map(function (r) { return r.score; });
+      var grades = {};
+      mine.forEach(function (r) { grades[r.grade] = (grades[r.grade] || 0) + 1; });
+      return {
+        subject_id: id, subject_name: sub ? sub.name : id,
+        entries: mine.length,
+        mean: vals.reduce(function (n, v) { return n + v; }, 0) / vals.length,
+        highest: Math.max.apply(null, vals),
+        lowest: Math.min.apply(null, vals),
+        unverified: mine.filter(function (r) { return !r.verified; }).length,
+        grades: grades
+      };
+    }).sort(function (a, b) { return b.mean - a.mean; });
+
+    var cls = byId(d.classes, opts.classId);
+    return resolve({
+      exam_id: examId, exam_name: exam.name,
+      class_id: opts.classId || null, class_name: cls ? cls.full_name : 'All classes',
+      entries: rows.length,
+      mean: scores.reduce(function (n, v) { return n + v; }, 0) / scores.length,
+      highest: Math.max.apply(null, scores),
+      lowest: Math.min.apply(null, scores),
+      unverified: rows.filter(function (r) { return !r.verified; }).length,
+      subjects: subjects
+    });
+  }
+
+  /**
+   * Dense ranking: ties share a rank and the next distinct total takes the rank
+   * immediately after, so three pupils tied at the top are 1, 1, 1, then 2.
+   */
+  function denseRank(rows, valueOf) {
+    var ordered = rows.slice().sort(function (a, b) { return valueOf(b) - valueOf(a); });
+    var rank = 0, previous = null;
+    ordered.forEach(function (row) {
+      var v = valueOf(row);
+      if (previous === null || v !== previous) { rank += 1; previous = v; }
+      row.position = rank;
+    });
+    return ordered;
+  }
+
+  // GET /api/school/{school_id}/exams/{exam_id}/merit-list?class_id=
+  function getMeritList(schoolId, examId, opts) {
+    opts = opts || {};
+    var d = db();
+    var exam = byId(d.exams, examId);
+    if (!exam) return reject(404, 'No exam ' + examId);
+    var rows = d.exam_results.filter(function (r) {
+      return r.exam_id === examId && (!opts.classId || r.class_id === opts.classId);
+    });
+    var byStudent = {};
+    rows.forEach(function (r) {
+      var e = byStudent[r.student_id] = byStudent[r.student_id] ||
+        { student_id: r.student_id, class_id: r.class_id, total: 0, points: 0, subjects: 0, unverified: 0 };
+      e.total += r.score;
+      e.points += r.points;
+      e.subjects += 1;
+      if (!r.verified) e.unverified += 1;
+    });
+    var list = Object.keys(byStudent).map(function (id) {
+      var e = byStudent[id];
+      var s = byId(d.students, id), c = byId(d.classes, e.class_id);
+      e.name = s ? s.name : '—';
+      e.admission_no = s ? s.admission_no : '—';
+      e.class_name = c ? c.full_name : '—';
+      e.average = e.subjects ? e.total / e.subjects : 0;
+      return e;
+    });
+    var ranked = denseRank(list, function (e) { return e.total; });
+    var cls = byId(d.classes, opts.classId);
+    return resolve({
+      exam_id: examId, exam_name: exam.name,
+      class_id: opts.classId || null, class_name: cls ? cls.full_name : 'All classes',
+      items: ranked, total: ranked.length,
+      unverified: ranked.reduce(function (n, e) { return n + e.unverified; }, 0)
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Report cards
+  // ══════════════════════════════════════════════════════════════════════
+
+  // POST /api/school/{school_id}/report-cards/generate
+  function generateReportCards(schoolId, payload) {
+    if (!payload || !payload.classId) return reject(422, 'Choose a class to generate for.');
+    if (!payload.examId) return reject(422, 'Choose the exam these cards report on.');
+    var d = db();
+    var termId = payload.termId || d.current_term_id;
+    var exam = byId(d.exams, payload.examId);
+    if (!exam) return reject(404, 'No exam ' + payload.examId);
+
+    var roll = d.students.filter(function (s) {
+      return s.class_id === payload.classId && s.status === 'active';
+    });
+    if (!roll.length) return reject(422, 'That class has nobody on the roll.');
+
+    var results = d.exam_results.filter(function (r) {
+      return r.exam_id === payload.examId && r.class_id === payload.classId;
+    });
+    if (!results.length) {
+      return reject(422, 'No marks have been entered for ' + exam.name + ' in that class, so there is nothing to report.');
+    }
+
+    var cards = roll.map(function (s) {
+      var mine = results.filter(function (r) { return r.student_id === s.id; });
+      var total = mine.reduce(function (n, r) { return n + r.score; }, 0);
+      var average = mine.length ? total / mine.length : 0;
+      var existing = d.report_cards.filter(function (c) {
+        return c.student_id === s.id && c.term_id === termId && c.exam_id === payload.examId;
+      })[0];
+      var card = existing || {
+        id: 'rpt-' + s.id + '-' + termId,
+        school_id: schoolId, term_id: termId, exam_id: payload.examId,
+        student_id: s.id, class_id: payload.classId,
+        teacher_comment: '', principal_comment: '',
+        published_at: null, published_by: null
+      };
+      card.subject_count = mine.length;
+      card.total_marks = total;
+      card.average = Math.round(average * 10) / 10;
+      card.mean_score = card.average;
+      card.points = mine.reduce(function (n, r) { return n + r.points; }, 0);
+      var scale = scaleById(exam.grading_scale_id) || d.grading_scale;
+      var band = bandFor(scale, Math.round(average));
+      card.grade = band ? band.grade : '—';
+      card.class_size = roll.length;
+      // regenerating a published card puts it back in draft — the numbers moved
+      card.status = 'draft';
+      card.published_at = null;
+      card.published_by = null;
+      if (!existing) d.report_cards.push(card);
+      return card;
+    });
+
+    denseRank(cards, function (c) { return c.average; });
+    persist();
+    return resolve({ class_id: payload.classId, exam_id: payload.examId, term_id: termId,
+                     generated: cards.length, cards: cards });
+  }
+
+  // GET /api/school/{school_id}/report-cards?class_id=&status=
+  function listReportCardRows(schoolId, opts) {
+    opts = opts || {};
+    var d = db();
+    var termId = opts.termId || d.current_term_id;
+    var rows = d.report_cards.filter(function (c) {
+      return c.school_id === schoolId && c.term_id === termId &&
+             (!opts.classId || c.class_id === opts.classId) &&
+             (!opts.status || c.status === opts.status);
+    }).map(function (c) {
+      var s = byId(d.students, c.student_id), cls = byId(d.classes, c.class_id);
+      var unverified = d.exam_results.filter(function (r) {
+        return r.exam_id === c.exam_id && r.student_id === c.student_id && !r.verified;
+      }).length;
+      return Object.assign({}, c, {
+        student_name: s ? s.name : '—', admission_no: s ? s.admission_no : '—',
+        class_name: cls ? cls.full_name : '—',
+        unverified_subjects: unverified,
+        publishable: unverified === 0
+      });
+    });
+    rows.sort(function (a, b) { return (a.position || 99) - (b.position || 99) || a.student_name.localeCompare(b.student_name); });
+    return resolve({ items: rows, total: rows.length, term_id: termId });
+  }
+
+  // GET /api/school/{school_id}/report-cards/{card_id}
+  function getReportCard(schoolId, cardId) {
+    var d = db();
+    var card = byId(d.report_cards, cardId);
+    if (!card) return reject(404, 'No report card ' + cardId);
+    var s = byId(d.students, card.student_id);
+    var cls = byId(d.classes, card.class_id);
+    var term = byId(d.terms, card.term_id);
+    var exam = byId(d.exams, card.exam_id);
+    var teacher = cls ? byId(d.teachers, cls.class_teacher_id) : null;
+
+    var results = d.exam_results.filter(function (r) {
+      return r.exam_id === card.exam_id && r.student_id === card.student_id;
+    }).map(function (r) {
+      var sub = byId(d.subjects, r.subject_id);
+      return Object.assign({}, r, { subject_name: sub ? sub.name : r.subject_id });
+    }).sort(function (a, b) { return a.subject_name.localeCompare(b.subject_name); });
+
+    var attendance = d.attendance.filter(function (a) {
+      return a.student_id === card.student_id && a.term_id === card.term_id;
+    });
+    var here = attendance.filter(function (a) { return a.status === 'present' || a.status === 'late'; }).length;
+
+    return resolve({
+      card: card, school: d.school, student: s,
+      class_name: cls ? cls.full_name : '—',
+      term_name: term ? term.name + ' ' + term.year : '—',
+      exam_name: exam ? exam.name : '—',
+      class_teacher_name: teacher ? teacher.name : '—',
+      results: results,
+      unverified_subjects: results.filter(function (r) { return !r.verified; })
+        .map(function (r) { return r.subject_name; }),
+      attendance_days: attendance.length,
+      attendance_percentage: attendance.length ? here / attendance.length * 100 : null
+    });
+  }
+
+  // PATCH /api/school/{school_id}/report-cards/{card_id}
+  function updateReportCard(schoolId, cardId, payload) {
+    var d = db();
+    var card = byId(d.report_cards, cardId);
+    if (!card) return reject(404, 'No report card ' + cardId);
+    if (card.status === 'published') {
+      return reject(409, 'That card is published. Comments cannot change under a guardian who has already read it.');
+    }
+    if (payload.teacher_comment !== undefined) card.teacher_comment = String(payload.teacher_comment).trim();
+    if (payload.principal_comment !== undefined) card.principal_comment = String(payload.principal_comment).trim();
+    persist();
+    return resolve(card);
+  }
+
+  // POST /api/school/{school_id}/report-cards/publish
+  /**
+   * A card cannot go out while any result feeding it is unverified. The refusal
+   * names the subjects, because "publish is greyed out" is not an explanation
+   * anyone can act on.
+   */
+  function publishReportCardsFor(schoolId, payload) {
+    if (!payload || !payload.classId) return reject(422, 'Choose a class to publish.');
+    var d = db();
+    var termId = payload.termId || d.current_term_id;
+    var cards = d.report_cards.filter(function (c) {
+      return c.school_id === schoolId && c.class_id === payload.classId &&
+             c.term_id === termId && c.status === 'draft';
+    });
+    if (!cards.length) return reject(422, 'There are no draft cards for that class this term.');
+
+    var blocked = [];
+    cards.forEach(function (c) {
+      var unverified = d.exam_results.filter(function (r) {
+        return r.exam_id === c.exam_id && r.student_id === c.student_id && !r.verified;
+      });
+      if (unverified.length) {
+        var s = byId(d.students, c.student_id);
+        blocked.push({
+          card_id: c.id, student_id: c.student_id,
+          student_name: s ? s.name : c.student_id,
+          subjects: unverified.map(function (r) {
+            var sub = byId(d.subjects, r.subject_id);
+            return sub ? sub.name : r.subject_id;
+          })
+        });
+      }
+    });
+
+    if (blocked.length) {
+      var subjects = {};
+      blocked.forEach(function (b) { b.subjects.forEach(function (n) { subjects[n] = (subjects[n] || 0) + 1; }); });
+      var named = Object.keys(subjects).sort();
+      var e = new Error(blocked.length + ' of ' + cards.length + ' cards have results that nobody has verified. ' +
+        'Unverified subjects: ' + named.join(', ') + '. ' +
+        'Verify those marks on the results page, then publish.');
+      e.status = 409;
+      e.blocked = blocked;
+      e.subjects = named;
+      return Promise.reject(e);
+    }
+
+    var stamp = (payload.date || d.today) + 'T16:00:00+03:00';
+    cards.forEach(function (c) {
+      c.status = 'published';
+      c.published_at = stamp;
+      c.published_by = payload.publishedBy || 'tch-06';
+    });
+    persist();
+    return resolve({ class_id: payload.classId, term_id: termId,
+                     published: cards.length, published_at: stamp });
+  }
+
   global.DemoBackend = {
     // people
     listStudents: listStudents,
@@ -1719,6 +2651,33 @@
     sendRemindersFor: sendRemindersFor,
     AGING_BUCKETS: BUCKETS.map(function (b) { return { key: b.key, label: b.label }; }),
     MAX_REMINDERS: MAX_REMINDERS,
+    // grading scales
+    listGradingScaleRows: listGradingScaleRows,
+    createGradingScale: createGradingScale,
+    updateGradingScale: updateGradingScale,
+    deleteGradingScale: deleteGradingScale,
+    setDefaultGradingScale: setDefaultGradingScale,
+    validateBands: validateBands,
+    // attendance
+    getClassRegister: getClassRegister,
+    getAttendanceReport: getAttendanceReport,
+    getAbsentees: getAbsentees,
+    // exams and results
+    listExamRows: listExamRows,
+    createExam: createExam,
+    updateExam: updateExam,
+    getMarkSheet: getMarkSheet,
+    saveExamResults: saveExamResults,
+    verifyExamResults: verifyExamResults,
+    getClassAnalysis: getClassAnalysis,
+    getMeritList: getMeritList,
+    EXAM_TYPES: EXAM_TYPES,
+    // report cards
+    generateReportCards: generateReportCards,
+    listReportCardRows: listReportCardRows,
+    getReportCard: getReportCard,
+    updateReportCard: updateReportCard,
+    publishReportCardsFor: publishReportCardsFor,
     // waivers
     listWaiverRows: listWaiverRows,
     approveWaiver: approveWaiver,

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Waivers — Shule</title>
-<meta name="description" content="Bursary and hardship fee waivers at Riverside Academy: approve or reject requests, with approval reducing the invoice balance once.">
+<title>Exams — Shule</title>
+<meta name="description" content="Exams at Riverside Academy: set an exam, bind it to a grading scale, and see how many marks are entered and how many still need verifying.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="../assets/css/theme.css">
 <link rel="stylesheet" href="../assets/css/app.css">
 </head>
-<body class="app-body" data-role="admin" data-page="waivers">
+<body class="app-body" data-role="admin" data-page="exams">
 
 <div class="app">
 <aside class="side" id="side">
@@ -44,13 +44,13 @@
           <li><a href="payments.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg><span>Payments</span></a></li>
           <li><a href="defaulters.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg><span>Defaulters</span></a></li>
           <li><a href="fee-structures.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V9M10 20V4M16 20v-8M22 20h-20"/></svg><span>Fee structures</span></a></li>
-          <li><a href="waivers.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
+          <li><a href="waivers.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/><path d="M3 4h10"/></svg><span>Waivers</span></a></li>
         </ul>
       </div>
       <div class="navg" data-group="academics">
         <p class="navg__t">Academics</p>
         <ul>
-          <li><a href="exams.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg><span>Exams</span></a></li>
+          <li><a href="exams.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg><span>Exams</span></a></li>
           <li><a href="results.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V12M10 20V6M16 20v-9M22 20h-20"/><circle cx="10" cy="6" r="1.6"/></svg><span>Results</span></a></li>
           <li><a href="report-cards.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 16h6M9 12h3"/></svg><span>Report cards</span></a></li>
           <li><a href="grading-scales.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.4 6 6.1.5-4.7 4 1.5 6L12 16.3 6.7 19.5l1.5-6-4.7-4 6.1-.5z"/></svg><span>Grading scales</span></a></li>
@@ -131,104 +131,103 @@
 <main class="content">
   <div class="phd">
     <div>
-      <h1>Waivers</h1>
-      <p>Bursary and hardship requests waiting on a decision</p>
+      <h1>Exams</h1>
+      <p>What is being sat this term, and what each mark will mean</p>
     </div>
-    <div class="phd__act"></div>
+    <div class="phd__act"><button type="button" class="btn btn--solid btn--sm" id="new-exam">Set an exam</button></div>
   </div>
 
-  <div class="qstats" style="margin:0 0 16px">
-    <div class="qstat"><span>Pending</span><b data-bind="pending-count">—</b></div>
-    <div class="qstat"><span>Pending value</span><b data-bind="pending-value">—</b></div>
-    <div class="qstat"><span>Approved this term</span><b data-bind="approved-count">—</b></div>
-    <div class="qstat"><span>Approved value</span><b data-bind="approved-value">—</b></div>
-  </div>
-
-  <section class="card" data-panel="waivers">
+  <section class="card" data-panel="exams">
     <div class="filters">
-      <div class="field filters__grow">
-        <label for="f-search">Search</label>
-        <input type="search" id="f-search" name="search" placeholder="Pupil name…" autocomplete="off">
+      <div class="field">
+        <label for="f-term">Term</label>
+        <select id="f-term" name="term"></select>
       </div>
       <div class="field">
-        <label for="f-status">Status</label>
-        <select id="f-status" name="status">
-          <option value="">All</option>
-          <option value="pending" selected>Pending</option><option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        <label for="f-type">Type</label>
+        <select id="f-type" name="type"><option value="">All types</option></select>
       </div>
       <div class="filters__end"><span class="filters__n" data-bind="result-count">—</span></div>
     </div>
   <div class="card__b card__b--flush">
-    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
     <div data-region="content" hidden>
       <div class="tbl-scroll">
         <table class="tbl">
-          <caption class="vh">Bursary and hardship requests</caption>
-          <thead><tr><th scope="col">Student</th><th scope="col">Class</th><th scope="col">Reason</th><th scope="col" class="r">Amount</th><th scope="col">Requested by</th><th scope="col">Requested</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
+          <caption class="vh">Exams set for the term</caption>
+          <thead><tr><th scope="col">Exam</th><th scope="col">Type</th><th scope="col">Dates</th><th scope="col" class="r">Out of</th><th scope="col">Grading scale</th><th scope="col" class="r">Classes</th><th scope="col" class="r">Marks</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
     </div>
     <div data-region="empty" hidden><div class="empty">
             <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg></span>
-            <b>No requests here</b>
-            <p>Nothing is waiting on a decision with those filters.</p>
+            <b>No exams for this term</b>
+            <p>Set one, and bind it to the scale its marks will be graded against.</p>
           </div></div>
   </div>
 </section>
 </main>
 
-<div class="scrim" id="modal-approve" role="dialog" aria-modal="true" aria-labelledby="modal-approve-t">
-  <div class="modal">
-    <form id="modal-approve-form" novalidate>
+<div class="scrim" id="modal-exam" role="dialog" aria-modal="true" aria-labelledby="modal-exam-t">
+  <div class="modal" style="max-width:640px">
+    <form id="modal-exam-form" novalidate>
       <div class="modal__h">
         <div>
-          <h2 id="modal-approve-t">Approve this waiver</h2>
-          <p>Approving reduces the pupil’s invoice by the waiver amount and posts a bursary entry to the ledger.</p>
+          <h2 id="modal-exam-t">Exam</h2>
+          <p>An exam is bound to a grading scale when it is created. Once anything is marked, that binding is frozen.</p>
         </div>
         <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <div class="modal__b">
-          <div class="modal__note" id="approve-context">—</div>
           <div class="field">
-            <label for="approve-reason">Note <span class="opt">(optional)</span></label>
-            <input type="text" id="approve-reason" name="reason" aria-describedby="approve-reason-err" placeholder="Board minute 14/2026">
-            <p class="err" id="approve-reason-err" role="alert"></p>
+            <label for="ex-name">Exam name</label>
+            <input type="text" id="ex-name" name="name" aria-describedby="ex-name-err" placeholder="End-term Exam">
+            <p class="err" id="ex-name-err" role="alert"></p>
           </div>
+          <div class="field">
+            <label for="ex-type">Type</label>
+            <select id="ex-type" name="type" aria-describedby="ex-type-err"><option value="opener">Opener</option><option value="cat">CAT</option><option value="midterm" selected>Mid-term</option><option value="endterm">End-term</option><option value="mock">Mock</option></select>
+            <p class="err" id="ex-type-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="ex-term">Term</label>
+            <select id="ex-term" name="term" aria-describedby="ex-term-err"></select>
+            <p class="err" id="ex-term-err" role="alert"></p>
+          </div>
+          <div class="calc__row">
+          <div class="field">
+            <label for="ex-starts">Starts</label>
+            <input type="date" id="ex-starts" name="starts" aria-describedby="ex-starts-err">
+            <p class="err" id="ex-starts-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="ex-ends">Ends</label>
+            <input type="date" id="ex-ends" name="ends" aria-describedby="ex-ends-err">
+            <p class="err" id="ex-ends-err" role="alert"></p>
+          </div>
+          </div>
+          <div class="field">
+            <label for="ex-max">Marked out of</label>
+            <input type="number" id="ex-max" name="max" aria-describedby="ex-max-err" min="1" max="1000" step="1" value="100">
+            <p class="err" id="ex-max-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="ex-scale">Grading scale</label>
+            <select id="ex-scale" name="scale" aria-describedby="ex-scale-err"></select>
+            <p class="err" id="ex-scale-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="ex-classes">Classes sitting it</label>
+            <select id="ex-classes" name="classes" aria-describedby="ex-classes-err" multiple size="6"></select>
+            <p class="err" id="ex-classes-err" role="alert"></p>
+          </div>
+          <p class="modal__note" id="ex-lock" hidden></p>
         <p class="formerr" data-form-error role="alert"></p>
       </div>
       <div class="modal__f">
         <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn--solid btn--sm">Approve and apply</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="scrim" id="modal-reject" role="dialog" aria-modal="true" aria-labelledby="modal-reject-t">
-  <div class="modal">
-    <form id="modal-reject-form" novalidate>
-      <div class="modal__h">
-        <div>
-          <h2 id="modal-reject-t">Reject this waiver</h2>
-          <p>The person who requested it will be told what the reason was, so make it useful.</p>
-        </div>
-        <button type="button" class="modal__x" data-modal-close aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-      </div>
-      <div class="modal__b">
-          <div class="modal__note" id="reject-context">—</div>
-          <div class="field">
-            <label for="reject-reason">Reason for rejection</label>
-            <textarea id="reject-reason" name="reason" rows="3" aria-describedby="reject-reason-err" placeholder="Household income above the bursary threshold for this term."></textarea>
-            <p class="err" id="reject-reason-err" role="alert"></p>
-          </div>
-        <p class="formerr" data-form-error role="alert"></p>
-      </div>
-      <div class="modal__f">
-        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
-        <button type="submit" class="btn btn--solid btn--sm">Reject request</button>
+        <button type="submit" class="btn btn--solid btn--sm">Save exam</button>
       </div>
     </form>
   </div>
@@ -244,6 +243,6 @@
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/shell.js"></script>
 <script src="../assets/js/ui.js"></script>
-<script src="../assets/js/waivers.js"></script>
+<script src="../assets/js/exams.js"></script>
 </body>
 </html>

@@ -506,3 +506,183 @@ body.app-body{font-size:14px;background:var(--paper);color:var(--ink)}
   .modal{max-width:none;border:0;box-shadow:none}
   body.app-body{background:#fff}
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Step 4 — academics: bands, register, mark sheet, report cards
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── band editor ────────────────────────────────────────────────────── */
+.bands{display:flex;flex-direction:column;gap:7px}
+.band{display:grid;grid-template-columns:74px 78px 78px 72px 1fr 34px;gap:7px;align-items:center}
+.band__h{display:grid;grid-template-columns:74px 78px 78px 72px 1fr 34px;gap:7px;
+  font-family:var(--f-display);font-size:9.5px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--body-2);margin-bottom:3px}
+.band input{font-size:12.8px;padding:7px 9px;width:100%;font-family:var(--f-body);color:var(--ink);
+  background:#fff;border:1px solid var(--line-2);border-radius:8px}
+.band input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-tint)}
+.band input[aria-invalid="true"]{border-color:var(--red);background:var(--red-soft)}
+.band__x{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line);
+  border-radius:8px;background:#fff;color:var(--body-2);cursor:pointer}
+.band__x:hover{border-color:var(--red);color:var(--red)}
+.band__move{display:flex;flex-direction:column;gap:1px}
+
+.coverage{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.coverage__bar{display:flex;height:16px;border-radius:5px;overflow:hidden;background:var(--line);
+  border:1px solid var(--line-2)}
+.coverage__seg{height:100%;display:grid;place-items:center;font-family:var(--f-display);font-size:8.5px;
+  font-weight:600;color:var(--ink);background:var(--orange-soft);box-shadow:inset -1px 0 0 #fff;overflow:hidden}
+.coverage__seg:nth-child(even){background:var(--orange-tint)}
+.coverage__seg.gap{background:var(--red-soft);color:var(--red-ink)}
+.coverage__seg.over{background:var(--red);color:#fff}
+.coverage__msg{margin-top:9px;font-size:12.2px;display:flex;align-items:flex-start;gap:7px}
+.coverage__msg.ok{color:var(--green-ink)}
+.coverage__msg.bad{color:var(--red-ink)}
+.coverage__msg svg{flex:none;margin-top:2px}
+
+/* ── mode switch ────────────────────────────────────────────────────── */
+.modes{display:inline-flex;gap:3px;padding:3px;background:#fff;border:1px solid var(--line);
+  border-radius:10px;margin-bottom:16px}
+.modes button{padding:8px 16px;border:0;border-radius:8px;background:none;cursor:pointer;
+  font-family:var(--f-display);font-size:12.8px;font-weight:500;color:var(--body)}
+.modes button:hover{color:var(--ink)}
+.modes button[aria-selected="true"]{background:var(--orange-tint);color:var(--orange-600)}
+
+/* ── register ───────────────────────────────────────────────────────── */
+.tally{display:flex;gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.tally__i{flex:1;background:#fff;padding:11px 14px;text-align:center}
+.tally__i span{display:block;font-family:var(--f-display);font-size:9.5px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--body-2)}
+.tally__i b{display:block;font-family:var(--f-display);font-size:19px;font-weight:600;margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.tally__i.present b{color:var(--green-ink)}
+.tally__i.absent b{color:var(--red-ink)}
+.tally__i.late b{color:var(--orange-600)}
+
+.mark{display:grid;place-items:center}
+.mark input{position:absolute;opacity:0;width:1px;height:1px}
+.mark label{display:grid;place-items:center;width:30px;height:26px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--line-2);background:#fff;font-family:var(--f-display);font-size:11px;
+  font-weight:600;color:var(--body-2);transition:background .12s,color .12s,border-color .12s}
+.mark label:hover{border-color:var(--ink-2);color:var(--ink)}
+.mark input:checked+label{border-color:transparent;color:#fff}
+.mark--present input:checked+label{background:var(--green)}
+.mark--absent input:checked+label{background:var(--red)}
+.mark--late input:checked+label{background:var(--orange)}
+.mark input:focus-visible+label{outline:2px solid var(--orange);outline-offset:2px}
+.tbl td .notein{font-size:12px;padding:6px 9px;width:100%;min-width:150px;font-family:var(--f-body);
+  color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:7px}
+.tbl td .notein:focus{outline:none;border-color:var(--orange)}
+.tbl td .notein:disabled{background:var(--paper);color:var(--body-2)}
+
+.regfoot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:14px 16px;border-top:1px solid var(--line);background:var(--paper);
+  border-radius:0 0 var(--r) var(--r)}
+.regfoot p{font-size:12.2px;margin:0}
+
+/* ── attendance grid ────────────────────────────────────────────────── */
+.grid-tbl th.day{padding:6px 3px;text-align:center;font-size:8.5px;min-width:26px}
+.grid-tbl td.day{padding:3px;text-align:center}
+.grid-tbl td.day i{display:block;width:18px;height:18px;border-radius:4px;margin:0 auto;
+  border:1px solid var(--line);background:#fff}
+.grid-tbl td.day i[data-s="present"]{background:var(--green-soft);border-color:var(--green-soft)}
+.grid-tbl td.day i[data-s="late"]{background:var(--orange-tint);border-color:var(--orange-soft)}
+.grid-tbl td.day i[data-s="absent"]{background:var(--red-soft);border-color:var(--red-soft)}
+.grid-tbl td.day i[data-s="excused"]{background:var(--paper);border-color:var(--line-2)}
+
+.absentees{border-top:1px solid var(--line);margin-top:0}
+.absentees__h{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:14px 16px}
+.absentees__h h2{font-family:var(--f-display);font-size:13px;font-weight:600}
+.absentees__h .field{gap:4px}
+.absentees__h label{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--body-2)}
+.absentees__h input{font-size:12.8px;padding:7px 10px}
+
+/* ── mark sheet ─────────────────────────────────────────────────────── */
+.sheetbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;
+  border-bottom:1px solid var(--line);background:var(--paper);font-size:12.4px;color:var(--body)}
+.sheetbar b{font-family:var(--f-display);font-weight:600;color:var(--ink)}
+.sheetbar__end{margin-left:auto;display:flex;align-items:center;gap:9px}
+
+.scorein{width:74px;font-size:13px;padding:6px 9px;font-family:var(--f-display);font-weight:600;
+  font-variant-numeric:tabular-nums;text-align:right;color:var(--ink);background:#fff;
+  border:1px solid var(--line-2);border-radius:7px}
+.scorein:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-tint)}
+.scorein[aria-invalid="true"]{border-color:var(--red);background:var(--red-soft);color:var(--red-ink)}
+.gradecell{font-family:var(--f-display);font-weight:600;color:var(--orange-600)}
+.gradecell span{display:block;font-family:var(--f-body);font-weight:400;font-size:11px;color:var(--body-2)}
+.scoreerr{display:block;font-size:11px;color:var(--red-ink);margin-top:3px}
+.commentin{font-size:12px;padding:6px 9px;width:100%;min-width:160px;font-family:var(--f-body);
+  color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:7px}
+.commentin:focus{outline:none;border-color:var(--orange)}
+
+/* ── report cards ───────────────────────────────────────────────────── */
+.blocker{margin:0;border-bottom:1px solid var(--line);background:var(--red-soft);padding:14px 16px}
+.blocker b{display:block;font-family:var(--f-display);font-size:12.8px;font-weight:600;
+  color:var(--red-ink);margin-bottom:5px}
+.blocker p{font-size:12.4px;color:var(--red-ink);margin-bottom:8px}
+.blocker ul{display:flex;flex-wrap:wrap;gap:6px}
+.blocker li{font-family:var(--f-display);font-size:11px;font-weight:600;background:#fff;
+  border:1px solid var(--red-soft);border-radius:5px;padding:3px 8px;color:var(--red-ink)}
+
+.card-sheet{background:#fff;padding:24px 26px;font-size:13px}
+.card-sheet__h{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding-bottom:14px;border-bottom:2px solid var(--ink)}
+.card-sheet__h h3{font-family:var(--f-display);font-size:17px;font-weight:700;letter-spacing:-.02em}
+.card-sheet__h p{font-size:11.5px;line-height:1.5}
+.card-sheet__h em{font-style:normal;display:block;font-family:var(--f-display);font-size:11.5px;
+  font-weight:600;color:var(--orange-600);margin-top:3px}
+.card-sheet__who{text-align:right}
+.card-sheet__who b{display:block;font-family:var(--f-display);font-size:14px;font-weight:600}
+.card-sheet__who span{font-size:11.5px;color:var(--body)}
+.card-sheet table{width:100%;border-collapse:collapse;font-size:12.4px;margin-top:16px}
+.card-sheet th{text-align:left;font-family:var(--f-display);font-size:9.5px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--body-2);padding:7px 0;
+  border-bottom:1px solid var(--line)}
+.card-sheet td{padding:7px 0;border-bottom:1px solid var(--line)}
+.card-sheet .r{text-align:right;font-variant-numeric:tabular-nums}
+.card-sheet tfoot td{border-bottom:0;padding-top:11px;font-family:var(--f-display);font-weight:600}
+.card-sheet__stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:18px}
+.card-sheet__stat{background:var(--paper);padding:12px 14px;text-align:center}
+.card-sheet__stat span{display:block;font-family:var(--f-display);font-size:9.5px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--body-2)}
+.card-sheet__stat b{display:block;font-family:var(--f-display);font-size:18px;font-weight:600;
+  margin-top:3px;font-variant-numeric:tabular-nums}
+.card-sheet__comments{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+.card-sheet__comments .field label{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--body-2)}
+.card-sheet__comments textarea{font-size:12.6px;min-height:64px}
+.card-sheet__sign{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:11.2px;color:var(--body-2)}
+.card-sheet__draft{margin-top:16px;padding:11px 14px;border-radius:var(--r);background:var(--orange-tint);
+  color:var(--orange-600);font-size:12.2px;font-family:var(--f-display);font-weight:500}
+
+@media (max-width:820px){
+  .band,.band__h{grid-template-columns:64px 62px 62px 58px 34px}
+  .band__h span:nth-child(5),.band input[data-band-remark]{display:none}
+  .card-sheet__stats{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PRINT — a report card a parent would accept.
+   One card per page, school header, nothing from the application chrome.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media print{
+  @page{size:A4 portrait;margin:14mm}
+  .side,.top,.tabs,.modes,.phd__act,.filters,.pager,.bulkbar,.toasts,
+  .modal__f,.modal__h button,.regfoot,.sheetbar__end,.card__f{display:none!important}
+  .app{grid-template-columns:1fr;min-height:0}
+  body.app-body{background:#fff;font-size:11.5pt}
+  .content{padding:0}
+  .scrim{position:static;display:block;background:none;padding:0;inset:auto}
+  .scrim:not(.is-on){display:none!important}
+  .modal{max-width:none;max-height:none;border:0;box-shadow:none;display:block}
+  .modal__h{border-bottom:0;padding:0 0 8px}
+  .modal__b{padding:0;overflow:visible}
+  .card-sheet{padding:0;page-break-after:always}
+  .card-sheet:last-child{page-break-after:auto}
+  .card-sheet__comments textarea{border:0;padding:0;min-height:0;resize:none;
+    background:none;font-size:11pt;color:#000}
+  .card-sheet__comments .field label{color:#000}
+  .card-sheet__draft{border:1px solid #000;background:none;color:#000}
+  a[href]::after{content:""}
+}
