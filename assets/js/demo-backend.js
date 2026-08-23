@@ -1817,12 +1817,40 @@
     var problem = validateBands(payload.bands, max);
     if (problem) return reject(422, problem);
 
+    /*
+     * Regrading live marks is right — a stored grade that disagrees with its
+     * scale is a bug. Regrading a mark that already sits on a PUBLISHED report
+     * card is not: a parent has read that document, and changing the grade
+     * under them is worse than leaving the scale alone. So the edit stops, names
+     * the classes, and asks for the cards to be regenerated first.
+     */
+    var examIds = d.exams.filter(function (e) { return e.grading_scale_id === scale.id; })
+      .map(function (e) { return e.id; });
+    var publishedCards = d.report_cards.filter(function (c) {
+      return c.status === 'published' && examIds.indexOf(c.exam_id) !== -1;
+    });
+    if (publishedCards.length) {
+      var classNames = publishedCards.map(function (c) {
+        var cls = byId(d.classes, c.class_id);
+        return cls ? cls.full_name : c.class_id;
+      }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort();
+      var e = new Error('Cannot edit "' + scale.name + '": ' + publishedCards.length +
+        ' published report card' + (publishedCards.length === 1 ? '' : 's') +
+        ' were graded on these bands, in ' + classNames.join(', ') + '. ' +
+        'Changing the scale would rewrite a grade a guardian has already read. ' +
+        'Regenerate those cards back to draft first, then edit the scale.');
+      e.status = 409;
+      e.published_cards = publishedCards.length;
+      e.classes = classNames;
+      return Promise.reject(e);
+    }
+
     scale.name = String(payload.name).trim();
     if (payload.description !== undefined) scale.description = payload.description || null;
     scale.max_score = max;
     scale.bands = normaliseBands(payload.bands);
 
-    // an edited scale regrades everything already marked against it
+    // an edited scale regrades everything still in draft
     var regraded = regradeAgainst(schoolId, scale);
     persist();
     return resolve({ scale: scale, regraded: regraded });
@@ -2333,15 +2361,20 @@
   }
 
   /**
-   * Dense ranking: ties share a rank and the next distinct total takes the rank
-   * immediately after, so three pupils tied at the top are 1, 1, 1, then 2.
+   * COMPETITION ranking, the way a school actually reads a position.
+   *
+   * Ties share a rank and the ranks they consumed are skipped: two pupils tied
+   * at the top are 1, 1, and the next is 3. Dense ranking would call that pupil
+   * 2, which puts "Position 2 of 44" on a card with two pupils ahead of them —
+   * something a head teacher spots immediately.
    */
-  function denseRank(rows, valueOf) {
+  function competitionRank(rows, valueOf) {
     var ordered = rows.slice().sort(function (a, b) { return valueOf(b) - valueOf(a); });
-    var rank = 0, previous = null;
+    var rank = 0, previous = null, seen = 0;
     ordered.forEach(function (row) {
       var v = valueOf(row);
-      if (previous === null || v !== previous) { rank += 1; previous = v; }
+      seen += 1;
+      if (previous === null || v !== previous) { rank = seen; previous = v; }
       row.position = rank;
     });
     return ordered;
@@ -2374,7 +2407,7 @@
       e.average = e.subjects ? e.total / e.subjects : 0;
       return e;
     });
-    var ranked = denseRank(list, function (e) { return e.total; });
+    var ranked = competitionRank(list, function (e) { return e.total; });
     var cls = byId(d.classes, opts.classId);
     return resolve({
       exam_id: examId, exam_name: exam.name,
@@ -2440,7 +2473,7 @@
       return card;
     });
 
-    denseRank(cards, function (c) { return c.average; });
+    competitionRank(cards, function (c) { return c.average; });
     persist();
     return resolve({ class_id: payload.classId, exam_id: payload.examId, term_id: termId,
                      generated: cards.length, cards: cards });
@@ -2580,6 +2613,497 @@
                      published: cards.length, published_at: stamp });
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // Teacher scope
+  //
+  // A teacher sees only the classes and subjects they are assigned to. This is
+  // enforced HERE, not in the page: a page-level filter is a UI convenience,
+  // and anything that opens a console can step around it. Asking for a class
+  // you do not teach returns exactly what asking for a class that does not
+  // exist returns — a 404 — so the refusal leaks nothing either.
+  // ══════════════════════════════════════════════════════════════════════
+
+  function assignmentsOf(teacherId) {
+    return db().assignments.filter(function (a) { return a.teacher_id === teacherId; });
+  }
+  function teacherClassIds(teacherId) {
+    var d = db();
+    var ids = assignmentsOf(teacherId).map(function (a) { return a.class_id; });
+    // a class teacher owns their register whether or not they teach the class
+    d.classes.forEach(function (c) { if (c.class_teacher_id === teacherId) ids.push(c.id); });
+    return ids.filter(function (v, i, arr) { return arr.indexOf(v) === i; });
+  }
+  function teaches(teacherId, classId, subjectId) {
+    var d = db();
+    if (subjectId) {
+      return assignmentsOf(teacherId).some(function (a) {
+        return a.class_id === classId && a.subject_id === subjectId;
+      });
+    }
+    return teacherClassIds(teacherId).indexOf(classId) !== -1;
+  }
+  /** The refusal a teacher gets for anything outside their scope. */
+  function outOfScope(what, id) {
+    return reject(404, 'No ' + what + ' ' + id);
+  }
+  function requireTeacher(teacherId) {
+    var t = byId(db().teachers, teacherId);
+    return t ? null : reject(404, 'No teacher ' + teacherId);
+  }
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/classes
+  function listTeacherClasses(schoolId, teacherId) {
+    var missing = requireTeacher(teacherId);
+    if (missing) return missing;
+    var d = db();
+    var ids = teacherClassIds(teacherId);
+    return resolve(d.classes.filter(function (c) { return ids.indexOf(c.id) !== -1; })
+      .map(function (c) {
+        var mine = assignmentsOf(teacherId).filter(function (a) { return a.class_id === c.id; });
+        return {
+          id: c.id, full_name: c.full_name, level: c.level, sort_order: c.sort_order, room: c.room,
+          roll: d.students.filter(function (s) { return s.class_id === c.id && s.status === 'active'; }).length,
+          is_class_teacher: c.class_teacher_id === teacherId,
+          subjects: mine.map(function (a) {
+            var sub = byId(d.subjects, a.subject_id);
+            return { id: a.subject_id, name: sub ? sub.name : a.subject_id };
+          })
+        };
+      }).sort(function (a, b) { return a.sort_order - b.sort_order; }));
+  }
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/timetable
+  function getTeacherTimetable(schoolId, teacherId, opts) {
+    opts = opts || {};
+    var missing = requireTeacher(teacherId);
+    if (missing) return missing;
+    var d = db();
+    var rows = d.timetable.filter(function (t) {
+      return t.school_id === schoolId && t.teacher_id === teacherId &&
+             (!opts.day || t.day === opts.day);
+    }).map(function (t) {
+      var c = byId(d.classes, t.class_id), sub = byId(d.subjects, t.subject_id);
+      return Object.assign({}, t, {
+        class_name: c ? c.full_name : t.class_id,
+        subject_name: sub ? sub.name : t.subject_id
+      });
+    });
+    rows.sort(function (a, b) { return a.day - b.day || a.period - b.period; });
+    return resolve({
+      teacher_id: teacherId, days: d.days_of_week, periods: d.periods,
+      items: rows, total: rows.length,
+      periods_per_week: rows.length
+    });
+  }
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/dashboard
+  function getTeacherDashboard(schoolId, teacherId, opts) {
+    opts = opts || {};
+    var missing = requireTeacher(teacherId);
+    if (missing) return missing;
+    var d = db();
+    var today = opts.date || d.today;
+    var weekday = new Date(today + 'T00:00:00Z').getUTCDay();
+    var teacher = byId(d.teachers, teacherId);
+    var ids = teacherClassIds(teacherId);
+
+    var periods = d.timetable.filter(function (t) {
+      return t.teacher_id === teacherId && t.day === weekday;
+    }).map(function (t) {
+      var c = byId(d.classes, t.class_id), sub = byId(d.subjects, t.subject_id);
+      return Object.assign({}, t, {
+        class_name: c ? c.full_name : t.class_id,
+        subject_name: sub ? sub.name : t.subject_id
+      });
+    }).sort(function (a, b) { return a.period - b.period; });
+
+    // registers this teacher is responsible for, and whether they are in
+    var registers = d.classes.filter(function (c) { return c.class_teacher_id === teacherId; })
+      .map(function (c) {
+        var marked = d.attendance.filter(function (a) { return a.class_id === c.id && a.date === today; });
+        return {
+          class_id: c.id, class_name: c.full_name,
+          roll: d.students.filter(function (s) { return s.class_id === c.id && s.status === 'active'; }).length,
+          marked: marked.length > 0,
+          present: marked.filter(function (a) { return a.status === 'present' || a.status === 'late'; }).length,
+          absent: marked.filter(function (a) { return a.status === 'absent' || a.status === 'excused'; }).length,
+          marked_at: marked.length ? marked[0].marked_at : null
+        };
+      });
+
+    // marks still owed, per assignment, for every exam that is open
+    var openExams = d.exams.filter(function (e) { return e.term_id === d.current_term_id; });
+    var outstanding = [];
+    assignmentsOf(teacherId).forEach(function (a) {
+      openExams.forEach(function (e) {
+        if (e.class_ids.indexOf(a.class_id) === -1) return;
+        var roll = d.students.filter(function (s) { return s.class_id === a.class_id && s.status === 'active'; }).length;
+        var entered = d.exam_results.filter(function (r) {
+          return r.exam_id === e.id && r.class_id === a.class_id && r.subject_id === a.subject_id;
+        });
+        if (entered.length >= roll) return;
+        var c = byId(d.classes, a.class_id), sub = byId(d.subjects, a.subject_id);
+        outstanding.push({
+          exam_id: e.id, exam_name: e.name, deadline: e.ends_on,
+          class_id: a.class_id, class_name: c ? c.full_name : a.class_id,
+          subject_id: a.subject_id, subject_name: sub ? sub.name : a.subject_id,
+          entered: entered.length, roll: roll, missing: roll - entered.length
+        });
+      });
+    });
+    outstanding.sort(function (a, b) { return a.deadline < b.deadline ? -1 : 1; });
+
+    return resolve({
+      teacher_id: teacherId,
+      teacher_name: teacher ? teacher.name : '—',
+      date: today,
+      periods: periods,
+      registers: registers,
+      registers_outstanding: registers.filter(function (r) { return !r.marked; }).length,
+      marks_outstanding: outstanding,
+      class_count: ids.length,
+      announcements: d.announcements.filter(function (a) {
+        return a.audience === 'all' || a.audience === 'staff';
+      }).slice(0, 4)
+    });
+  }
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/classes/{class_id}/register
+  function getTeacherRegister(schoolId, teacherId, classId, opts) {
+    var missing = requireTeacher(teacherId);
+    if (missing) return missing;
+    if (!teaches(teacherId, classId)) return outOfScope('class', classId);
+    return getClassRegister(schoolId, classId, opts);
+  }
+
+  // POST /api/school/{school_id}/teachers/{teacher_id}/classes/{class_id}/attendance
+  function markTeacherAttendance(schoolId, teacherId, classId, payload) {
+    var missing = requireTeacher(teacherId);
+    if (missing) return missing;
+    if (!teaches(teacherId, classId)) return outOfScope('class', classId);
+    return markAttendance(schoolId, classId, Object.assign({}, payload, { markedBy: teacherId }));
+  }
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/exams/{exam_id}/mark-sheet
+  function getTeacherMarkSheet(schoolId, teacherId, examId, opts) {
+    opts = opts || {};
+    var missing = requireTeacher(teacherId);
+    if (missing) return missing;
+    if (!teaches(teacherId, opts.classId, opts.subjectId)) return outOfScope('class', opts.classId);
+    return getMarkSheet(schoolId, examId, opts);
+  }
+
+  // PUT /api/school/{school_id}/teachers/{teacher_id}/exams/{exam_id}/results
+  function saveTeacherResults(schoolId, teacherId, examId, payload) {
+    payload = payload || {};
+    var missing = requireTeacher(teacherId);
+    if (missing) return missing;
+    if (!teaches(teacherId, payload.classId, payload.subjectId)) return outOfScope('class', payload.classId);
+    return saveExamResults(schoolId, examId, Object.assign({}, payload, { enteredBy: teacherId }));
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Parent scope
+  //
+  // A guardian sees only children they are a guardian of, only PUBLISHED report
+  // cards and only VERIFIED results. The same reasoning as the teacher scope:
+  // the page is not the control.
+  // ══════════════════════════════════════════════════════════════════════
+
+  function guardianRows(personId) {
+    return db().guardians.filter(function (g) { return g.person_id === personId; });
+  }
+  function childIds(personId) {
+    return guardianRows(personId).map(function (g) { return g.student_id; });
+  }
+  function guards(personId, studentId) {
+    return childIds(personId).indexOf(studentId) !== -1;
+  }
+
+  // GET /api/school/{school_id}/guardians/{person_id}/children
+  function listMyChildren(schoolId, personId) {
+    var d = db();
+    var rows = guardianRows(personId);
+    if (!rows.length) return reject(404, 'No guardian ' + personId);
+    return resolve(rows.map(function (g) {
+      var s = byId(d.students, g.student_id);
+      var c = s ? byId(d.classes, s.class_id) : null;
+      var invoices = d.invoices.filter(function (i) {
+        return i.student_id === g.student_id && i.term_id === d.current_term_id;
+      });
+      var att = d.attendance.filter(function (a) { return a.student_id === g.student_id; });
+      var here = att.filter(function (a) { return a.status === 'present' || a.status === 'late'; }).length;
+      var published = d.report_cards.filter(function (r) {
+        return r.student_id === g.student_id && r.status === 'published';
+      });
+      return {
+        student_id: g.student_id,
+        name: s ? s.name : '—', admission_no: s ? s.admission_no : '—',
+        gender: s ? s.gender : null,
+        class_id: s ? s.class_id : null, class_name: c ? c.full_name : '—',
+        relationship: g.relationship, is_primary: g.is_primary,
+        balance: invoices.reduce(function (n, i) { return n + i.balance; }, 0),
+        invoiced: invoices.reduce(function (n, i) { return n + i.amount_due; }, 0),
+        attendance_percentage: att.length ? here / att.length * 100 : null,
+        published_cards: published.length
+      };
+    }));
+  }
+
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/fees
+  function getChildFees(schoolId, personId, studentId) {
+    if (!guards(personId, studentId)) return outOfScope('student', studentId);
+    var d = db();
+    var s = byId(d.students, studentId);
+    var invoices = d.invoices.filter(function (i) { return i.student_id === studentId; })
+      .map(function (i) {
+        var t = byId(d.terms, i.term_id);
+        return Object.assign({}, i, { term_name: t ? t.name + ' ' + t.year : i.term_id });
+      });
+    var payments = d.payments.filter(function (p) { return p.student_id === studentId; })
+      .slice().sort(function (a, b) { return a.paid_at < b.paid_at ? 1 : -1; });
+    return resolve({
+      student_id: studentId, student_name: s ? s.name : '—',
+      paybill: d.school.paybill, account_ref: s ? s.admission_no : '—',
+      invoices: invoices, payments: payments,
+      balance: invoices.reduce(function (n, i) { return n + i.balance; }, 0),
+      invoiced: invoices.reduce(function (n, i) { return n + i.amount_due; }, 0),
+      paid: invoices.reduce(function (n, i) { return n + i.amount_paid; }, 0)
+    });
+  }
+
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/attendance
+  function getChildAttendance(schoolId, personId, studentId, opts) {
+    if (!guards(personId, studentId)) return outOfScope('student', studentId);
+    opts = opts || {};
+    var d = db();
+    var rows = d.attendance.filter(function (a) { return a.student_id === studentId; })
+      .slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var here = rows.filter(function (a) { return a.status === 'present' || a.status === 'late'; }).length;
+    var count = function (st) { return rows.filter(function (a) { return a.status === st; }).length; };
+    return resolve({
+      student_id: studentId, items: rows, days: rows.length,
+      present: count('present'), absent: count('absent'),
+      late: count('late'), excused: count('excused'),
+      percentage: rows.length ? here / rows.length * 100 : null
+    });
+  }
+
+  /**
+   * PUBLISHED cards and VERIFIED results only. An unverified mark is one nobody
+   * has checked; a draft card is one the head has not signed. Neither belongs in
+   * front of a parent, and neither is filtered out on the page.
+   */
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/results
+  function getChildResults(schoolId, personId, studentId) {
+    if (!guards(personId, studentId)) return outOfScope('student', studentId);
+    var d = db();
+    var cards = d.report_cards.filter(function (c) {
+      return c.student_id === studentId && c.status === 'published';
+    });
+    var out = cards.map(function (c) {
+      var exam = byId(d.exams, c.exam_id);
+      var results = d.exam_results.filter(function (r) {
+        return r.student_id === studentId && r.exam_id === c.exam_id && r.verified;
+      }).map(function (r) {
+        var sub = byId(d.subjects, r.subject_id);
+        return {
+          subject_id: r.subject_id, subject_name: sub ? sub.name : r.subject_id,
+          score: r.score, grade: r.grade, points: r.points, remark: r.remark,
+          comment: r.comment, max_score: r.max_score
+        };
+      }).sort(function (a, b) { return a.subject_name.localeCompare(b.subject_name); });
+      return {
+        card_id: c.id, exam_id: c.exam_id, exam_name: exam ? exam.name : c.exam_id,
+        term_id: c.term_id,
+        total_marks: c.total_marks, average: c.average, grade: c.grade,
+        position: c.position, class_size: c.class_size,
+        teacher_comment: c.teacher_comment, principal_comment: c.principal_comment,
+        published_at: c.published_at,
+        results: results
+      };
+    });
+    var s = byId(d.students, studentId);
+    return resolve({ student_id: studentId, student_name: s ? s.name : '—', cards: out, total: out.length });
+  }
+
+  // GET /api/school/{school_id}/guardians/{person_id}/messages
+  function getGuardianMessages(schoolId, personId) {
+    var d = db();
+    if (!guardianRows(personId).length) return reject(404, 'No guardian ' + personId);
+    var rows = d.announcements.filter(function (a) {
+      return a.school_id === schoolId && (a.audience === 'all' || a.audience === 'guardians');
+    }).slice().sort(function (a, b) { return a.posted_at < b.posted_at ? 1 : -1; });
+    var events = d.events.filter(function (e) { return e.school_id === schoolId; });
+    return resolve({ items: rows, total: rows.length, events: events });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Guardian portal — the tokenised public surface
+  // ══════════════════════════════════════════════════════════════════════
+
+  var PORTAL_STATES = { OK: 'ok', UNKNOWN: 'unknown', EXPIRED: 'expired', REVOKED: 'revoked' };
+
+  // POST /api/school/{school_id}/students/{student_id}/guardian-token
+  function issueGuardianToken(schoolId, studentId, payload) {
+    payload = payload || {};
+    var d = db();
+    var s = byId(d.students, studentId);
+    if (!s) return reject(404, 'No student ' + studentId);
+    var guardian = payload.guardianId
+      ? byId(d.guardians, payload.guardianId)
+      : d.guardians.filter(function (g) { return g.student_id === studentId && g.is_primary; })[0];
+    if (!guardian) return reject(422, 'That pupil has no guardian to send a link to.');
+    if (guardian.student_id !== studentId) {
+      return reject(422, 'That guardian is not on this pupil’s record.');
+    }
+    var days = Number(payload.days) || 30;
+    if (days < 1 || days > 180) return reject(422, 'A portal link lasts between 1 and 180 days.');
+
+    var token = 'gp-' + hash32(studentId + '|' + guardian.id + '|' + d.guardian_tokens.length + '|' + d.today);
+    var row = {
+      token: token, school_id: schoolId,
+      student_id: studentId, guardian_id: guardian.id,
+      issued_to: guardian.phone, issued_by: payload.issuedBy || 'tch-06',
+      created_at: d.today + 'T09:00:00+03:00',
+      expires_at: shiftDay(d.today, days),
+      revoked: false, uses: 0, last_used_at: null
+    };
+    d.guardian_tokens.push(row);
+    persist();
+    return resolve(Object.assign({}, row, {
+      guardian_name: guardian.name,
+      student_name: s.name,
+      url: 'portal.html?token=' + token
+    }));
+  }
+  /** Small deterministic hash, so a demo token looks like a token. */
+  function hash32(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(16).padStart(8, '0');
+  }
+
+  // GET /api/school/guardian-portal/{token}
+  /**
+   * Resolves to exactly one child. An unknown, revoked or expired token returns
+   * a state and nothing else — never a partial record, never another pupil.
+   */
+  function getGuardianPortal(token, opts) {
+    opts = opts || {};
+    var d = db();
+    var row = d.guardian_tokens.filter(function (t) { return t.token === token; })[0];
+    if (!row) {
+      return resolve({ state: PORTAL_STATES.UNKNOWN, token: token || null,
+                       message: 'This link is not one we issued. Ask the school office for a new one.' });
+    }
+    if (row.revoked) {
+      return resolve({ state: PORTAL_STATES.REVOKED, token: token,
+                       message: 'This link has been withdrawn by the school. Ask the office for a new one.' });
+    }
+    var today = opts.asOf || d.today;
+    if (row.expires_at < today) {
+      return resolve({ state: PORTAL_STATES.EXPIRED, token: token, expired_on: row.expires_at,
+                       message: 'This link expired on ' + row.expires_at +
+                                '. Reply to the school SMS or call the office for a fresh one.' });
+    }
+
+    var s = byId(d.students, row.student_id);
+    if (!s) {
+      return resolve({ state: PORTAL_STATES.UNKNOWN, token: token,
+                       message: 'This link points at a record that is no longer on the roll.' });
+    }
+    var cls = byId(d.classes, s.class_id);
+    var guardian = byId(d.guardians, row.guardian_id);
+    var term = byId(d.terms, d.current_term_id);
+
+    var invoices = d.invoices.filter(function (i) { return i.student_id === s.id; })
+      .map(function (i) {
+        var t = byId(d.terms, i.term_id);
+        return {
+          id: i.id, term_name: t ? t.name + ' ' + t.year : i.term_id,
+          items: i.items, amount_due: i.amount_due, amount_paid: i.amount_paid,
+          balance: i.balance, due_date: i.due_date, status: i.status
+        };
+      });
+    var payments = d.payments.filter(function (p) { return p.student_id === s.id; })
+      .slice().sort(function (a, b) { return a.paid_at < b.paid_at ? 1 : -1; })
+      .slice(0, 6)
+      .map(function (p) {
+        return { amount: p.amount, method: p.method, reference: p.reference || p.mpesa_code, paid_at: p.paid_at };
+      });
+
+    var attendance = d.attendance.filter(function (a) { return a.student_id === s.id; })
+      .slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var recent = attendance.slice(0, 20).reverse()
+      .map(function (a) { return { date: a.date, status: a.status }; });
+    var here = attendance.filter(function (a) { return a.status === 'present' || a.status === 'late'; }).length;
+
+    var cards = d.report_cards.filter(function (c) {
+      return c.student_id === s.id && c.status === 'published';
+    }).map(function (c) {
+      var exam = byId(d.exams, c.exam_id);
+      return {
+        exam_name: exam ? exam.name : c.exam_id,
+        total_marks: c.total_marks, average: c.average, grade: c.grade,
+        position: c.position, class_size: c.class_size,
+        teacher_comment: c.teacher_comment,
+        published_at: c.published_at,
+        subjects: d.exam_results.filter(function (r) {
+          return r.student_id === s.id && r.exam_id === c.exam_id && r.verified;
+        }).map(function (r) {
+          var sub = byId(d.subjects, r.subject_id);
+          return { subject_name: sub ? sub.name : r.subject_id, score: r.score, grade: r.grade, remark: r.remark };
+        }).sort(function (a, b) { return a.subject_name.localeCompare(b.subject_name); })
+      };
+    });
+
+    row.uses += 1;
+    row.last_used_at = today + 'T00:00:00+03:00';
+    persist();
+
+    return resolve({
+      state: PORTAL_STATES.OK,
+      token: token,
+      expires_at: row.expires_at,
+      school: { name: d.school.name, phone: d.school.phone, email: d.school.email,
+                paybill: d.school.paybill, address: d.school.address, motto: d.school.motto },
+      term_name: term ? term.name + ' ' + term.year : '—',
+      guardian: guardian ? { name: guardian.name, relationship: guardian.relationship } : null,
+      student: {
+        id: s.id, name: s.name, admission_no: s.admission_no,
+        class_name: cls ? cls.full_name : '—'
+      },
+      fees: {
+        invoices: invoices, payments: payments,
+        balance: invoices.reduce(function (n, i) { return n + i.balance; }, 0),
+        invoiced: invoices.reduce(function (n, i) { return n + i.amount_due; }, 0),
+        paid: invoices.reduce(function (n, i) { return n + i.amount_paid; }, 0)
+      },
+      attendance: {
+        recent: recent, days: attendance.length,
+        percentage: attendance.length ? here / attendance.length * 100 : null
+      },
+      results: cards
+    });
+  }
+
+  // GET /api/school/{school_id}/students/{student_id}/guardian-tokens
+  function listGuardianTokens(schoolId, studentId) {
+    var d = db();
+    var rows = d.guardian_tokens.filter(function (t) {
+      return t.school_id === schoolId && t.student_id === studentId;
+    }).map(function (t) {
+      var g = byId(d.guardians, t.guardian_id);
+      return Object.assign({}, t, {
+        guardian_name: g ? g.name : '—',
+        active: !t.revoked && t.expires_at >= d.today,
+        url: 'portal.html?token=' + t.token
+      });
+    });
+    return resolve(rows);
+  }
+
   global.DemoBackend = {
     // people
     listStudents: listStudents,
@@ -2678,6 +3202,25 @@
     getReportCard: getReportCard,
     updateReportCard: updateReportCard,
     publishReportCardsFor: publishReportCardsFor,
+    // teacher scope
+    listTeacherClasses: listTeacherClasses,
+    getTeacherTimetable: getTeacherTimetable,
+    getTeacherDashboard: getTeacherDashboard,
+    getTeacherRegister: getTeacherRegister,
+    markTeacherAttendance: markTeacherAttendance,
+    getTeacherMarkSheet: getTeacherMarkSheet,
+    saveTeacherResults: saveTeacherResults,
+    // parent scope
+    listMyChildren: listMyChildren,
+    getChildFees: getChildFees,
+    getChildAttendance: getChildAttendance,
+    getChildResults: getChildResults,
+    getGuardianMessages: getGuardianMessages,
+    // guardian portal
+    issueGuardianToken: issueGuardianToken,
+    listGuardianTokens: listGuardianTokens,
+    getGuardianPortal: getGuardianPortal,
+    PORTAL_STATES: PORTAL_STATES,
     // waivers
     listWaiverRows: listWaiverRows,
     approveWaiver: approveWaiver,

@@ -262,8 +262,10 @@
       var female = chance(0.55);
       var rel = i === 0 ? (female ? 'Mother' : 'Father') : pick(RELATIONS);
       var gname = (female ? pick(FIRST_F) : pick(FIRST_M)) + ' ' + surname;
+      var gid = 'gdn-' + String(gSeq++).padStart(5, '0');
       guardians.push({
-        id: 'gdn-' + String(gSeq++).padStart(5, '0'),
+        id: gid,
+        person_id: 'per-' + gid.slice(4),   // one row per child; person_id is the human
         school_id: SCHOOL_ID,
         student_id: s.id,
         name: gname,
@@ -278,6 +280,47 @@
     }
   });
   // the student record mirrors its primary guardian, for lists that need one line
+  students.forEach(function (s) {
+    var primary = guardians.filter(function (g) { return g.student_id === s.id && g.is_primary; })[0];
+    s.guardian_name = primary.name;
+    s.guardian_phone = primary.phone;
+    s.guardian_relation = primary.relationship;
+  });
+
+  /*
+   * One guardian with three children, so the parent portal has something real to
+   * switch between. Their rows share a person_id — the guardian table is keyed
+   * per child, and person_id is what says "this is the same human".
+   */
+  var DEMO_PARENT = {
+    person_id: 'per-demo-parent',
+    name: 'Mercy Ouma',
+    email: 'mercy.ouma@gmail.com',
+    phone: '0722 418 067',
+    occupation: 'Trader'
+  };
+  var demoChildren = ['cls-g4e', 'cls-g7e', 'cls-g9e'].map(function (classId) {
+    return students.filter(function (s) { return s.class_id === classId; })[1];
+  });
+  demoChildren.forEach(function (child, i) {
+    guardians.forEach(function (g) {
+      if (g.student_id === child.id) g.is_primary = false;
+    });
+    guardians.push({
+      id: 'gdn-demo-' + (i + 1),
+      person_id: DEMO_PARENT.person_id,
+      school_id: SCHOOL_ID,
+      student_id: child.id,
+      name: DEMO_PARENT.name,
+      relationship: 'Mother',
+      phone: DEMO_PARENT.phone,
+      email: DEMO_PARENT.email,
+      is_primary: true,
+      is_emergency: true,
+      occupation: DEMO_PARENT.occupation
+    });
+  });
+  // re-mirror, because three primaries just moved
   students.forEach(function (s) {
     var primary = guardians.filter(function (g) { return g.student_id === s.id && g.is_primary; })[0];
     s.guardian_name = primary.name;
@@ -549,9 +592,10 @@
   });
 
   // ── report cards ──────────────────────────────────────────────────────
-  // Positions are dense-ranked by average descending: ties share a position and
-  // the next distinct average takes the position after it, so a class of 30 with
-  // one tie at the top runs 1, 1, 2, 3 rather than 1, 1, 3, 4.
+  // Positions use competition ranking on the average, descending: ties share a
+  // position and the ranks they consumed are skipped, so a class with one tie at
+  // the top runs 1, 1, 3, 4. Dense ranking would call the third pupil second,
+  // with two pupils ahead of them on the sheet.
   var TEACHER_REMARKS = [
     'A steady term. Keep the reading going over the holiday.',
     'Much improved on last term — the effort is showing.',
@@ -592,11 +636,12 @@
       };
     });
 
-    // dense rank on the rounded average, so what is printed is what is ranked
+    // ranked on the rounded average, so what is printed is what is ranked
     var ordered = cards.slice().sort(function (a, b) { return b.average - a.average; });
-    var position = 0, previous = null;
+    var position = 0, previous = null, seen = 0;
     ordered.forEach(function (card) {
-      if (previous === null || card.average !== previous) { position += 1; previous = card.average; }
+      seen += 1;
+      if (previous === null || card.average !== previous) { position = seen; previous = card.average; }
       card.position = position;
     });
     cards.forEach(function (card) {
@@ -609,6 +654,44 @@
   });
 
   // ── fee waivers ───────────────────────────────────────────────────────
+  // ── timetable ─────────────────────────────────────────────────────────
+  var DAYS_OF_WEEK = [
+    { day: 1, name: 'Monday' }, { day: 2, name: 'Tuesday' }, { day: 3, name: 'Wednesday' },
+    { day: 4, name: 'Thursday' }, { day: 5, name: 'Friday' }
+  ];
+  var PERIODS = [
+    { period: 1, starts_at: '08:00', ends_at: '08:40' },
+    { period: 2, starts_at: '08:40', ends_at: '09:20' },
+    { period: 3, starts_at: '09:20', ends_at: '10:00' },
+    { period: 4, starts_at: '10:30', ends_at: '11:10' },
+    { period: 5, starts_at: '11:10', ends_at: '11:50' },
+    { period: 6, starts_at: '11:50', ends_at: '12:30' },
+    { period: 7, starts_at: '14:00', ends_at: '14:40' },
+    { period: 8, starts_at: '14:40', ends_at: '15:20' }
+  ];
+  var timetable = [];
+  var tSeq = 1;
+  classes.forEach(function (c) {
+    var mine = assignments.filter(function (a) { return a.class_id === c.id; });
+    if (!mine.length) return;
+    var cursor = 0;
+    DAYS_OF_WEEK.forEach(function (d) {
+      PERIODS.forEach(function (p) {
+        if (p.period > 6) return;               // afternoons are games, clubs and prep
+        var a = mine[cursor % mine.length];
+        cursor++;
+        timetable.push({
+          id: 'tt-' + String(tSeq++).padStart(5, '0'),
+          school_id: SCHOOL_ID, term_id: TERM_ID,
+          class_id: c.id, subject_id: a.subject_id, teacher_id: a.teacher_id,
+          day: d.day, day_name: d.name,
+          period: p.period, starts_at: p.starts_at, ends_at: p.ends_at,
+          room: c.room
+        });
+      });
+    });
+  });
+
   // ── discipline incidents ──────────────────────────────────────────────
   var DISC = [
     ['lateness', 'Arrived after the second bell for the third time this week.'],
@@ -682,6 +765,36 @@
       ACCOUNTS.bursary_expense, ACCOUNTS.fees_receivable, w.amount);
   });
 
+  // ── guardian portal tokens ────────────────────────────────────────────
+  // The tokenised surface a guardian reaches from an SMS link: one token, one
+  // child, an expiry. An expired token must render an expiry state and no data.
+  var guardianTokens = [
+    { token: 'gp-live-4f21c8a9', school_id: SCHOOL_ID,
+      student_id: demoChildren[0].id, guardian_id: 'gdn-demo-1',
+      issued_to: DEMO_PARENT.phone, issued_by: 'tch-06',
+      created_at: '2026-08-14T09:00:00+03:00', expires_at: '2026-09-30',
+      revoked: false, uses: 6, last_used_at: '2026-08-19T18:22:00+03:00' },
+    { token: 'gp-live-b7d3e015', school_id: SCHOOL_ID,
+      student_id: demoChildren[1].id, guardian_id: 'gdn-demo-2',
+      issued_to: DEMO_PARENT.phone, issued_by: 'tch-06',
+      created_at: '2026-08-14T09:00:00+03:00', expires_at: '2026-09-30',
+      revoked: false, uses: 2, last_used_at: '2026-08-16T07:40:00+03:00' },
+    { token: 'gp-expired-91aa20d4', school_id: SCHOOL_ID,
+      student_id: students[0].id, guardian_id: guardians.filter(function (g) {
+        return g.student_id === students[0].id && g.is_primary;
+      })[0].id,
+      issued_to: students[0].guardian_phone, issued_by: 'tch-06',
+      created_at: '2026-05-06T09:00:00+03:00', expires_at: '2026-06-01',
+      revoked: false, uses: 11, last_used_at: '2026-05-30T12:04:00+03:00' },
+    { token: 'gp-revoked-3c8f7e62', school_id: SCHOOL_ID,
+      student_id: students[1].id, guardian_id: guardians.filter(function (g) {
+        return g.student_id === students[1].id && g.is_primary;
+      })[0].id,
+      issued_to: students[1].guardian_phone, issued_by: 'tch-06',
+      created_at: '2026-07-01T09:00:00+03:00', expires_at: '2026-12-01',
+      revoked: true, uses: 3, last_used_at: '2026-07-20T15:11:00+03:00' }
+  ];
+
   // ── announcements & events ────────────────────────────────────────────
   var announcements = [
     { id: 'ann-1', school_id: SCHOOL_ID, title: 'Term 2 closing date confirmed',
@@ -740,6 +853,11 @@
     report_cards: reportCards,
     waivers: waivers,
     discipline: discipline,
+    timetable: timetable,
+    periods: PERIODS,
+    days_of_week: DAYS_OF_WEEK,
+    guardian_tokens: guardianTokens,
+    demo_parent: DEMO_PARENT,
     accounts: ACCOUNTS,
     journal_lines: journalLines,
     grading_scale: gradingScale,

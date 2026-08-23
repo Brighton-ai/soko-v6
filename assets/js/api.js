@@ -355,6 +355,81 @@
   }
 
   // ════════════════════════════════════════════════════════════════════
+  // TEACHER SCOPE
+  // ════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/classes
+  async function listTeacherClasses(schoolId, teacherId) {
+    return BACKEND.listTeacherClasses(schoolId, teacherId);
+  }
+  // GET /api/school/{school_id}/teachers/{teacher_id}/timetable
+  async function getTeacherTimetable(schoolId, teacherId, opts) {
+    return BACKEND.getTeacherTimetable(schoolId, teacherId, opts);
+  }
+  // GET /api/school/{school_id}/teachers/{teacher_id}/dashboard
+  async function getTeacherDashboard(schoolId, teacherId, opts) {
+    return BACKEND.getTeacherDashboard(schoolId, teacherId, opts);
+  }
+  // GET /api/school/{school_id}/teachers/{teacher_id}/classes/{class_id}/register
+  async function getTeacherRegister(schoolId, teacherId, classId, opts) {
+    return BACKEND.getTeacherRegister(schoolId, teacherId, classId, opts);
+  }
+  // POST /api/school/{school_id}/teachers/{teacher_id}/classes/{class_id}/attendance
+  async function markTeacherAttendance(schoolId, teacherId, classId, payload) {
+    return BACKEND.markTeacherAttendance(schoolId, teacherId, classId, payload);
+  }
+  // GET /api/school/{school_id}/teachers/{teacher_id}/exams/{exam_id}/mark-sheet
+  async function getTeacherMarkSheet(schoolId, teacherId, examId, opts) {
+    return BACKEND.getTeacherMarkSheet(schoolId, teacherId, examId, opts);
+  }
+  // PUT /api/school/{school_id}/teachers/{teacher_id}/exams/{exam_id}/results
+  async function saveTeacherResults(schoolId, teacherId, examId, payload) {
+    return BACKEND.saveTeacherResults(schoolId, teacherId, examId, payload);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // PARENT SCOPE
+  // ════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/guardians/{person_id}/children
+  async function listMyChildren(schoolId, personId) {
+    return BACKEND.listMyChildren(schoolId, personId);
+  }
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/fees
+  async function getChildFees(schoolId, personId, studentId) {
+    return BACKEND.getChildFees(schoolId, personId, studentId);
+  }
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/attendance
+  async function getChildAttendance(schoolId, personId, studentId, opts) {
+    return BACKEND.getChildAttendance(schoolId, personId, studentId, opts);
+  }
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/results
+  async function getChildResults(schoolId, personId, studentId) {
+    return BACKEND.getChildResults(schoolId, personId, studentId);
+  }
+  // GET /api/school/{school_id}/guardians/{person_id}/messages
+  async function getGuardianMessages(schoolId, personId) {
+    return BACKEND.getGuardianMessages(schoolId, personId);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // GUARDIAN PORTAL
+  // ════════════════════════════════════════════════════════════════════
+
+  // POST /api/school/{school_id}/students/{student_id}/guardian-token
+  async function issueGuardianToken(schoolId, studentId, payload) {
+    return BACKEND.issueGuardianToken(schoolId, studentId, payload);
+  }
+  // GET /api/school/{school_id}/students/{student_id}/guardian-tokens
+  async function listGuardianTokens(schoolId, studentId) {
+    return BACKEND.listGuardianTokens(schoolId, studentId);
+  }
+  // GET /api/school/guardian-portal/{token}
+  async function getGuardianPortal(token, opts) {
+    return BACKEND.getGuardianPortal(token, opts);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
   // ADAPTER PASS-THROUGHS
   // Not routes. These exist because the demo runs without a server: the
   // store has to be resettable and inspectable. In step 5 they go with
@@ -441,11 +516,28 @@
     updateReportCard: updateReportCard,
     publishReportCardsFor: publishReportCardsFor,
 
+    listTeacherClasses: listTeacherClasses,
+    getTeacherTimetable: getTeacherTimetable,
+    getTeacherDashboard: getTeacherDashboard,
+    getTeacherRegister: getTeacherRegister,
+    markTeacherAttendance: markTeacherAttendance,
+    getTeacherMarkSheet: getTeacherMarkSheet,
+    saveTeacherResults: saveTeacherResults,
+    listMyChildren: listMyChildren,
+    getChildFees: getChildFees,
+    getChildAttendance: getChildAttendance,
+    getChildResults: getChildResults,
+    getGuardianMessages: getGuardianMessages,
+    issueGuardianToken: issueGuardianToken,
+    listGuardianTokens: listGuardianTokens,
+    getGuardianPortal: getGuardianPortal,
+
     // constants the backend owns; re-exported so pages read one source
     CSV_COLUMNS: BACKEND.CSV_COLUMNS,
     MAX_REMINDERS: BACKEND.MAX_REMINDERS,
     EXAM_TYPES: BACKEND.EXAM_TYPES,
     validateBands: BACKEND.validateBands,
+    PORTAL_STATES: BACKEND.PORTAL_STATES,
     STORE_KEY: BACKEND.STORE_KEY,
 
     // demo-only adapter hooks

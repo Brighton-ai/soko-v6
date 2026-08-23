@@ -29,83 +29,60 @@
   var ROLE_NAV = {
     admin: [
       { group: 'overview', label: 'Overview', items: [
-        { label: 'Dashboard', icon: 'dashboard', href: 'dashboard.html' }
-      ] },
+        { label: 'Dashboard', icon: 'dashboard', href: 'dashboard.html' } ] },
       { group: 'people', label: 'People', items: [
         { label: 'Students', icon: 'students', href: 'students.html' },
-        { label: 'Classes & streams', icon: 'classes', step: '5' },
-        { label: 'Teachers', icon: 'teachers', step: '5' }
-      ] },
+        { label: 'Classes & streams', icon: 'classes', step: 'later' },
+        { label: 'Teachers', icon: 'teachers', step: 'later' } ] },
       { group: 'fees', label: 'Fees', items: [
         { label: 'Invoices', icon: 'invoices', href: 'invoices.html' },
         { label: 'Payments', icon: 'payments', href: 'payments.html' },
         { label: 'Defaulters', icon: 'defaulters', href: 'defaulters.html' },
         { label: 'Fee structures', icon: 'structures', href: 'fee-structures.html' },
-        { label: 'Waivers', icon: 'waivers', href: 'waivers.html' }
-      ] },
+        { label: 'Waivers', icon: 'waivers', href: 'waivers.html' } ] },
       { group: 'academics', label: 'Academics', items: [
-        { label: 'Exams', icon: 'exams', step: '4' },
-        { label: 'Results', icon: 'results', step: '4' },
-        { label: 'Report cards', icon: 'reports', step: '4' },
-        { label: 'Grading scales', icon: 'grading', step: '4' }
-      ] },
+        { label: 'Exams', icon: 'exams', href: 'exams.html' },
+        { label: 'Results', icon: 'results', href: 'results.html' },
+        { label: 'Report cards', icon: 'reports', href: 'report-cards.html' },
+        { label: 'Grading scales', icon: 'grading', href: 'grading-scales.html' } ] },
       { group: 'daily', label: 'Daily', items: [
-        { label: 'Attendance', icon: 'attendance', step: '4' },
-        { label: 'Timetable', icon: 'timetable', step: '5' }
-      ] },
+        { label: 'Attendance', icon: 'attendance', href: 'attendance.html' },
+        { label: 'Timetable', icon: 'timetable', step: 'later' } ] },
       { group: 'facilities', label: 'Facilities', items: [
-        { label: 'Boarding', icon: 'boarding', step: '5' },
-        { label: 'Transport', icon: 'transport', step: '5' },
-        { label: 'Library', icon: 'library', step: '5' }
-      ] },
+        { label: 'Boarding', icon: 'boarding', step: 'later' },
+        { label: 'Transport', icon: 'transport', step: 'later' },
+        { label: 'Library', icon: 'library', step: 'later' } ] },
       { group: 'communication', label: 'Communication', items: [
-        { label: 'Announcements', icon: 'announcements', step: '5' },
-        { label: 'Events', icon: 'events', step: '5' }
-      ] },
+        { label: 'Announcements', icon: 'announcements', step: 'later' },
+        { label: 'Events', icon: 'events', step: 'later' } ] },
       { group: 'admin', label: 'Admin', items: [
-        { label: 'Reports', icon: 'analytics', step: '5' },
-        { label: 'Settings', icon: 'settings', step: '5' }
-      ] }
+        { label: 'Reports', icon: 'analytics', step: 'later' },
+        { label: 'Settings', icon: 'settings', step: 'later' } ] }
     ],
 
     teacher: [
       { group: 'overview', label: 'Overview', items: [
-        { label: 'My day', icon: 'dashboard', step: '5' }
-      ] },
+        { label: 'My day', icon: 'dashboard', href: 'teacher/dashboard.html' } ] },
       { group: 'classes', label: 'My classes', items: [
-        { label: 'My register', icon: 'attendance', step: '5' },
-        { label: 'My pupils', icon: 'students', step: '5' },
-        { label: 'My timetable', icon: 'timetable', step: '5' }
-      ] },
+        { label: 'My register', icon: 'attendance', href: 'teacher/register.html' },
+        { label: 'My timetable', icon: 'timetable', href: 'teacher/timetable.html' } ] },
       { group: 'marks', label: 'Marks', items: [
-        { label: 'Enter marks', icon: 'exams', step: '5' },
-        { label: 'My subjects', icon: 'results', step: '5' },
-        { label: 'Comments', icon: 'reports', step: '5' }
-      ] },
+        { label: 'Enter marks', icon: 'exams', href: 'teacher/marks.html' } ] },
       { group: 'communication', label: 'Communication', items: [
-        { label: 'Announcements', icon: 'announcements', step: '5' },
-        { label: 'Message guardians', icon: 'events', step: '5' }
-      ] }
+        { label: 'Announcements', icon: 'announcements', step: 'later' },
+        { label: 'Message guardians', icon: 'events', step: 'later' } ] }
     ],
 
     parent: [
       { group: 'overview', label: 'Overview', items: [
-        { label: 'My children', icon: 'students', step: '5' }
-      ] },
+        { label: 'My children', icon: 'students', href: 'parent/index.html' } ] },
       { group: 'money', label: 'Money', items: [
-        { label: 'My fees', icon: 'invoices', step: '5' },
-        { label: 'Payment history', icon: 'payments', step: '5' },
-        { label: 'Pay on M-Pesa', icon: 'structures', step: '5' }
-      ] },
+        { label: 'Fee statement', icon: 'invoices', href: 'parent/fees.html' } ] },
       { group: 'progress', label: 'Progress', items: [
-        { label: 'Results', icon: 'results', step: '5' },
-        { label: 'Report cards', icon: 'reports', step: '5' },
-        { label: 'Attendance', icon: 'attendance', step: '5' }
-      ] },
+        { label: 'Results', icon: 'results', href: 'parent/results.html' },
+        { label: 'Attendance', icon: 'attendance', href: 'parent/attendance.html' } ] },
       { group: 'school', label: 'School', items: [
-        { label: 'Announcements', icon: 'announcements', step: '5' },
-        { label: 'Term calendar', icon: 'events', step: '5' }
-      ] }
+        { label: 'Messages', icon: 'announcements', href: 'parent/messages.html' } ] }
     ]
   };
 
@@ -113,9 +90,9 @@
 
   /** Demo identities. Step 4 replaces this with the session from the API. */
   var ROLE_USER = {
-    admin:   { name: 'Jane Wanjiru',    email: 'jane.wanjiru@riverside.ac.ke' },
-    teacher: { name: 'Samuel Kariuki',  email: 'samuel.kariuki@riverside.ac.ke' },
-    parent:  { name: 'Mercy Ouma',      email: 'mercy.ouma@gmail.com' }
+    admin:   { id: 'tch-06', name: 'Jane Wanjiru',   email: 'jane.wanjiru@riverside.ac.ke' },
+    teacher: { id: 'tch-04', name: 'Samuel Kariuki', email: 'samuel.kariuki@riverside.ac.ke' },
+    parent:  { id: 'gdn-demo', name: 'Mercy Ouma',   email: 'mercy.ouma@gmail.com' }
   };
 
   var STORAGE_KEY = 'shule.role';
@@ -175,28 +152,39 @@
       (ICONS[key] || ICONS.dashboard) + '</svg>';
   }
 
+  /** The page's path relative to app/, e.g. 'teacher/marks.html'. */
   function currentPage() {
-    var parts = global.location.pathname.split('/');
-    return parts[parts.length - 1] || 'dashboard.html';
+    var parts = global.location.pathname.split('/').filter(Boolean);
+    var at = parts.lastIndexOf('app');
+    var rest = at === -1 ? parts.slice(-1) : parts.slice(at + 1);
+    return rest.join('/') || 'dashboard.html';
+  }
+
+  /** How many `../` this page needs to climb back to app/. */
+  function upToApp() {
+    var depth = currentPage().split('/').length - 1;
+    return depth > 0 ? new Array(depth + 1).join('../') : '';
   }
 
   function renderNav(role) {
     var host = doc.getElementById('sidenav');
     if (!host) return;
-    var here = currentPage();
+    var here = currentPage(), climb = upToApp();
     host.innerHTML = (ROLE_NAV[role] || ROLE_NAV.admin).map(function (g) {
       var items = g.items.map(function (it) {
         var body = icon(it.icon) + '<span>' + it.label + '</span>';
         if (it.step) {
           return '<li><a href="#" data-step="' + it.step + '">' + body +
-            '<span class="navg__soon">Step ' + it.step + '</span></a></li>';
+            '<span class="navg__soon">' +
+            (it.step === 'later' ? 'Planned' : 'Step ' + it.step) + '</span></a></li>';
         }
         var cur = it.href === here ? ' aria-current="page"' : '';
-        return '<li><a href="' + it.href + '"' + cur + '>' + body + '</a></li>';
+        return '<li><a href="' + climb + it.href + '"' + cur + '>' + body + '</a></li>';
       }).join('');
       return '<div class="navg" data-group="' + g.group + '">' +
         '<p class="navg__t">' + g.label + '</p><ul>' + items + '</ul></div>';
     }).join('');
+    host.setAttribute('data-nav-role', role);
   }
 
   /**
@@ -206,7 +194,12 @@
   function applyRole(role) {
     var known = ROLE_NAV[role] ? role : 'admin';
     doc.body.setAttribute('data-role', known);
-    if (known !== 'admin') renderNav(known);
+    // The nav stamped into the page is used as-is when it already matches the
+    // signed-in role. Anything else is re-rendered: navigation follows who you
+    // are, not which directory the page happens to live in.
+    var host = doc.getElementById('sidenav');
+    var stamped = host ? host.getAttribute('data-nav-role') : null;
+    if (host && stamped !== known) renderNav(known);
     var user = ROLE_USER[known] || ROLE_USER.admin;
     bind('user-name', user.name);
     bind('user-email', user.email);
@@ -373,7 +366,9 @@
     SCHOOL_ID: SCHOOL_ID,
     STORAGE_KEY: STORAGE_KEY,
     ROLE_NAV: ROLE_NAV,
+    ROLE_USER: ROLE_USER,
     renderNav: renderNav,
+    currentPage: currentPage,
     ROLE_LABEL: ROLE_LABEL,
     readRole: readRole,
     writeRole: writeRole,
