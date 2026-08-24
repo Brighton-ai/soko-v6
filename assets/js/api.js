@@ -26,11 +26,11 @@
   async function listStudents(schoolId, opts) {
     return BACKEND.listStudents(schoolId, opts);
   }
-  // GET /api/school/{school_id}/students/{student_id}
+  // GET /api/school/students/{student_id}
   async function getStudent(schoolId, studentId) {
     return BACKEND.getStudent(schoolId, studentId);
   }
-  // POST /api/school/{school_id}/students
+  // POST /api/school/students
   async function createStudent(schoolId, payload) {
     return BACKEND.createStudent(schoolId, payload);
   }
@@ -46,15 +46,15 @@
   async function listSubjects(schoolId, opts) {
     return BACKEND.listSubjects(schoolId, opts);
   }
-  // GET /api/school/{school_id}/fee-structures
+  // GET /api/school/fee-structures?school_id=
   async function listFeeStructures(schoolId, opts) {
     return BACKEND.listFeeStructures(schoolId, opts);
   }
-  // GET /api/school/{school_id}/fee-invoices
+  // GET /api/school/fee-invoices?school_id=
   async function listFeeInvoices(schoolId, opts) {
     return BACKEND.listFeeInvoices(schoolId, opts);
   }
-  // GET /api/school/{school_id}/fee-invoices/defaulters
+  // GET /api/school/defaulters?school_id=&threshold_days=
   async function listDefaulters(schoolId, opts) {
     return BACKEND.listDefaulters(schoolId, opts);
   }
@@ -70,11 +70,12 @@
   async function getDailyCollections(schoolId, opts) {
     return BACKEND.getDailyCollections(schoolId, opts);
   }
-  // POST /api/school/{school_id}/fee-invoices/{invoice_id}/payments
+  // POST /api/school/fee-invoices/{invoice_id}/pay-with-journal
+  // NOT /pay: school.py:807 records the money and posts nothing to the ledger
   async function recordPayment(schoolId, invoiceId, payload) {
     return BACKEND.recordPayment(schoolId, invoiceId, payload);
   }
-  // POST /api/school/{school_id}/fee-invoices/reminders
+  // POST /api/school/notifications/fee-reminder
   async function sendFeeReminders(schoolId, opts) {
     return BACKEND.sendFeeReminders(schoolId, opts);
   }
@@ -86,7 +87,7 @@
   async function listWaivers(schoolId, opts) {
     return BACKEND.listWaivers(schoolId, opts);
   }
-  // GET /api/school/{school_id}/attendance
+  // GET /api/school/attendance/report?school_id=
   async function listAttendance(schoolId, opts) {
     return BACKEND.listAttendance(schoolId, opts);
   }
@@ -94,15 +95,15 @@
   async function getRegisterStatus(schoolId, opts) {
     return BACKEND.getRegisterStatus(schoolId, opts);
   }
-  // POST /api/school/{school_id}/classes/{class_id}/attendance
+  // POST /api/school/attendance/mark
   async function markAttendance(schoolId, classId, payload) {
     return BACKEND.markAttendance(schoolId, classId, payload);
   }
-  // GET /api/school/{school_id}/exams
+  // GET /api/school/exams?school_id=
   async function listExams(schoolId, opts) {
     return BACKEND.listExams(schoolId, opts);
   }
-  // GET /api/school/{school_id}/exams/{exam_id}/results
+  // GET /api/school/exams/{exam_id}/results
   async function listExamResults(schoolId, examId, opts) {
     return BACKEND.listExamResults(schoolId, examId, opts);
   }
@@ -114,15 +115,15 @@
   async function publishReportCards(schoolId, payload) {
     return BACKEND.publishReportCards(schoolId, payload);
   }
-  // GET /api/school/{school_id}/grading-scales
+  // GET /api/school/grading-scales?school_id=
   async function listGradingScales(schoolId) {
     return BACKEND.listGradingScales(schoolId);
   }
-  // GET /api/school/{school_id}/announcements
+  // GET /api/school/announcements?school_id=
   async function listAnnouncements(schoolId, opts) {
     return BACKEND.listAnnouncements(schoolId, opts);
   }
-  // GET /api/school/{school_id}/events
+  // GET /api/school/events?school_id=
   async function listEvents(schoolId, opts) {
     return BACKEND.listEvents(schoolId, opts);
   }
@@ -138,19 +139,19 @@
   async function searchStudents(schoolId, opts) {
     return BACKEND.searchStudents(schoolId, opts);
   }
-  // PATCH /api/school/{school_id}/students/{student_id}
+  // PUT /api/school/students/{student_id}
   async function updateStudent(schoolId, studentId, payload) {
     return BACKEND.updateStudent(schoolId, studentId, payload);
   }
-  // POST /api/school/{school_id}/students/promote
+  // POST /api/school/students/{student_id}/promote
   async function promoteStudents(schoolId, payload) {
     return BACKEND.promoteStudents(schoolId, payload);
   }
-  // POST /api/school/{school_id}/students/{student_id}/transfer
+  // POST /api/school/students/{student_id}/transfer-out
   async function transferStudent(schoolId, studentId, payload) {
     return BACKEND.transferStudent(schoolId, studentId, payload);
   }
-  // POST /api/school/{school_id}/students/import
+  // POST /api/school/{school_id}/students/import  (multipart, school.py:2242)
   async function importStudentsCSV(schoolId, csvText, opts) {
     return BACKEND.importStudentsCSV(schoolId, csvText, opts);
   }
@@ -162,11 +163,11 @@
   async function sendMessage(schoolId, payload) {
     return BACKEND.sendMessage(schoolId, payload);
   }
-  // GET /api/school/{school_id}/students/{student_id}/guardians
+  // GET /api/school/students/{student_id}/guardians
   async function listGuardians(schoolId, studentId) {
     return BACKEND.listGuardians(schoolId, studentId);
   }
-  // POST /api/school/{school_id}/students/{student_id}/guardians
+  // POST /api/school/students/{student_id}/guardians
   async function addGuardian(schoolId, studentId, payload) {
     return BACKEND.addGuardian(schoolId, studentId, payload);
   }
@@ -182,11 +183,11 @@
   async function removeGuardian(schoolId, guardianId) {
     return BACKEND.removeGuardian(schoolId, guardianId);
   }
-  // GET /api/school/{school_id}/students/{student_id}/discipline
+  // GET /api/school/students/{student_id}/discipline
   async function listDiscipline(schoolId, opts) {
     return BACKEND.listDiscipline(schoolId, opts);
   }
-  // POST /api/school/{school_id}/students/{student_id}/discipline
+  // POST /api/school/students/{student_id}/discipline
   async function addDiscipline(schoolId, studentId, payload) {
     return BACKEND.addDiscipline(schoolId, studentId, payload);
   }
@@ -210,11 +211,11 @@
   async function listInvoiceRows(schoolId, opts) {
     return BACKEND.listInvoiceRows(schoolId, opts);
   }
-  // POST /api/school/{school_id}/fee-invoices/bulk-generate?dry_run=true
+  // POST /api/school/fee-invoices/bulk-generate
   async function bulkGenerateInvoices(schoolId, payload) {
     return BACKEND.bulkGenerateInvoices(schoolId, payload);
   }
-  // GET /api/school/{school_id}/payments/{payment_id}/receipt
+  // GET /api/school/fee-invoices/{invoice_id}/receipt
   async function getReceipt(schoolId, paymentId) {
     return BACKEND.getReceipt(schoolId, paymentId);
   }
@@ -234,7 +235,7 @@
   async function listDefaulterRows(schoolId, opts) {
     return BACKEND.listDefaulterRows(schoolId, opts);
   }
-  // POST /api/school/{school_id}/fee-invoices/reminders
+  // POST /api/school/notifications/fee-reminder
   async function sendRemindersFor(schoolId, payload) {
     return BACKEND.sendRemindersFor(schoolId, payload);
   }
@@ -258,7 +259,7 @@
   async function listGradingScaleRows(schoolId, opts) {
     return BACKEND.listGradingScaleRows(schoolId, opts);
   }
-  // POST /api/school/{school_id}/grading-scales
+  // POST /api/school/grading-scales  (+ /grading-scales/{id}/bands per band)
   async function createGradingScale(schoolId, payload) {
     return BACKEND.createGradingScale(schoolId, payload);
   }
@@ -283,11 +284,11 @@
   async function getClassRegister(schoolId, classId, opts) {
     return BACKEND.getClassRegister(schoolId, classId, opts);
   }
-  // GET /api/school/{school_id}/attendance/report
+  // GET /api/school/attendance/report?school_id=
   async function getAttendanceReport(schoolId, opts) {
     return BACKEND.getAttendanceReport(schoolId, opts);
   }
-  // GET /api/school/{school_id}/attendance/absentees
+  // GET /api/school/attendance/absentees?school_id=&date=
   async function getAbsentees(schoolId, opts) {
     return BACKEND.getAbsentees(schoolId, opts);
   }
@@ -300,7 +301,7 @@
   async function listExamRows(schoolId, opts) {
     return BACKEND.listExamRows(schoolId, opts);
   }
-  // POST /api/school/{school_id}/exams
+  // POST /api/school/exams
   async function createExam(schoolId, payload) {
     return BACKEND.createExam(schoolId, payload);
   }
@@ -308,11 +309,11 @@
   async function updateExam(schoolId, examId, payload) {
     return BACKEND.updateExam(schoolId, examId, payload);
   }
-  // GET /api/school/{school_id}/exams/{exam_id}/mark-sheet
+  // GET /api/school/exams/{exam_id}/results?class_id=&subject_id=
   async function getMarkSheet(schoolId, examId, opts) {
     return BACKEND.getMarkSheet(schoolId, examId, opts);
   }
-  // PUT /api/school/{school_id}/exams/{exam_id}/results
+  // POST /api/school/exams/{exam_id}/results
   async function saveExamResults(schoolId, examId, payload) {
     return BACKEND.saveExamResults(schoolId, examId, payload);
   }
@@ -320,11 +321,11 @@
   async function verifyExamResults(schoolId, examId, payload) {
     return BACKEND.verifyExamResults(schoolId, examId, payload);
   }
-  // GET /api/school/{school_id}/exams/{exam_id}/analysis
+  // GET /api/school/exams/{exam_id}/class-analysis
   async function getClassAnalysis(schoolId, examId, opts) {
     return BACKEND.getClassAnalysis(schoolId, examId, opts);
   }
-  // GET /api/school/{school_id}/exams/{exam_id}/merit-list
+  // GET /api/school/exams/{exam_id}/merit-list
   async function getMeritList(schoolId, examId, opts) {
     return BACKEND.getMeritList(schoolId, examId, opts);
   }
@@ -333,15 +334,15 @@
   // REPORT CARDS
   // ════════════════════════════════════════════════════════════════════
 
-  // POST /api/school/{school_id}/report-cards/generate
+  // POST /api/school/report-cards
   async function generateReportCards(schoolId, payload) {
     return BACKEND.generateReportCards(schoolId, payload);
   }
-  // GET /api/school/{school_id}/report-cards
+  // GET /api/school/report-cards?school_id=
   async function listReportCardRows(schoolId, opts) {
     return BACKEND.listReportCardRows(schoolId, opts);
   }
-  // GET /api/school/{school_id}/report-cards/{card_id}
+  // GET /api/school/report-cards/{card_id}
   async function getReportCard(schoolId, cardId) {
     return BACKEND.getReportCard(schoolId, cardId);
   }
@@ -362,7 +363,7 @@
   async function listTeacherClasses(schoolId, teacherId) {
     return BACKEND.listTeacherClasses(schoolId, teacherId);
   }
-  // GET /api/school/{school_id}/teachers/{teacher_id}/timetable
+  // GET /api/school/timetable?school_id=&teacher_id=
   async function getTeacherTimetable(schoolId, teacherId, opts) {
     return BACKEND.getTeacherTimetable(schoolId, teacherId, opts);
   }
@@ -416,7 +417,7 @@
   // GUARDIAN PORTAL
   // ════════════════════════════════════════════════════════════════════
 
-  // POST /api/school/{school_id}/students/{student_id}/guardian-token
+  // POST /api/school/students/{student_id}/guardian-token
   async function issueGuardianToken(schoolId, studentId, payload) {
     return BACKEND.issueGuardianToken(schoolId, studentId, payload);
   }

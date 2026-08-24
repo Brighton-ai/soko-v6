@@ -45,7 +45,7 @@ missing**, and the guardian portal is a 500 on every valid link.
 | 19 | Competition ranking | `competitionRank()` | Merit list `:2327` uses `RANK() OVER (…)`, which is competition ranking. Report card position `:1254-1265` uses `fetchval` over a `GROUP BY`, returning only ever 1 or 2 | **modelled differently** — one right, one broken |
 | 20 | Scale edit blocked by published cards | 409 naming the classes | Absent | **backend gap** |
 | 21 | Teacher sees only assigned classes | 404, identical to nonexistent | `teacher_id` appears only on class and assignment models (`:43`, `:63`, `:339`). No route filters on it. Any authenticated tenant user reads and writes any class | **backend gap** |
-| 22 | Guardian sees only their children | `guards()` on every route | Portal is per-token, so one child. No authenticated guardian surface exists | **backend gap** |
+| 22 | Guardian sees only their children | `guards()` on every route | Portal is per-token, so one child. No authenticated guardian surface exists — searched for a guardian login and a children route | **backend gap** |
 | 23 | Guardian sees only published cards and verified marks | filtered in the backend | `:2498-2503` selects every result for the pupil, no publication or verification filter | **backend gap** |
 | 24 | A token resolves to exactly one student | `token.student_id` | `:2465-2467` joins `school_guardian_tokens` to one `student_id` | **backend has it** |
 | 25 | An expired token returns a state, not data | expiry state, no payload | `:2467` `AND gt.expires_at > NOW()`, 404 at `:2470` | **backend has it** |

@@ -1153,6 +1153,131 @@ describe('The guardian portal page', () => {
   });
 });
 
+describe('The live backend adapter', () => {
+  it('exists and exports one swappable object', () => {
+    assert.ok(exists('assets/js/live-backend.js'), 'assets/js/live-backend.js is missing.');
+    const src = readFile('assets/js/live-backend.js');
+    assert.ok(/global\.ShuleLiveBackend = B;/.test(src),
+      'live-backend.js does not export window.ShuleLiveBackend, so api.js cannot select it.');
+  });
+
+  it('mounts every path under the router prefix school.py uses', () => {
+    const src = codeOf('assets/js/live-backend.js');
+    assert.ok(/'\/school'/.test(src),
+      "live-backend.js does not prefix its paths with /school. main.py:398 mounts school_router at /api/school.");
+  });
+
+  it('carries auth, refresh, timeouts and an offline state', () => {
+    const src = codeOf('assets/js/live-backend.js');
+    for (const [re, what] of [
+      [/Bearer/, 'a bearer token'],
+      [/refresh/, 'token refresh'],
+      [/AbortController/, 'a request timeout'],
+      [/data-connection/, 'a visible offline state'],
+      [/status >= 500/, 'a 5xx path that does not render as empty data']
+    ]) {
+      assert.ok(re.test(src), `live-backend.js has no ${what}.`);
+    }
+  });
+
+  /**
+   * The route comment above each function in api.js is the contract. This
+   * checks the adapter honours it: for every function both files know about,
+   * the path segments in the comment and the path the adapter calls must
+   * agree. Where they cannot, the adapter says so inline — several of our
+   * names did not match the real router, and the real router wins.
+   */
+  it('adapter paths agree with the route comments in api.js', () => {
+    const api = readFile('assets/js/api.js');
+    const live = readFile('assets/js/live-backend.js');
+    const mismatches = [];
+
+    const routes = [...api.matchAll(/\/\/\s*(GET|POST|PUT|PATCH|DELETE)\s+(\/api\/school\/\S+)\s*\n\s*async function (\w+)/g)];
+    assert.ok(routes.length >= 50, `Only ${routes.length} documented routes found in api.js.`);
+
+    for (const [, , docPath, fn] of routes) {
+      const at = live.indexOf(`B.${fn} = function`);
+      if (at === -1) continue;                       // aliased or unimplemented
+      // the body runs to the next top-level B.<name> assignment
+      const next = live.indexOf('\n  B.', at + 1);
+      const body = live.slice(at, next === -1 ? live.length : next);
+
+      // a path is built by concatenation: '/' + schoolId + '/students'.
+      // Collect every quoted fragment on the call line and join them.
+      const callLines = body.split('\n').filter((l) => /\b(?:GET|POST|PUT)\(|request\('/.test(l));
+      if (!callLines.length) continue;
+      const called = callLines.map((l) => (l.match(/'([^']*)'/g) || []).join('').replace(/'/g, ''));
+      const got = called.join(' ');
+
+      // compare the literal path segments only: {placeholders} are interpolated
+      // and ?query= is passed separately, so neither appears in the call literal
+      const want = docPath.split('?')[0].replace('/api/school', '').split('/')
+        .filter((seg) => seg && !seg.startsWith('{'));
+      const missing = want.filter((seg) => !got.includes(seg));
+      if (missing.length) {
+        mismatches.push(`${fn}: comment says ${docPath}, adapter calls ${called.join(' or ')} ` +
+          `(missing: ${missing.join(', ')})`);
+      }
+    }
+    assert.deepEqual(mismatches, [],
+      'These adapter paths do not match their route comment in api.js. ' +
+      'The comment is the contract — fix whichever is wrong:\n  ' + mismatches.join('\n  '));
+  });
+
+  it('never reimplements a rule the backend is missing', () => {
+    const src = codeOf('assets/js/live-backend.js');
+    for (const [re, what] of [
+      [/amount\s*>\s*\w*[Bb]alance/, 'an over-payment guard'],
+      [/verified\s*===?\s*(true|false)/, 'a verification filter'],
+      [/status\s*===?\s*'published'/, 'a publication filter']
+    ]) {
+      assert.ok(!re.test(src),
+        `live-backend.js contains ${what}. A client-side guard hides the very gap ` +
+        'the contract suite exists to surface — the contract test must fail instead.');
+    }
+    assert.ok(/does not add guards the backend is missing/i.test(readFile('assets/js/live-backend.js')),
+      'live-backend.js does not say it deliberately adds no guards.');
+  });
+
+  it('names the rule when a route has no backend counterpart', () => {
+    const src = readFile('assets/js/live-backend.js');
+    assert.ok(/has no route in school\.py/.test(src),
+      'live-backend.js does not report missing routes.');
+    assert.ok(/RULES_RECONCILED\.md row/.test(src),
+      'A missing route does not cite the rule it breaks.');
+    const stubs = (src.match(/notInBackend\('/g) || []).length;
+    assert.ok(stubs >= 20, `Only ${stubs} routes are marked missing; the audit found more.`);
+  });
+});
+
+describe('The reconciliation and patch documents', () => {
+  it('RULES_RECONCILED.md replaced RULES.md', () => {
+    assert.ok(exists('docs/RULES_RECONCILED.md'), 'docs/RULES_RECONCILED.md is missing.');
+    assert.ok(!exists('docs/RULES.md'), 'docs/RULES.md is still present; it was superseded.');
+  });
+
+  it('every rule row cites school.py or says it searched', () => {
+    const md = readFile('docs/RULES_RECONCILED.md');
+    const rows = md.split('\n').filter((l) => /^\| \d+ \|/.test(l));
+    assert.ok(rows.length >= 35, `Only ${rows.length} rule rows.`);
+    const uncited = rows.filter((l) => !/:\d+|[Aa]bsent|searched|frontend-only|no import route|Exists because|Presentation|preview|Visualises|Menu shape|Deleted when/.test(l))
+      .map((l) => l.split('|')[2].trim());
+    assert.deepEqual(uncited, [],
+      `These rows carry neither a line reference nor an explicit "searched": ${uncited.join(', ')}`);
+  });
+
+  it('every backend gap has a patch entry', () => {
+    const patches = readFile('docs/BACKEND-PATCHES.md');
+    assert.ok(/^## 1\./m.test(patches) && /^## 14\./m.test(patches),
+      'BACKEND-PATCHES.md does not run from 1 to 14.');
+    const diffs = (patches.match(/```diff/g) || []).length;
+    assert.ok(diffs >= 9, `Only ${diffs} diffs in the patch set; most entries should carry one.`);
+    for (const line of ['school.py:2498', 'school.py:1254', 'school.py:1976', 'school.py:900', 'school.py:1331']) {
+      assert.ok(patches.includes(line), `The patch set does not reference ${line}.`);
+    }
+  });
+});
+
 describe('Budget', () => {
   it('no HTML page is over 120 KB', () => {
     const over = ALL_PAGES.filter((p) => exists(p))
