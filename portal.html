@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your child at Riverside Academy — Shule</title>
+<meta name="description" content="A guardian's private link to one child at Riverside Academy: fee balance and how to pay it, recent attendance, and published results. No app, no password.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/portal.css">
+</head>
+<body class="portal-body" data-page="portal">
+
+<div class="pw" id="portal">
+
+  <div data-region="loading" class="pcard">
+    <span class="sk sk--head"></span>
+    <span class="sk sk--line"></span><span class="sk sk--line"></span><span class="sk sk--line"></span>
+  </div>
+
+  <div data-region="content" hidden>
+    <header class="phdr">
+      <div class="phdr__mark">
+        <span class="logo__m"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+        <span data-bind="school-name">—</span>
+      </div>
+      <h1 data-bind="student-name">—</h1>
+      <p class="phdr__meta">
+        <span data-bind="admission">—</span> · <span data-bind="class-name">—</span> · <span data-bind="term-name">—</span>
+      </p>
+      <p class="phdr__for">Shared with <b data-bind="guardian-name">—</b></p>
+    </header>
+
+    <section class="pcard pcard--money" aria-labelledby="fees-h">
+      <h2 id="fees-h">Fees</h2>
+      <p class="bigmoney" data-bind="balance">—</p>
+      <p class="bigmoney__l" data-bind="balance-label">—</p>
+      <dl class="prow">
+        <div><dt>Invoiced</dt><dd data-bind="invoiced">—</dd></div>
+        <div><dt>Paid</dt><dd data-bind="paid">—</dd></div>
+      </dl>
+      <div class="paybox" id="paybox" hidden>
+        <b>To pay by M-Pesa</b>
+        <ol>
+          <li>Go to <b>Lipa na M-Pesa</b>, then <b>Pay Bill</b></li>
+          <li>Business number <b data-bind="paybill">—</b></li>
+          <li>Account number <b data-bind="account-ref">—</b></li>
+          <li>Enter the amount and confirm</li>
+        </ol>
+        <p>Any amount reduces the balance. You do not have to pay it all at once.</p>
+      </div>
+      <div class="ptable" id="invoice-list"></div>
+      <details class="pdet" id="receipts-det">
+        <summary>Payments received <span data-bind="receipt-count"></span></summary>
+        <div class="ptable" id="receipt-list"></div>
+      </details>
+    </section>
+
+    <section class="pcard" aria-labelledby="att-h">
+      <h2 id="att-h">Attendance</h2>
+      <p class="bigpct" data-bind="attendance-pct">—</p>
+      <p class="bigmoney__l" data-bind="attendance-label">—</p>
+      <div class="pdays" id="attendance-days" role="img" aria-label="Attendance over the last twenty school days"></div>
+      <div class="plegend">
+        <span><i class="present"></i>Present</span><span><i class="late"></i>Late</span>
+        <span><i class="absent"></i>Absent</span><span><i class="excused"></i>Excused</span>
+      </div>
+    </section>
+
+    <section class="pcard" aria-labelledby="res-h">
+      <h2 id="res-h">Results</h2>
+      <div id="results-body"></div>
+    </section>
+
+    <footer class="pfoot">
+      <p><b data-bind="school-name-2">—</b><br><span data-bind="school-address">—</span></p>
+      <p><a data-bind="school-phone-link" href="#"><span data-bind="school-phone">—</span></a> ·
+         <a data-bind="school-email-link" href="#"><span data-bind="school-email">—</span></a></p>
+      <p class="pfoot__note">This is a private link for one child. It expires on
+        <b data-bind="expires">—</b>. Do not forward it.</p>
+    </footer>
+  </div>
+
+  <div data-region="closed" hidden>
+    <div class="pcard pcard--closed">
+      <span class="pclosed__ico" id="closed-ico"></span>
+      <h1 data-bind="closed-title">This link is no longer open</h1>
+      <p data-bind="closed-message">—</p>
+      <div class="pclosed__act">
+        <a class="btn btn--solid" href="tel:+254700000000">Call the school</a>
+        <a class="btn btn--ghost" href="index.html">About Shule</a>
+      </div>
+      <p class="pfoot__note">No pupil information is shown on an expired or unknown link.</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="assets/js/data/demo-data.js"></script>
+<script src="assets/js/demo-backend.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/portal.js"></script>
+</body>
+</html>

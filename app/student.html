@@ -191,6 +191,17 @@
           <button type="button" class="btn btn--solid btn--sm" id="add-guardian"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Add guardian</button>
         </div>
         <div class="gcards" id="guardian-cards"></div>
+
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div>
+              <h2 style="font-family:var(--f-display);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--body-2)">Guardian portal links</h2>
+              <p style="font-size:12.4px;margin-top:3px">A private link to this one pupil, sent by SMS. No app, no password, and it expires.</p>
+            </div>
+            <button type="button" class="btn btn--solid btn--sm" data-modal-open="modal-token">Issue a link</button>
+          </div>
+          <div class="tokens" id="token-list"></div>
+        </div>
       </div>
     </div>
     <div class="tabpanel" role="tabpanel" id="panel-fees" aria-labelledby="tab-fees" hidden>
@@ -286,6 +297,46 @@
       <div class="modal__f">
         <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
         <button type="submit" class="btn btn--solid btn--sm">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="scrim" id="modal-token" role="dialog" aria-modal="true" aria-labelledby="modal-token-t">
+  <div class="modal">
+    <form id="modal-token-form" novalidate>
+      <div class="modal__h">
+        <div>
+          <h2 id="modal-token-t">Issue a guardian portal link</h2>
+          <p>One token, one child. Anyone holding the link sees this pupil and nobody else.</p>
+        </div>
+        <button type="button" class="modal__x" data-modal-close aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal__b">
+          <div class="field">
+            <label for="tk-guardian">Send to</label>
+            <select id="tk-guardian" name="guardian" aria-describedby="tk-guardian-err"></select>
+            <p class="err" id="tk-guardian-err" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="tk-days">Expires after</label>
+            <select id="tk-days" name="days" aria-describedby="tk-days-err">
+              <option value="14">14 days</option>
+              <option value="30" selected>30 days</option>
+              <option value="90">A term (90 days)</option>
+              <option value="180">180 days</option>
+            </select>
+            <p class="err" id="tk-days-err" role="alert"></p>
+          </div>
+          <p class="modal__note">The link stops working on its expiry date and shows an expiry
+          notice instead — never a partial record.</p>
+        <p class="formerr" data-form-error role="alert"></p>
+      </div>
+      <div class="modal__f">
+        <button type="button" class="btn btn--ghost btn--sm" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn--solid btn--sm">Issue link</button>
       </div>
     </form>
   </div>

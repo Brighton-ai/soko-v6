@@ -105,6 +105,40 @@
     });
   }
 
+  // ── guardian portal links ─────────────────────────────────────────────
+  function renderTokens(rows) {
+    var host = doc.getElementById('token-list');
+    if (!host) return;
+    host.innerHTML = rows.length
+      ? rows.map(function (t) {
+          return '<div class="token" data-token="' + U.esc(t.token) + '" data-active="' + t.active + '">' +
+            '<span class="token__x"><b>' + U.esc(t.url) + '</b>' +
+            '<span>' + U.esc(t.guardian_name) + ' · ' + U.esc(t.issued_to) + ' · ' +
+              (t.revoked ? 'withdrawn'
+                : t.active ? 'expires ' + U.shortDate(t.expires_at)
+                : 'expired ' + U.shortDate(t.expires_at)) +
+              ' · ' + t.uses + (t.uses === 1 ? ' visit' : ' visits') + '</span></span>' +
+            (t.active
+              ? '<span class="tag tag--ok"><i></i>Live</span>'
+              : '<span class="tag tag--mute"><i></i>' + (t.revoked ? 'Withdrawn' : 'Expired') + '</span>') +
+            '<a class="btn btn--ghost btn--sm" href="../' + U.esc(t.url) + '" target="_blank" rel="noopener">Open</a>' +
+            '</div>';
+        }).join('')
+      : '<p class="sub" style="font-size:12.4px">No portal link has been issued for this pupil yet.</p>';
+  }
+
+  U.onSubmit('modal-token-form', function () {
+    var guardian = doc.getElementById('tk-guardian'), days = doc.getElementById('tk-days');
+    if (!U.setErr(guardian, guardian.value ? '' : 'Choose which guardian the link is for.')) return null;
+    return API.issueGuardianToken(SCHOOL, studentId, {
+      guardianId: guardian.value, days: Number(days.value)
+    }).then(function (t) {
+      reload();
+      return 'Link issued for <b>' + U.esc(t.guardian_name) + '</b>, good until ' +
+        U.shortDate(t.expires_at) + '.';
+    });
+  });
+
   function openGuardianModal(g) {
     editingGuardian = g || null;
     doc.getElementById('modal-guardian-t').textContent = g ? 'Edit guardian' : 'Add a guardian';
@@ -390,7 +424,8 @@
         API.listAttendance(SCHOOL, { studentId: studentId }),
         API.listExams(SCHOOL, {}),
         API.listExamResults(SCHOOL, 'exm-t2-mid', { pageSize: 100000 }),
-        API.listDiscipline(SCHOOL, { studentId: studentId })
+        API.listDiscipline(SCHOOL, { studentId: studentId }),
+        API.listGuardianTokens(SCHOOL, studentId)
       ]).then(function (r) {
         var invoices = r[1].items;
         var payments = r[2].items.filter(function (p) { return p.student_id === studentId; });
@@ -402,6 +437,8 @@
         renderAttendance(r[3]);
         renderResults(r[4], results, subjects);
         renderDiscipline(r[6]);
+        renderTokens(r[7]);
+        U.fillSelect(doc.getElementById('tk-guardian'), r[0], 'id', 'name', false);
 
         doc.getElementById('loading').hidden = true;
         doc.getElementById('notfound').hidden = true;

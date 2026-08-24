@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My register — Shule</title>
+<meta name="description" content="Take the register for a class you teach at Riverside Academy: present, absent or late per pupil, with a note on absences and running tallies.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/theme.css">
+<link rel="stylesheet" href="../../assets/css/app.css">
+</head>
+<body class="app-body" data-role="teacher" data-page="teacher-register">
+
+<div class="app">
+<aside class="side" id="side">
+  <div class="side__top">
+    <a href="../../index.html" class="logo">
+      <span class="logo__m"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/></svg></span>
+      Shule<i>.</i>
+    </a>
+  </div>
+  <nav class="side__scroll" id="sidenav" aria-label="Sections" data-nav-role="teacher">
+      <div class="navg" data-group="overview">
+        <p class="navg__t">Overview</p>
+        <ul>
+          <li><a href="../teacher/dashboard.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.6"/><rect x="14" y="3" width="7" height="5" rx="1.6"/><rect x="14" y="12" width="7" height="9" rx="1.6"/><rect x="3" y="16" width="7" height="5" rx="1.6"/></svg><span>My day</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="classes">
+        <p class="navg__t">My classes</p>
+        <ul>
+          <li><a href="../teacher/register.html" aria-current="page"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="m9 14 2 2 4-4"/></svg><span>My register</span></a></li>
+          <li><a href="../teacher/timetable.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>My timetable</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="marks">
+        <p class="navg__t">Marks</p>
+        <ul>
+          <li><a href="../teacher/marks.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M4 19a2 2 0 0 0 2 2h14M8 8h8M8 12h5"/></svg><span>Enter marks</span></a></li>
+        </ul>
+      </div>
+      <div class="navg" data-group="communication">
+        <p class="navg__t">Communication</p>
+        <ul>
+          <li><a href="#" data-step="later"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v13H8l-4 3z"/><path d="M8 9h8M8 13h5"/></svg><span>Announcements</span><span class="navg__soon">Planned</span></a></li>
+          <li><a href="#" data-step="later"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M8 2v4M16 2v4M3 9h18"/></svg><span>Message guardians</span><span class="navg__soon">Planned</span></a></li>
+        </ul>
+      </div>
+  </nav>
+  <div class="side__end">
+    <div class="sidecard">
+      <b>Term 2 · 2026</b>
+      <p>Closes Friday 7 August. 240 pupils on roll.</p>
+      <a href="#" data-step="later" class="btn btn--ghost btn--sm btn--full">Switch term</a>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+<header class="top">
+  <button class="top__menu" id="sidetoggle" aria-label="Open menu" aria-expanded="false" aria-controls="side"><span></span></button>
+  <div class="top__school">
+    <span data-bind="school-name">Riverside Academy</span>
+    <small data-bind="term-name">Term 2 2026 · Nairobi</small>
+  </div>
+  <div class="search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <label class="vh" for="app-search">Search students, invoices and classes</label>
+    <input type="search" id="app-search" name="q" placeholder="Search pupils, invoices, classes…" autocomplete="off">
+  </div>
+  <button class="iconbtn" id="notifs" aria-label="Notifications, 3 unread">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    <span class="iconbtn__dot" id="notif-dot"></span>
+  </button>
+  <button class="who" id="usermenu" aria-expanded="false" aria-haspopup="true" aria-controls="usermenu-panel">
+    <span class="who__av" data-bind="user-initials">JW</span>
+    <span class="who__n"><span data-bind="user-name">Jane Wanjiru</span><small data-bind="user-role">School admin</small></span>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div class="menu" id="usermenu-panel" role="menu" aria-labelledby="usermenu">
+    <div class="menu__h">
+      <b data-bind="user-name">Jane Wanjiru</b>
+      <span data-bind="user-email">jane.wanjiru@riverside.ac.ke</span>
+    </div>
+    <a href="#" data-step="later" role="menuitem">Profile &amp; password</a>
+    <a href="#" data-step="later" role="menuitem">School settings</a>
+    <button type="button" role="menuitem" id="reset-demo">Reset demo data</button>
+    <button type="button" role="menuitem" id="signout">Sign out</button>
+  </div>
+</header>
+
+<main class="content">
+  <div class="phd">
+    <div>
+      <h1>My register</h1>
+      <p>Only the classes you teach appear here</p>
+    </div>
+    <div class="phd__act"></div>
+  </div>
+
+  <section class="card" data-panel="register">
+    <div class="filters">
+      <div class="field">
+        <label for="r-class">Class</label>
+        <select id="r-class" name="class"></select>
+      </div>
+      <div class="field">
+        <label for="r-date">Date</label>
+        <input type="date" id="r-date" name="date">
+      </div>
+      <div class="filters__end">
+        <button type="button" class="btn btn--ghost btn--sm" id="mark-all">Mark all present</button>
+      </div>
+    </div>
+  <div class="card__b card__b--flush">
+    <div data-region="loading" class="sk-rows"><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span><span class="sk sk--row"></span></div>
+    <div data-region="content" hidden>
+      <div class="tally" id="tally"></div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <caption class="vh">The register for the selected class and date</caption>
+          <thead><tr><th scope="col">Pupil</th><th scope="col">Adm. no</th><th scope="col">Present</th><th scope="col">Absent</th><th scope="col">Late</th><th scope="col">Note</th></tr></thead>
+          <tbody id="roll"></tbody>
+        </table>
+      </div>
+      <div class="regfoot">
+        <p id="reg-state" class="sub"></p>
+        <button type="button" class="btn btn--solid btn--sm" id="submit-register">Submit register</button>
+      </div>
+    </div>
+    <div data-region="empty" hidden><div class="empty">
+            <span class="empty__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg></span>
+            <b>Nothing to mark</b>
+            <p>Pick one of your classes to open its register.</p>
+          </div></div>
+  </div>
+</section>
+</main>
+</div>
+</div>
+
+<div class="sidescrim" id="sidescrim" hidden></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="../../assets/js/data/demo-data.js"></script>
+<script src="../../assets/js/demo-backend.js"></script>
+<script src="../../assets/js/api.js"></script>
+<script src="../../assets/js/shell.js"></script>
+<script src="../../assets/js/ui.js"></script>
+<script src="../../assets/js/teacher.js"></script>
+</body>
+</html>
