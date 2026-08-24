@@ -100,12 +100,27 @@
     return Math.round((dr - cr) * 100) / 100;
   }
 
-  /** Keeps an invoice's derived fields honest after any change to the money. */
+  /**
+   * Keeps an invoice's derived fields honest after any change to the money.
+   *
+   * The identity is school.py's, not the one we started with:
+   *
+   *     balance = amount_due − amount_paid − discount_amount
+   *
+   * amount_due stays the face value of the charge and an approved waiver shows
+   * as its own line rather than quietly shrinking the invoice. That is better
+   * bookkeeping — a bursary is a thing the school granted, not a smaller bill.
+   * See docs/RULES_RECONCILED.md row 5 (school.py:919).
+   */
   function reconcileInvoice(inv) {
-    inv.balance = inv.amount_due - inv.amount_paid;
-    inv.status = inv.amount_paid === 0
-      ? (inv.balance === 0 ? 'cleared' : 'unpaid')
-      : (inv.balance <= 0 ? 'cleared' : 'part_paid');
+    if (typeof inv.discount_amount !== 'number') inv.discount_amount = 0;
+    inv.balance = inv.amount_due - inv.amount_paid - inv.discount_amount;
+    // A bursary is not a payment. A family that has paid nothing is "unpaid"
+    // even with a discount on the invoice; only a zero balance is "cleared",
+    // which is also what school.py:917 does when a waiver closes an invoice.
+    inv.status = inv.balance <= 0
+      ? 'cleared'
+      : (inv.amount_paid === 0 ? 'unpaid' : 'part_paid');
     return inv;
   }
 
@@ -705,8 +720,11 @@
     var invoices = d.invoices.filter(function (i) { return i.school_id === schoolId && i.term_id === termId; });
     var invoiced = invoices.reduce(function (n, i) { return n + i.amount_due; }, 0);
     var collected = invoices.reduce(function (n, i) { return n + i.amount_paid; }, 0);
-    var outstanding = invoiced - collected;
-    var rate = invoiced ? collected / invoiced * 100 : 0;
+    var discounted = invoices.reduce(function (n, i) { return n + (i.discount_amount || 0); }, 0);
+    // what is still owed, not what was billed: a waived shilling is not outstanding
+    var outstanding = invoices.reduce(function (n, i) { return n + i.balance; }, 0);
+    var collectable = invoiced - discounted;
+    var rate = collectable ? collected / collectable * 100 : 0;
 
     var priorRate = prior && prior.amount_invoiced ? prior.amount_collected / prior.amount_invoiced * 100 : null;
 
@@ -733,7 +751,9 @@
         previous: priorRate,
         delta: priorRate != null ? rate - priorRate : null,
         invoiced: invoiced,
-        collected: collected
+        collected: collected,
+        discounted: discounted,
+        collectable: collectable
       },
       outstanding: {
         value: outstanding,
@@ -1367,9 +1387,15 @@
     var roll = d.students.filter(function (s) {
       return s.school_id === schoolId && s.class_id === payload.classId && s.status === 'active';
     });
+    /*
+     * One invoice per pupil per TERM, regardless of stream — school.py:793,
+     * ON CONFLICT (student_id,term,year) DO NOTHING. Keying on class as we
+     * first did would raise a second invoice for a pupil who changed stream
+     * mid-term, which is exactly the pupil least able to absorb it.
+     */
     var already = {};
     d.invoices.forEach(function (i) {
-      if (i.class_id === payload.classId && i.term_id === payload.termId) already[i.student_id] = i.id;
+      if (i.term_id === payload.termId) already[i.student_id] = i.id;
     });
 
     var toCreate = roll.filter(function (s) { return !already[s.id]; });
@@ -1632,12 +1658,13 @@
       return i.student_id === w.student_id && i.term_id === w.term_id;
     })[0];
     if (!inv) return reject(422, 'That pupil has no invoice this term for the waiver to reduce.');
-    if (w.amount > inv.amount_due - inv.amount_paid) {
+    if (w.amount > inv.balance) {
       return reject(422, 'The waiver of KES ' + w.amount.toLocaleString('en-KE') +
-        ' is larger than the KES ' + (inv.amount_due - inv.amount_paid).toLocaleString('en-KE') + ' still owed.');
+        ' is larger than the KES ' + inv.balance.toLocaleString('en-KE') + ' still owed.');
     }
 
-    inv.amount_due -= w.amount;
+    // the charge stands; the bursary is a visible discount against it
+    inv.discount_amount = (inv.discount_amount || 0) + w.amount;
     reconcileInvoice(inv);
 
     w.status = 'approved';
@@ -2810,8 +2837,23 @@
   // the page is not the control.
   // ══════════════════════════════════════════════════════════════════════
 
+  /**
+   * The backend has one guardian row per (guardian, student) and no shared
+   * identity between them — school.py:107, :449. So "the same human across
+   * several children" is matched on a normalised phone number rather than on
+   * an id we invented. It is weaker than a join and we know it: a proper
+   * guardians table with a person key is schema change #15 in
+   * docs/BACKEND-PATCHES.md, not something the client should paper over.
+   */
+  function normalisePhone(v) {
+    var digits = String(v || '').replace(/\D/g, '');
+    if (digits.indexOf('254') === 0) digits = '0' + digits.slice(3);
+    return digits.slice(-9);
+  }
   function guardianRows(personId) {
-    return db().guardians.filter(function (g) { return g.person_id === personId; });
+    var key = normalisePhone(personId);
+    if (!key) return [];
+    return db().guardians.filter(function (g) { return normalisePhone(g.phone) === key; });
   }
   function childIds(personId) {
     return guardianRows(personId).map(function (g) { return g.student_id; });
@@ -2941,6 +2983,8 @@
   // ══════════════════════════════════════════════════════════════════════
   // Guardian portal — the tokenised public surface
   // ══════════════════════════════════════════════════════════════════════
+
+  var GUARDIAN_KEY_IS_PHONE = true;
 
   var PORTAL_STATES = { OK: 'ok', UNKNOWN: 'unknown', EXPIRED: 'expired', REVOKED: 'revoked' };
 
@@ -3221,6 +3265,8 @@
     listGuardianTokens: listGuardianTokens,
     getGuardianPortal: getGuardianPortal,
     PORTAL_STATES: PORTAL_STATES,
+    normalisePhone: normalisePhone,
+    GUARDIAN_KEY_IS_PHONE: GUARDIAN_KEY_IS_PHONE,
     // waivers
     listWaiverRows: listWaiverRows,
     approveWaiver: approveWaiver,

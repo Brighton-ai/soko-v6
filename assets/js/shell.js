@@ -92,7 +92,8 @@
   var ROLE_USER = {
     admin:   { id: 'tch-06', name: 'Jane Wanjiru',   email: 'jane.wanjiru@riverside.ac.ke' },
     teacher: { id: 'tch-04', name: 'Samuel Kariuki', email: 'samuel.kariuki@riverside.ac.ke' },
-    parent:  { id: 'per-demo-parent', name: 'Mercy Ouma', email: 'mercy.ouma@gmail.com' }
+    // the guardian is keyed on their phone number, not an invented id
+    parent:  { id: '0722 418 067', name: 'Mercy Ouma', email: 'mercy.ouma@gmail.com' }
   };
 
   var STORAGE_KEY = 'shule.role';

@@ -209,17 +209,19 @@ describe('Data integrity', () => {
       `There are ${D.invoices.length} invoices for ${D.students.length} students; every pupil should have one.`);
   });
 
-  it('balance equals amount_due minus amount_paid on every invoice', () => {
+  it('balance equals amount_due minus amount_paid minus discount on every invoice', () => {
     const bad = D.invoices
-      .filter((i) => i.balance !== i.amount_due - i.amount_paid)
-      .map((i) => `${i.id}: due ${i.amount_due} − paid ${i.amount_paid} = ${i.amount_due - i.amount_paid}, but balance says ${i.balance}`);
+      .filter((i) => i.balance !== i.amount_due - i.amount_paid - (i.discount_amount || 0))
+      .map((i) => `${i.id}: due ${i.amount_due} − paid ${i.amount_paid} − discount ${i.discount_amount || 0} = ` +
+        `${i.amount_due - i.amount_paid - (i.discount_amount || 0)}, but balance says ${i.balance}`);
     deepEqual(bad, [], `Invoice arithmetic does not hold:\n  ${bad.slice(0, 10).join('\n  ')}`);
   });
 
   it('invoice status agrees with the money, and paid invoices carry an M-Pesa code', () => {
     const bad = [];
     for (const i of D.invoices) {
-      const expected = i.amount_paid === 0 ? 'unpaid' : i.balance === 0 ? 'cleared' : 'part_paid';
+      // a discount is not a payment: only money paid moves an invoice off "unpaid"
+      const expected = i.balance === 0 ? 'cleared' : (i.amount_paid === 0 ? 'unpaid' : 'part_paid');
       if (i.status !== expected) bad.push(`${i.id} is "${i.status}" but paid ${i.amount_paid} of ${i.amount_due}, which is "${expected}"`);
       if (i.amount_paid > 0 && !i.mpesa_code) bad.push(`${i.id} was paid but has no mpesa_code`);
       if (i.amount_paid === 0 && i.mpesa_code) bad.push(`${i.id} was never paid but carries mpesa_code ${i.mpesa_code}`);
@@ -349,12 +351,14 @@ describe('Dashboard render', () => {
     const invoices = D.invoices.filter((i) => i.term_id === termId);
     const invoiced = invoices.reduce((n, i) => n + i.amount_due, 0);
     const collected = invoices.reduce((n, i) => n + i.amount_paid, 0);
+    const discounted = invoices.reduce((n, i) => n + (i.discount_amount || 0), 0);
+    const collectable = invoiced - discounted;
     const today = D.attendance.filter((a) => a.date === D.today);
     const here = today.filter((a) => a.status === 'present' || a.status === 'late').length;
     return {
       enrolment: D.students.filter((s) => s.status === 'active').length,
-      rate: invoiced ? collected / invoiced * 100 : 0,
-      outstanding: invoiced - collected,
+      rate: collectable ? collected / collectable * 100 : 0,
+      outstanding: invoices.reduce((n, i) => n + i.balance, 0),
       attendance: today.length ? here / today.length * 100 : null
     };
   };
@@ -869,9 +873,11 @@ function checkInvariants(win, after) {
   const D = storeOf(win);
   const problems = [];
 
+  // school.py's identity: the charge stands and a waiver is a visible discount
   D.invoices.forEach((i) => {
-    if (i.balance !== i.amount_due - i.amount_paid) {
-      problems.push(`invoice ${i.id}: due ${i.amount_due} − paid ${i.amount_paid} = ${i.amount_due - i.amount_paid}, but balance says ${i.balance}`);
+    const discount = i.discount_amount || 0;
+    if (i.balance !== i.amount_due - i.amount_paid - discount) {
+      problems.push(`invoice ${i.id}: due ${i.amount_due} − paid ${i.amount_paid} − discount ${discount} = ${i.amount_due - i.amount_paid - discount}, but balance says ${i.balance}`);
     }
   });
 
@@ -1256,15 +1262,17 @@ describe('Waiver approval', () => {
     const waiver = storeOf(win).waivers.filter((w) => w.status === 'pending')[0];
     assert.ok(waiver, 'No pending waiver in the seed to approve.');
     const invBefore = storeOf(win).invoices.filter((i) => i.student_id === waiver.student_id)[0];
-    const before = { due: invBefore.amount_due, balance: invBefore.balance };
+    const before = { due: invBefore.amount_due, balance: invBefore.balance, discount: invBefore.discount_amount || 0 };
     const journalBefore = storeOf(win).journal_lines.length;
 
     const first = await API.approveWaiver('sch-riverside', waiver.id, {});
     checkInvariants(win, 'approving a waiver');
 
     assert.equal(first.applied, true, 'The first approval reported applied: false.');
-    assert.equal(first.invoice.amount_due, before.due - waiver.amount,
-      `amount_due went from ${before.due} to ${first.invoice.amount_due}; a waiver of ${waiver.amount} should leave ${before.due - waiver.amount}.`);
+    assert.equal(first.invoice.amount_due, before.due,
+      `amount_due moved from ${before.due} to ${first.invoice.amount_due}. A waiver is a discount against the charge, not a smaller charge (school.py:919).`);
+    assert.equal(first.invoice.discount_amount, waiver.amount,
+      `discount_amount is ${first.invoice.discount_amount} after a waiver of ${waiver.amount}.`);
     assert.equal(first.invoice.balance, before.balance - waiver.amount,
       `The balance went from ${before.balance} to ${first.invoice.balance}, expected ${before.balance - waiver.amount}.`);
     assert.equal(storeOf(win).journal_lines.length, journalBefore + 2,
@@ -1272,6 +1280,7 @@ describe('Waiver approval', () => {
 
     const afterFirst = {
       due: first.invoice.amount_due, balance: first.invoice.balance,
+      discount: first.invoice.discount_amount,
       journal: storeOf(win).journal_lines.length
     };
 
@@ -1282,8 +1291,8 @@ describe('Waiver approval', () => {
 
     assert.equal(second.already, true, 'The second approval did not report the waiver as already applied.');
     assert.equal(second.applied, false, 'The second approval claimed to apply the waiver again.');
-    assert.equal(invNow.amount_due, afterFirst.due,
-      `Approving twice deducted twice: amount_due is ${invNow.amount_due}, expected ${afterFirst.due}.`);
+    assert.equal(invNow.discount_amount, waiver.amount,
+      `Approving twice discounted twice: discount_amount is ${invNow.discount_amount}, expected ${waiver.amount}.`);
     assert.equal(invNow.balance, afterFirst.balance,
       `Approving twice reduced the balance twice: ${invNow.balance}, expected ${afterFirst.balance}.`);
     assert.equal(storeOf(win).journal_lines.length, afterFirst.journal,
@@ -1296,6 +1305,7 @@ describe('Waiver approval', () => {
     const waiver = storeOf(win).waivers.filter((w) => w.status === 'pending')[0];
     const inv = storeOf(win).invoices.filter((i) => i.student_id === waiver.student_id)[0];
     const before = inv.amount_due;
+    const beforeDiscount = inv.discount_amount || 0;
 
     let err = null;
     await win.ShuleAPI.rejectWaiver('sch-riverside', waiver.id, { reason: '' }).catch((e) => { err = e; });
@@ -1310,6 +1320,8 @@ describe('Waiver approval', () => {
     assert.equal(w.status, 'rejected', `The waiver is "${w.status}" after being rejected.`);
     assert.equal(w.decision_reason, 'Above the bursary threshold.', 'The rejection reason was not kept.');
     assert.equal(after.amount_due, before, `Rejecting changed amount_due from ${before} to ${after.amount_due}.`);
+    assert.equal(after.discount_amount || 0, beforeDiscount,
+      `Rejecting changed discount_amount from ${beforeDiscount} to ${after.discount_amount}.`);
   });
 });
 
@@ -2644,7 +2656,7 @@ describe('Report cards', () => {
 // ══════════════════════════════════════════════════════════════════════════
 
 const ME_TEACHER = 'tch-04';
-const ME_PARENT = 'per-demo-parent';
+const ME_PARENT = '0722 418 067';   // guardians are keyed on phone, not an invented id
 
 describe('Teacher scope', () => {
   let dom, win, API, D;
@@ -2794,7 +2806,7 @@ describe('Parent scope', () => {
   });
   after(() => { if (dom) dom.window.close(); });
 
-  const myChildren = () => D.guardians.filter((g) => g.person_id === ME_PARENT).map((g) => g.student_id);
+  const myChildren = () => D.guardians.filter((g) => g.phone === ME_PARENT).map((g) => g.student_id);
 
   it('returns only children this guardian is a guardian of', async () => {
     const rows = await API.listMyChildren('sch-riverside', ME_PARENT);

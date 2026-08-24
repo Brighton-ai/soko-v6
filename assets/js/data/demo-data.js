@@ -265,7 +265,6 @@
       var gid = 'gdn-' + String(gSeq++).padStart(5, '0');
       guardians.push({
         id: gid,
-        person_id: 'per-' + gid.slice(4),   // one row per child; person_id is the human
         school_id: SCHOOL_ID,
         student_id: s.id,
         name: gname,
@@ -293,7 +292,8 @@
    * per child, and person_id is what says "this is the same human".
    */
   var DEMO_PARENT = {
-    person_id: 'per-demo-parent',
+    // no person_id: the backend has no shared guardian identity, so the phone
+    // number is the key. See docs/RULES_RECONCILED.md row 8.
     name: 'Mercy Ouma',
     email: 'mercy.ouma@gmail.com',
     phone: '0722 418 067',
@@ -308,7 +308,6 @@
     });
     guardians.push({
       id: 'gdn-demo-' + (i + 1),
-      person_id: DEMO_PARENT.person_id,
       school_id: SCHOOL_ID,
       student_id: child.id,
       name: DEMO_PARENT.name,
@@ -392,7 +391,10 @@
 
   students.forEach(function (s, idx) {
     var fs = feeStructureByClass[s.class_id];
-    var due = fs.total_mandatory + (s.transport_route_id ? 5500 : 0) - (approvedWaiverFor[s.id] || 0);
+    // amount_due is the face value of the charge. An approved waiver shows as
+    // discount_amount, the way school.py:919 models it — the bill does not shrink.
+    var due = fs.total_mandatory + (s.transport_route_id ? 5500 : 0);
+    var discount = approvedWaiverFor[s.id] || 0;
     var status = pool[idx];
     // A family waiting on a bursary decision has not started paying, and a
     // waiver can never exceed what is still owed — so a pending request always
@@ -400,11 +402,12 @@
     if (pendingWaiverFor[s.id]) status = 'unpaid';
     var paid = 0, reminders = 0;
 
+    var owed = due - discount;
     if (status === 'cleared') {
-      paid = due;
+      paid = owed;
     } else if (status === 'part_paid') {
-      paid = round(due * (0.25 + rand() * 0.5), 500);
-      if (paid >= due) paid = due - 1000;
+      paid = round(owed * (0.25 + rand() * 0.5), 500);
+      if (paid >= owed) paid = owed - 1000;
       reminders = int(1, 3);
     } else {
       paid = 0;
@@ -418,7 +421,8 @@
       items: fs.items.filter(function (it) { return it.mandatory || s.transport_route_id; }),
       amount_due: due,
       amount_paid: paid,
-      balance: due - paid,
+      discount_amount: discount,
+      balance: due - paid - discount,
       due_date: dueDate(),
       status: status,
       reminders_sent: reminders,
