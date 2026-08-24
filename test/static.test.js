@@ -1060,7 +1060,7 @@ describe('The allowSelf escape hatch', () => {
         });
       }
     };
-    ['app', 'assets/js', 'tools'].forEach(walk);
+    ['app', 'assets/js', 'tools'].forEach(walk);   // test/ is deliberately excluded
     const outsideBackend = offenders.filter((o) => !o.startsWith('assets/js/demo-backend.js'));
     assert.deepEqual(outsideBackend, [],
       'These files pass allowSelf, which turns off the rule that a teacher cannot verify their own marks:\n  ' +
