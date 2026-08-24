@@ -1,15 +1,55 @@
 # Shule — the `school.py` patch set
 
-Fourteen entries, ordered by what a customer sees first. Every line reference is
-from `soko-V4.2-main/backend/routers/school.py` (2,584 lines), mounted at
-`/api/school` by `main.py:398`.
+**Revised after a live run.** A SokoOS backend was stood up from
+`soko-V4.2-main` against Postgres, seeded with a contract tenant through its own
+API, and the contract suite was run against it. Where the running system
+disagreed with the static read, the live result wins and the entry says so.
 
-**These are not applied.** That repo is not in this workspace. Each entry gives
-the location, what breaks in production, and the minimal diff.
+Line references are from `soko-V4.2-main/backend/routers/school.py` (2,584
+lines), mounted at `/api/school` by `main.py:398`.
 
-The contract suite in `test/contract/` is the acceptance criteria. Each patch
-names the rows it closes; run `SHULE_BACKEND=live npm run test:contract` after
-each one and the tagged failures should go green.
+**These are not applied.** That repo is not in this workspace.
+
+## What the live run showed
+
+| Bucket | Count | Meaning |
+|---|---|---|
+| **RULE** | 16 | The route works and the backend does not enforce the rule |
+| **ROUTE** | 14 | No such endpoint exists |
+| **TRANSPORT** | 12 | Our adapter's request or response shape, or the seed — not a backend fault |
+
+Six of the seven targeted expectations were **confirmed with live evidence**.
+The seventh could not be reached because a bug the static read missed blocks it.
+Two entries changed: **#5 is worse than written**, and a **new #15** was found.
+
+### Confirmed live
+
+| # | Expectation | Result |
+|---|---|---|
+| 1 | Portal 500s on a valid token | **CONFIRMED** — issued a token (200), then `GET /guardian-portal/{token}` → **500** |
+| 2 | Merit list 500s | **CONFIRMED** — `GET /exams/{id}/merit-list` → **500** |
+| 3 | Class position only 1 or 2 | **NOT REACHABLE** — `POST /report-cards` is itself a 500 (see #15) |
+| 4 | `/pay` posts nothing to the GL | **CONFIRMED** — paid 1,000, HTTP 200, GL debits moved **0** |
+| 5 | Over-payment accepted | **CONFIRMED, and worse** — see below |
+| 6 | A payment wipes the waiver | **CONFIRMED** — 5,000 bursary, then paid **1 shilling**; balance rose 37,000 → 41,999 |
+| 7 | Double approval applies twice | **CONFIRMED** — discount 7,000 → 9,000 on the second click of a 2,000 waiver |
+
+### #5 is worse than the static read suggested
+
+The first attempt returned **HTTP 500**, not 200 — but the money had already
+moved. The invoice read `amount_due 42,000, amount_paid 50,000, balance 0,
+status paid` while the caller saw a 500 saying *"Payment recorded, but failed to
+post to the ledger."*
+
+That is patch **#10 (non-atomicity) firing in production conditions**: the
+invoice `UPDATE` at `:1983` committed, `post_journal` raised, and nothing rolled
+back. With the chart of accounts seeded the same call returns a clean **200**
+with `amount_paid 50,000` against `amount_due 42,000` — the school's books now
+show **8,000 more received than was ever charged**.
+
+So over-payment and non-atomicity are not two independent bugs. Either one alone
+is bad; together, a failed GL posting hands the caller an error for a payment
+that was kept.
 
 ---
 
@@ -542,3 +582,96 @@ mistaken for an oversight:
 | Money | 5, 10, 6, 11 | The identity, atomicity, idempotency, and the missing ledger leg |
 | Correctness | 9, 12 | Bad data at the point of entry |
 | Schema | 8, 13, 14 | Migrations; schedule with a release |
+
+---
+
+## 15. Report card creation is a 500 — `school.py:1274` — NEW, found live
+
+**Rule 19, and everything downstream of it.** The static read did not catch
+this. `create_report_card` inserts three columns that do not exist:
+
+| Inserted | Actual column |
+|---|---|
+| `school_id` | *(no such column on `report_cards`)* |
+| `mean_score` | `average_marks` |
+| `teacher_remarks` | `teacher_comment` |
+
+```
+asyncpg.exceptions.UndefinedColumnError:
+    column "school_id" of relation "report_cards" does not exist
+    at school.py:1274, in create_report_card
+```
+
+**Every report card generation is a 500.** No card can be created, so none can
+be published, and the class-position bug at `:1254` cannot even be reached to
+observe. This ranks with #1: a whole feature that has never run.
+
+```diff
+@@ -1274,10 +1274,10 @@ async def create_report_card(...):
+     r = await pool.fetchrow(
+         """INSERT INTO report_cards
+-           (tenant_id, student_id, school_id, term_id, academic_year, term_number,
+-            total_marks, mean_score, class_position, teacher_remarks, status)
+-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'draft') RETURNING *""",
+-        tid, body.student_id, str(school_id),
++           (tenant_id, student_id, class_id, term_id, academic_year, term_number,
++            total_marks, average_marks, class_position, teacher_comment, status)
++           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'draft') RETURNING *""",
++        tid, body.student_id, body.class_id,
+```
+
+`report_cards` already carries `class_size` and `published_at` — both unwritten.
+Patches #3 and #7 should fill them while this INSERT is open.
+
+---
+
+## Corrections to the static read
+
+| Entry | Static read said | Live run showed |
+|---|---|---|
+| #5 | Over-payment accepted (200) | Accepted — but the **first** call 500s while keeping the money, because #10 fires first. The two are one failure in practice |
+| #8 | `verified` / `verified_by` do not exist | **They exist in the schema** and are never written or read by any route. The migration in #8 is smaller than written: add `verified_at` only, then wire up the columns already there |
+| #13 | Add `class_id` to `school_attendance` | **`class_id` already exists.** Only the `UNIQUE(student_id, date)` constraint and the INSERT at `:631` need changing |
+| #7 | Add `published_at` | **Already exists**, along with `class_position` and `class_size`. Only the writes are missing |
+| — | — | **New #15**: report card creation has never worked |
+
+## Waves, by what a customer sees
+
+### Wave 1 — visible to a parent or a head teacher in week one
+
+| # | Entry | Why it is first |
+|---|---|---|
+| 1 | Guardian portal 500 | Every SMS link a parent follows is a 500. They cannot report it and nobody sees it |
+| 15 | Report card creation 500 | The whole report-card feature has never run |
+| 2 | Portal serves unpublished marks | Once #1 lands, unchecked marks reach parents unless this lands with it |
+| 3 | Class position only 1 or 2 | A head teacher reads "Position 2 of 44" with two pupils ahead on their first card |
+| 7 | Publish has no checks | Draft cards go out; published ones can be silently rewritten |
+
+`#1` and `#15` are column-name fixes: two queries and one INSERT.
+
+### Wave 2 — silent money errors
+
+| # | Entry | Why it is silent |
+|---|---|---|
+| 5 | No over-payment guard | The books show more received than charged. Nothing warns |
+| 10 | Payment and GL not atomic | Money moves, the ledger does not, the caller sees a 500. **Confirmed live** |
+| 6 | Waiver not idempotent | A double-click waives twice. **Confirmed live** |
+| 4 | No teacher scoping | Any tenant user reads and writes any class |
+| 11 | Waivers never reach the GL | Bursary spend is invisible at year end |
+| — | **Waiver wiped by the next payment** (`:1978`) | **Confirmed live** — a 5,000 bursary vanished when 1 shilling was paid. Folded into #5's diff |
+
+Wave 2 is where a school loses money quietly. #5 and #10 travel together: the
+diff for #5 also fixes the `new_bal` that discards `discount_amount`.
+
+### Wave 3 — missing features
+
+| # | Entry | Shape of work |
+|---|---|---|
+| 8 | Verification | Columns exist, unused. One migration (`verified_at`), one route, one clause in the upsert |
+| 13 | Per-period attendance | `class_id` exists; the constraint and INSERT need changing |
+| 14 | Token revocation | New column, new route |
+| 9 | Score range validation | Two small changes |
+| 12 | Band tiling validation | One helper, two call sites |
+
+Wave 3 is scheduled with a release. None of it is on fire; all of it is a
+promise the product currently makes and does not keep.

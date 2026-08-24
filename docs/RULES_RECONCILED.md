@@ -4,6 +4,15 @@
 were read from `soko-V4.2-main`. Every row below carries a line reference or an
 explicit "absent — searched for X". No row is a guess.
 
+> **Corrected again after a live run (step 7).** A backend was stood up and the
+> schema loaded. Three rows below were wrong because they were grepped from
+> `school.py` rather than read from the database: `school_exam_results` **has**
+> `verified` and `verified_by`, `school_attendance` **has** `class_id`, and
+> `report_cards` **has** `published_at`, `class_position` and `class_size`. In
+> every case the columns exist and no route touches them — dead schema, not
+> missing schema. Rows 12, 13, 16 and 14 are corrected accordingly, and a new
+> row 39 records a bug the static read missed entirely.
+>
 > **Correction against my first pass.** I initially recorded rows 27 and 28 as
 > gaps on a `grep` that missed them. `POST /{school_id}/students/import` exists
 > at `:2242` with the same six columns and per-row error collection, and
@@ -35,11 +44,11 @@ missing**, and the guardian portal is a 500 on every valid link.
 | 9 | Grade and points derived server-side | `bandFor()` on save | `:1012-1018` looks up the band and writes `grade`/`points`; the caller cannot dictate them | **backend has it** |
 | 10 | Score constrained to `0..max_score` | validated, saves nothing on failure | `:166` `score: float`, unbounded. A 900 stores; `:1014` finds no band and `grade` stays `NULL` | **backend gap** |
 | 11 | Exam scale immutable once results exist | 409 with the mark count | No exam update route exists at all — searched `PUT/PATCH /exams` | **backend gap** |
-| 12 | Changing a mark clears its verification | resets `verified` | `:1022` upserts `score`, `grade`, `points`, `entered_by`. No verification column to clear | **backend gap** |
-| 13 | `entered_by` ≠ `verified_by` | 409 unless `allowSelf` | `:1020` writes `entered_by`. `verified_by` does not exist — searched | **backend gap** |
-| 14 | Publish blocked while any result is unverified | 409 naming the subjects | `:1331-1338` `UPDATE report_cards SET status='published'` — no checks of any kind | **backend gap** |
+| 12 | Changing a mark clears its verification | resets `verified` | `:1022` upserts `score`, `grade`, `points`, `entered_by`. The `verified` column **exists in the schema** and no route ever writes it | **backend gap** |
+| 13 | `entered_by` ≠ `verified_by` | 409 unless `allowSelf` | `:1020` writes `entered_by`. `verified_by` **exists in the schema** and is never written or read by any route — dead column | **backend gap** |
+| 14 | Publish blocked while any result is unverified | 409 naming the subjects | `:1331-1338` `UPDATE report_cards SET status='published'` — no checks of any kind, and `published_at` exists but is never set | **backend gap** |
 | 15 | A published card's comments cannot be rewritten | 409 | No guard — searched `report_cards` updates | **backend gap** |
-| 16 | One attendance record per pupil, class and date | `(student, class, date)`, upsert | `:634` `ON CONFLICT (student_id,date) DO UPDATE`. `class_id` is not even a column on the insert at `:631` | **modelled differently** — theirs cannot express a per-period register |
+| 16 | One attendance record per pupil, class and date | `(student, class, date)`, upsert | `:634` `ON CONFLICT (student_id,date) DO UPDATE`. `class_id` **exists on the table** but is absent from the insert at `:631` and from the constraint | **modelled differently** — theirs cannot express a per-period register |
 | 17 | Registers cannot be dated in the future | 422 | Absent — searched `body.date` comparisons | **backend gap** |
 | 18 | Bands tile `0..max_score`, no gap or overlap | `validateBands()` | `:964` inserts a band with no validation. `:1014` `BETWEEN min_score AND max_score` silently returns no band for a score in a hole | **backend gap** |
 | 19 | Competition ranking | `competitionRank()` | Merit list `:2327` uses `RANK() OVER (…)`, which is competition ranking. Report card position `:1254-1265` uses `fetchval` over a `GROUP BY`, returning only ever 1 or 2 | **modelled differently** — one right, one broken |
@@ -70,3 +79,13 @@ backend's key is worse and we kept ours, recorded as schema change #13 in
 `BACKEND-PATCHES.md`. Row 8: we dropped the synthesised `person_id` and match
 guardians by normalised phone, because a shared guardian identity is a schema
 change and not ours to invent.
+
+| 39 | A report card can be created at all | `generateReportCards()` | `:1274` inserts `school_id`, `mean_score` and `teacher_remarks`; the table has none of those three. **Confirmed live: every `POST /report-cards` is a 500.** Missed by the static read | **backend gap** |
+
+## Live verification, step 7
+
+A backend was stood up from `soko-V4.2-main` (Postgres 18 on 55432, no Redis,
+no SMTP/eTIMS/Anthropic keys) and seeded through its own API. The contract
+suite ran against it: **16 RULE, 14 ROUTE, 12 TRANSPORT**. Six of the seven
+targeted expectations were confirmed with evidence; the seventh was blocked by
+row 39. See `docs/BACKEND-PATCHES.md` for the evidence and the wave order.

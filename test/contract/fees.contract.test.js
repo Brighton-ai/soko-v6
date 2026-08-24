@@ -2,10 +2,10 @@
 /** Money rules. Every one of these must hold against production. */
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { openAPI, SCHOOL, rule, because } = require('./backend.js');
+const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures } = require('./backend.js');
 
-let API;
-beforeEach(() => { API = openAPI(); });
+let API, F;
+beforeEach(async () => { API = openAPI(); resetFixtures(); F = await fixtures(API); });
 
 const owing = async (min = 1) =>
   (await API.listInvoiceRows(SCHOOL, { pageSize: 100000 })).items
@@ -134,17 +134,17 @@ describe('Contract — fees', () => {
   });
 
   it(rule(7, 'bulk generate skips pupils already invoiced for that term', 'school.py:793'), async () => {
-    const classes = await API.listClasses(SCHOOL, {});
-    const cls = classes[1];
+    const classes = Array.isArray(await API.listClasses(SCHOOL, {})) ? await API.listClasses(SCHOOL, {}) : [];
+    const cls = classes[1] || classes[0];
     const first = await API.bulkGenerateInvoices(SCHOOL, {
       classId: cls.id, termId: 't3-2026', dueDate: '2026-10-02',
-      structureId: `fee-${cls.id}-t2-2026`
+      structureId: F.structureId || `fee-${cls.id}-t2-2026`
     });
     assert.ok(first.created > 0, 'The first run created nothing.' + because(7));
 
     const second = await API.bulkGenerateInvoices(SCHOOL, {
       classId: cls.id, termId: 't3-2026', dueDate: '2026-10-02',
-      structureId: `fee-${cls.id}-t2-2026`
+      structureId: F.structureId || `fee-${cls.id}-t2-2026`
     });
     assert.equal(second.created, 0,
       `Running bulk generate twice created ${second.created} more invoices.` +

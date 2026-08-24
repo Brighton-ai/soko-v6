@@ -5,13 +5,13 @@
  */
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { openAPI, SCHOOL, rule, because } = require('./backend.js');
+const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures } = require('./backend.js');
 
-let API;
-beforeEach(() => { API = openAPI(); });
+let API, F;
+beforeEach(async () => { API = openAPI(); resetFixtures(); F = await fixtures(API); });
 
-const TEACHER = 'tch-04';
-const GUARDIAN = '0722 418 067';
+const TEACHER = process.env.SHULE_TEACHER_ID || 'tch-04';
+const GUARDIAN = process.env.SHULE_GUARDIAN || '0722 418 067';
 
 describe('Contract — teacher scope', () => {
   it(rule(21, 'a teacher is handed only the classes they are assigned to'), async () => {
@@ -48,8 +48,8 @@ describe('Contract — teacher scope', () => {
     const page = await API.listStudents(SCHOOL, { classId: foreign.id, pageSize: 5 });
 
     let err = null;
-    await API.saveTeacherResults(SCHOOL, TEACHER, 'exm-t2-mid', {
-      classId: foreign.id, subjectId: 'sub-mat',
+    await API.saveTeacherResults(SCHOOL, TEACHER, F.examId, {
+      classId: foreign.id, subjectId: F.subjectId,
       scores: [{ student_id: page.items[0].id, score: 99 }]
     }).catch((e) => { err = e; });
     assert.ok(err,

@@ -1,0 +1,44 @@
+[
+  {
+    "n": 1,
+    "expectation": "portal 500s on a valid token",
+    "confirmed": true,
+    "detail": "POST guardian-token → 200, token 48538a77b193…  then GET /guardian-portal/{token} → 500. Body: Internal Server Error"
+  },
+  {
+    "n": 2,
+    "expectation": "merit-list 500s (marks_obtained)",
+    "confirmed": true,
+    "detail": "GET /exams/{id}/merit-list → 500. Body: Internal Server Error"
+  },
+  {
+    "n": 3,
+    "expectation": "class position only 1 or 2",
+    "confirmed": false,
+    "detail": "three pupils with means 95, 80, 65 → positions [\"1a21bcba:ERR 500\",\"cb6afa11:ERR 500\",\"e23dfbbb:ERR 500\"]. Distinct values: []. Expected 1, 2, 3."
+  },
+  {
+    "n": 4,
+    "expectation": "/pay posts nothing to the GL",
+    "confirmed": true,
+    "detail": "POST /fee-invoices/{id}/pay 1,000 → 200. GL debits 0 → 0 (moved 0)."
+  },
+  {
+    "n": 5,
+    "expectation": "over-payment accepted",
+    "confirmed": true,
+    "detail": "invoice balance 40,999, sent 48,999 → HTTP 200. Result: amount_paid 50,000, balance 0, status \"paid\". amount_due is 42,000, so the school now shows 8,000 more received than was ever charged."
+  },
+  {
+    "n": 6,
+    "expectation": "payment after waiver wipes the discount",
+    "confirmed": true,
+    "detail": "start: due 42,000, paid 0, balance 42,000, discount 0\n    after 5,000 waiver (approve → 200): balance 37,000, discount 5,000\n    after paying 1: balance 41,999, discount 5,000, paid 1\n    → the bursary did NOT survive: balance rose by 4,999 when one shilling was paid."
+  },
+  {
+    "n": 7,
+    "expectation": "double approval applies twice",
+    "confirmed": true,
+    "detail": "approve #1 → 200: balance 39,999, discount 7,000\n    approve #2 → 200: balance 37,999, discount 9,000\n    → a 2,000 bursary was applied TWICE — discount rose by 2,000 on the second click."
+  }
+]

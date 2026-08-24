@@ -2,12 +2,10 @@
 /** Grading, marks, verification, publication and ranking. */
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { openAPI, SCHOOL, rule, because } = require('./backend.js');
+const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures } = require('./backend.js');
 
-let API;
-beforeEach(() => { API = openAPI(); });
-
-const EXAM = 'exm-t2-mid';
+let API, F;
+beforeEach(async () => { API = openAPI(); resetFixtures(); F = await fixtures(API); });
 
 describe('Contract — academics', () => {
   it(rule(18, 'grading bands tile 0..max_score with no gap or overlap', 'school.py:964'), async () => {
@@ -47,17 +45,17 @@ describe('Contract — academics', () => {
   });
 
   it(rule(9, 'grade and points are derived from the bound scale, not the caller', 'school.py:1012'), async () => {
-    const sheet = await API.getMarkSheet(SCHOOL, EXAM, { classId: 'cls-g4e', subjectId: 'sub-mat' });
+    const sheet = await API.getMarkSheet(SCHOOL, F.examId, { classId: F.classId, subjectId: F.subjectId });
     const scale = sheet.scale;
     const pupils = sheet.roll.slice(0, 4);
     const scores = [0, 44, 79, 100];
 
-    await API.saveExamResults(SCHOOL, EXAM, {
-      classId: 'cls-g4e', subjectId: 'sub-mat', enteredBy: 'tch-01',
+    await API.saveExamResults(SCHOOL, F.examId, {
+      classId: F.classId, subjectId: F.subjectId, enteredBy: F.teacherId || null,
       scores: pupils.map((p, i) => ({ student_id: p.student_id, score: scores[i], grade: 'Z', points: 999 }))
     });
 
-    const after = await API.getMarkSheet(SCHOOL, EXAM, { classId: 'cls-g4e', subjectId: 'sub-mat' });
+    const after = await API.getMarkSheet(SCHOOL, F.examId, { classId: F.classId, subjectId: F.subjectId });
     const wrong = pupils.map((p, i) => {
       const row = after.roll.filter((r) => r.student_id === p.student_id)[0];
       const band = scale.bands.filter((b) => scores[i] >= b.min && scores[i] <= b.max)[0];
@@ -70,12 +68,12 @@ describe('Contract — academics', () => {
   });
 
   it(rule(10, 'a score outside 0..max_score is refused', 'school.py:166'), async () => {
-    const sheet = await API.getMarkSheet(SCHOOL, EXAM, { classId: 'cls-g4e', subjectId: 'sub-mat' });
+    const sheet = await API.getMarkSheet(SCHOOL, F.examId, { classId: F.classId, subjectId: F.subjectId });
     const pupil = sheet.roll[0].student_id;
     for (const bad of [-1, 101, 900]) {
       let err = null;
-      await API.saveExamResults(SCHOOL, EXAM, {
-        classId: 'cls-g4e', subjectId: 'sub-mat', enteredBy: 'tch-01',
+      await API.saveExamResults(SCHOOL, F.examId, {
+        classId: F.classId, subjectId: F.subjectId, enteredBy: F.teacherId || null,
         scores: [{ student_id: pupil, score: bad }]
       }).catch((e) => { err = e; });
       assert.ok(err,
@@ -85,16 +83,16 @@ describe('Contract — academics', () => {
   });
 
   it(rule(10, 'a rejected mark sheet writes nothing at all'), async () => {
-    const sheet = await API.getMarkSheet(SCHOOL, EXAM, { classId: 'cls-g5w', subjectId: 'sub-eng' });
+    const sheet = await API.getMarkSheet(SCHOOL, F.examId, { classId: F.classId2 || F.classId, subjectId: F.subjects[1] ? F.subjects[1].id : F.subjectId });
     const before = sheet.roll.map((r) => r.score);
-    await API.saveExamResults(SCHOOL, EXAM, {
-      classId: 'cls-g5w', subjectId: 'sub-eng', enteredBy: 'tch-01',
+    await API.saveExamResults(SCHOOL, F.examId, {
+      classId: F.classId2 || F.classId, subjectId: F.subjects[1] ? F.subjects[1].id : F.subjectId, enteredBy: F.teacherId || null,
       scores: [
         { student_id: sheet.roll[0].student_id, score: 55 },
         { student_id: sheet.roll[1].student_id, score: 4000 }
       ]
     }).catch(() => null);
-    const after = await API.getMarkSheet(SCHOOL, EXAM, { classId: 'cls-g5w', subjectId: 'sub-eng' });
+    const after = await API.getMarkSheet(SCHOOL, F.examId, { classId: F.classId2 || F.classId, subjectId: F.subjects[1] ? F.subjects[1].id : F.subjectId });
     assert.deepEqual(after.roll.map((r) => r.score), before,
       'One bad row was rejected but the good row in the same sheet was still written.' + because(10));
   });
@@ -114,15 +112,15 @@ describe('Contract — academics', () => {
   });
 
   it(rule(12, 'changing a saved mark clears its verification'), async () => {
-    const page = await API.listExamResults(SCHOOL, EXAM, { pageSize: 100000 });
+    const page = await API.listExamResults(SCHOOL, F.examId, { pageSize: 100000 });
     const verified = page.items.filter((r) => r.verified)[0];
     assert.ok(verified, 'No verified result to disturb.' + because(12));
 
-    await API.saveExamResults(SCHOOL, EXAM, {
-      classId: verified.class_id, subjectId: verified.subject_id, enteredBy: 'tch-01',
+    await API.saveExamResults(SCHOOL, F.examId, {
+      classId: verified.class_id, subjectId: verified.subject_id, enteredBy: F.teacherId || null,
       scores: [{ student_id: verified.student_id, score: Math.max(0, verified.score - 3) }]
     });
-    const after = (await API.listExamResults(SCHOOL, EXAM, { pageSize: 100000 })).items
+    const after = (await API.listExamResults(SCHOOL, F.examId, { pageSize: 100000 })).items
       .filter((r) => r.student_id === verified.student_id && r.subject_id === verified.subject_id)[0];
     assert.equal(after.verified, false,
       'A changed mark kept its verification. Nobody has checked the new number.' +
@@ -130,14 +128,14 @@ describe('Contract — academics', () => {
   });
 
   it(rule(13, 'the person who entered a mark cannot verify it'), async () => {
-    const sheet = await API.getMarkSheet(SCHOOL, EXAM, { classId: 'cls-g6e', subjectId: 'sub-kis' });
-    await API.saveExamResults(SCHOOL, EXAM, {
-      classId: 'cls-g6e', subjectId: 'sub-kis', enteredBy: 'tch-02',
+    const sheet = await API.getMarkSheet(SCHOOL, F.examId, { classId: F.classId, subjectId: F.subjectId });
+    await API.saveExamResults(SCHOOL, F.examId, {
+      classId: F.classId, subjectId: F.subjectId, enteredBy: F.teacherId2 || null,
       scores: [{ student_id: sheet.roll[0].student_id, score: 61 }]
     });
     let err = null;
-    await API.verifyExamResults(SCHOOL, EXAM, {
-      classId: 'cls-g6e', subjectId: 'sub-kis', verifiedBy: 'tch-02'
+    await API.verifyExamResults(SCHOOL, F.examId, {
+      classId: F.classId, subjectId: F.subjectId, verifiedBy: F.teacherId2 || null
     }).catch((e) => { err = e; });
     assert.ok(err,
       'The teacher who entered the marks verified them. Separation is then only a naming convention.' +
@@ -145,15 +143,15 @@ describe('Contract — academics', () => {
   });
 
   it(rule(13, 'verification records who signed it off'), async () => {
-    const before = (await API.listExamResults(SCHOOL, EXAM, { pageSize: 100000 })).items
+    const before = (await API.listExamResults(SCHOOL, F.examId, { pageSize: 100000 })).items
       .filter((r) => !r.verified);
     assert.ok(before.length, 'Nothing awaiting verification.');
     const classId = before[0].class_id;
 
-    const r = await API.verifyExamResults(SCHOOL, EXAM, { classId, verifiedBy: 'tch-06', allowSelf: true });
+    const r = await API.verifyExamResults(SCHOOL, F.examId, { classId, verifiedBy: F.verifierId || null, allowSelf: true });
     assert.ok(r.verified > 0, `Verification reported ${r.verified} marks.` + because(13));
 
-    const after = (await API.listExamResults(SCHOOL, EXAM, { pageSize: 100000 })).items
+    const after = (await API.listExamResults(SCHOOL, F.examId, { pageSize: 100000 })).items
       .filter((r2) => r2.class_id === classId);
     const unstamped = after.filter((r2) => r2.verified && !r2.verified_by).length;
     assert.equal(unstamped, 0,
@@ -161,12 +159,12 @@ describe('Contract — academics', () => {
   });
 
   it(rule(14, 'a report card cannot be published while a feeding result is unverified', 'school.py:1331'), async () => {
-    const page = await API.listExamResults(SCHOOL, EXAM, { pageSize: 100000 });
+    const page = await API.listExamResults(SCHOOL, F.examId, { pageSize: 100000 });
     const unverified = page.items.filter((r) => !r.verified);
     assert.ok(unverified.length, 'Everything is verified, so the gate is never exercised.');
     const classId = unverified[0].class_id;
 
-    await API.generateReportCards(SCHOOL, { classId, examId: EXAM });
+    await API.generateReportCards(SCHOOL, { classId, examId: F.examId });
     let err = null;
     await API.publishReportCardsFor(SCHOOL, { classId }).catch((e) => { err = e; });
 
@@ -183,10 +181,10 @@ describe('Contract — academics', () => {
   });
 
   it(rule(15, "a published card's comments cannot be rewritten"), async () => {
-    const page = await API.listExamResults(SCHOOL, EXAM, { pageSize: 100000 });
+    const page = await API.listExamResults(SCHOOL, F.examId, { pageSize: 100000 });
     const classId = page.items.filter((r) => !r.verified)[0].class_id;
-    await API.verifyExamResults(SCHOOL, EXAM, { classId, verifiedBy: 'tch-06', allowSelf: true });
-    await API.generateReportCards(SCHOOL, { classId, examId: EXAM });
+    await API.verifyExamResults(SCHOOL, F.examId, { classId, verifiedBy: F.verifierId || null, allowSelf: true });
+    await API.generateReportCards(SCHOOL, { classId, examId: F.examId });
     await API.publishReportCardsFor(SCHOOL, { classId });
 
     const card = (await API.listReportCardRows(SCHOOL, { classId })).items[0];
@@ -197,7 +195,7 @@ describe('Contract — academics', () => {
   });
 
   it(rule(19, 'report card positions use competition ranking', 'school.py:1254'), async () => {
-    const cards = (await API.listReportCardRows(SCHOOL, { classId: 'cls-g4e' })).items;
+    const cards = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items;
     assert.ok(cards.length > 2, 'Too few cards to rank.');
 
     const ordered = cards.slice().sort((a, b) => b.average - a.average);
@@ -217,7 +215,7 @@ describe('Contract — academics', () => {
   });
 
   it(rule(19, 'a tie shares a position and the rank after it skips'), async () => {
-    const cards = (await API.listReportCardRows(SCHOOL, { classId: 'cls-g4e' })).items;
+    const cards = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items;
     const byAverage = {};
     cards.forEach((c) => { (byAverage[c.average] = byAverage[c.average] || []).push(c); });
     const tied = Object.values(byAverage).filter((g) => g.length > 1)[0];
@@ -234,7 +232,7 @@ describe('Contract — academics', () => {
   });
 
   it(rule(19, 'the merit list ranks by total descending', 'school.py:2327'), async () => {
-    const m = await API.getMeritList(SCHOOL, EXAM, { classId: 'cls-g4e' });
+    const m = await API.getMeritList(SCHOOL, F.examId, { classId: F.classId });
     const totals = m.items.map((e) => e.total);
     assert.deepEqual(totals, totals.slice().sort((a, b) => b - a),
       `The merit list is not in descending order: ${totals.slice(0, 6).join(', ')}` +
@@ -243,17 +241,17 @@ describe('Contract — academics', () => {
 
   it(rule(16, 'marking the same register twice updates rather than duplicates', 'school.py:634'), async () => {
     const classes = await API.listClasses(SCHOOL, {});
-    const cls = classes.filter((c) => c.id === 'cls-g6w')[0] || classes[0];
+    const cls = classes[0];
     const summary = await API.getDashboardSummary(SCHOOL, {});
     const reg = await API.getClassRegister(SCHOOL, cls.id, { date: summary.date });
     const records = reg.roll.map((r) => ({ student_id: r.student_id, status: 'present' }));
 
-    const first = await API.markTeacherAttendance(SCHOOL, cls.class_teacher_id || 'tch-04', cls.id, {
+    const first = await API.markTeacherAttendance(SCHOOL, cls.class_teacher_id || F.teacherId || null, cls.id, {
       date: summary.date, records
-    }).catch(() => API.markAttendance(SCHOOL, cls.id, { date: summary.date, markedBy: 'tch-04', records }));
+    }).catch(() => API.markAttendance(SCHOOL, cls.id, { date: summary.date, markedBy: F.teacherId || null, records }));
 
     const second = await API.markAttendance(SCHOOL, cls.id, {
-      date: summary.date, markedBy: 'tch-04',
+      date: summary.date, markedBy: F.teacherId || null,
       records: records.map((r, i) => ({ ...r, status: i < 2 ? 'absent' : 'present' }))
     });
     assert.equal(second.created, 0,
@@ -271,7 +269,7 @@ describe('Contract — academics', () => {
     const classes = await API.listClasses(SCHOOL, {});
     let err = null;
     await API.markAttendance(SCHOOL, classes[0].id, {
-      date: '2099-01-01', markedBy: 'tch-04',
+      date: '2099-01-01', markedBy: F.teacherId || null,
       records: [{ student_id: 'stu-2301', status: 'present' }]
     }).catch((e) => { err = e; });
     assert.ok(err, 'A register dated 2099 was accepted.' + because(17));

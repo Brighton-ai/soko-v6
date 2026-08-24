@@ -1,2 +1,8 @@
 node_modules/
 __pycache__/
+
+# the SokoOS backend is extracted beside this repo, never inside it
+soko-V4.2-main/
+dev/.env
+dev/*.log
+dev/seed-live.json

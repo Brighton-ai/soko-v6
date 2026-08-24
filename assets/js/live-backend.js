@@ -202,6 +202,8 @@
   var POST = function (p, b, q) { return request('POST', p, { body: b, query: q }); };
   var PUT = function (p, b, q) { return request('PUT', p, { body: b, query: q }); };
 
+  function notInBackendLater(name, row) { return notInBackend(name, row); }
+
   function notInBackend(name, row) {
     return function () {
       var e = new Error(name + ' has no route in school.py. ' +
@@ -218,10 +220,13 @@
   var B = {};
 
   // GET /api/school/{school_id}/students        (school.py:2242 region)
+  /** school.py caps per_page at 100 (le=100); asking for more is a 422. */
+  function pageSize(n) { return n ? Math.min(Number(n), 100) : undefined; }
+
   B.listStudents = function (schoolId, opts) {
     opts = opts || {};
     return GET('/' + schoolId + '/students',
-      { class_id: opts.classId, search: opts.search, page: opts.page, per_page: opts.pageSize });
+      { class_id: opts.classId, search: opts.search, page: opts.page, per_page: pageSize(opts.pageSize) });
   };
   B.searchStudents = B.listStudents;
   // GET /api/school/students/{id}
@@ -284,14 +289,15 @@
   B.listFeeInvoices = function (schoolId, opts) {
     opts = opts || {};
     return GET('/fee-invoices',
-      { school_id: schoolId, status: opts.status, page: opts.page, per_page: opts.pageSize });
+      { school_id: schoolId, status: opts.status, page: opts.page, per_page: pageSize(opts.pageSize) });
   };
   B.listInvoiceRows = B.listFeeInvoices;
   // POST /api/school/fee-invoices/bulk-generate
   B.bulkGenerateInvoices = function (schoolId, payload) {
+    // BulkFeeGenerateIn (school.py:141): fee_structure_id, not structure_id
     return POST('/fee-invoices/bulk-generate', {
-      school_id: schoolId, class_id: payload.classId, term: payload.termId,
-      due_date: payload.dueDate, structure_id: payload.structureId
+      school_id: schoolId, fee_structure_id: payload.structureId,
+      grade: payload.grade, due_date: payload.dueDate
     });
   };
   /*
@@ -313,8 +319,12 @@
     return GET('/defaulters', { school_id: schoolId, threshold_days: opts && opts.thresholdDays });
   };
   B.listDefaulterRows = B.listDefaulters;
-  // POST /api/school/fee-waivers
-  B.listWaiverRows = function (schoolId, opts) { return GET('/fee-waivers', { school_id: schoolId, status: opts && opts.status }); };
+  /*
+   * school.py has POST /fee-waivers but NO list route — searched. Waivers can
+   * be created and approved and never read back, so the demo's list has no
+   * counterpart. RULES row 6.
+   */
+  B.listWaiverRows = notInBackendLater('listWaiverRows', 6);
   // PUT /api/school/fee-waivers/{id}/approve
   B.approveWaiver = function (schoolId, waiverId, payload) {
     return PUT('/fee-waivers/' + waiverId + '/approve', payload || {});

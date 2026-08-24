@@ -1,0 +1,176 @@
+{
+  "RULE": [
+    {
+      "name": "[RULES row 18] a scale with a hole is refused on save",
+      "msg": "A scale with no band covering 50 was saved. A pupil scoring 50 would get no grade. | Rule: docs/RULES_RECONCILED.md row 18 | Backend under test: live"
+    },
+    {
+      "name": "[RULES row 19] report card positions use competition ranking — school.py:1254",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 19] a tie shares a position and the rank after it skips",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 19] the merit list ranks by total descending — school.py:2327",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 32] a live token returns a payload rather than an error — school.py:2498",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 24] a token resolves to exactly one student — school.py:2465",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 23] the portal shows only published cards and verified marks — school.py:2498",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 25] an expired token returns a state and no data — school.py:2467",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 25] an unknown token returns a state and no data",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 26] a revoked token stops working",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    },
+    {
+      "name": "[RULES row 1] balance = amount_due − amount_paid − discount_amount — school.py:815, :1978",
+      "msg": "The balance identity does not hold: | cb7c0af5-c33e-4e97-b04d-6cc49a3dc5e1: 42000 − 50000 − 0 ≠ 0 | 40e1cb4b-203f-40b8-986e-f31d6d60d184: 42000 − 50000 − 9000 ≠ 0"
+    },
+    {
+      "name": "[RULES row 2] a payment cannot exceed the balance — school.py:1976",
+      "msg": "A payment of 41001 against a balance of 41000 was accepted. | Rule: docs/RULES_RECONCILED.md row 2 | Backend: school.py:1976 takes body[\"amount\"] unchecked; :818 clamps balance but amount_paid keeps the overage"
+    },
+    {
+      "name": "[RULES row 2] a rejected over-payment mutates nothing",
+      "msg": "The over-payment was accepted. | Rule: docs/RULES_RECONCILED.md row 2 | Backend under test: live"
+    },
+    {
+      "name": "[RULES row 2] a zero or negative payment is refused",
+      "msg": "A payment of 0 was accepted. | Rule: docs/RULES_RECONCILED.md row 2 | Backend under test: live"
+    },
+    {
+      "name": "[RULES row 7] bulk generate skips pupils already invoiced for that term — school.py:793",
+      "msg": "Running bulk generate twice created 6 more invoices. | Rule: docs/RULES_RECONCILED.md row 7 | Backend: school.py:793 ON CONFLICT (student_id,term,year) DO NOTHING"
+    },
+    {
+      "name": "[RULES row 29] reminders never pass three",
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+    }
+  ],
+  "ROUTE": [
+    {
+      "name": "[RULES row 16] marking the same register twice updates rather than duplicates — school.py:634",
+      "msg": "getDashboardSummary has no route in school.py. See docs/RULES_RECONCILED.md row 1 and docs/BACKEND-PATCHES.md. | at Object.getDashboardSummary (assets/js/live-backend.js:209:15) | at Object.getDashboardSummary (assets/js"
+    },
+    {
+      "name": "[RULES row 21] a teacher is handed only the classes they are assigned to",
+      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:209:15) | at Object.listTeacherClasses (assets/js/a"
+    },
+    {
+      "name": "[RULES row 21] a class the teacher does not teach is refused",
+      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:209:15) | at Object.listTeacherClasses (assets/js/a"
+    },
+    {
+      "name": "[RULES row 21] a teacher cannot write marks outside their assignment",
+      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:209:15) | at Object.listTeacherClasses (assets/js/a"
+    },
+    {
+      "name": "[RULES row 21] a teacher's dashboard counts only their own work",
+      "msg": "getTeacherDashboard has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.getTeacherDashboard (assets/js/live-backend.js:209:15) | at Object.getTeacherDashboard (assets/j"
+    },
+    {
+      "name": "[RULES row 22] a guardian is handed only their own children",
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:397:20"
+    },
+    {
+      "name": "[RULES row 22] another family's child is refused on every child route",
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:397:20"
+    },
+    {
+      "name": "[RULES row 23] a guardian sees only published report cards",
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:397:20"
+    },
+    {
+      "name": "[RULES row 23] a guardian sees only verified marks",
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:397:20"
+    },
+    {
+      "name": "[RULES row 23] a card put back into draft stops being visible",
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:397:20"
+    },
+    {
+      "name": "[RULES row 4] every payment posts a balanced double entry — school.py:1985, test_school_fees.py:63",
+      "msg": "listJournalLines has no route in school.py. See docs/RULES_RECONCILED.md row 4 and docs/BACKEND-PATCHES.md. | at Object.listJournalLines (assets/js/live-backend.js:209:15) | at Object.listJournalLines (assets/js/api.js:2"
+    },
+    {
+      "name": "[RULES row 5] a waiver discounts the charge and never reduces amount_due — school.py:919",
+      "msg": "listWaiverRows has no route in school.py. See docs/RULES_RECONCILED.md row 6 and docs/BACKEND-PATCHES.md. | at Object.<anonymous> (assets/js/live-backend.js:209:15) | at Object.listWaiverRows (assets/js/api.js:244:20)"
+    },
+    {
+      "name": "[RULES row 6] approving a waiver twice discounts once — school.py:908",
+      "msg": "listWaiverRows has no route in school.py. See docs/RULES_RECONCILED.md row 6 and docs/BACKEND-PATCHES.md. | at Object.<anonymous> (assets/js/live-backend.js:209:15) | at Object.listWaiverRows (assets/js/api.js:244:20)"
+    },
+    {
+      "name": "[RULES row 31] approving a waiver posts to the general ledger",
+      "msg": "listWaiverRows has no route in school.py. See docs/RULES_RECONCILED.md row 6 and docs/BACKEND-PATCHES.md. | at Object.<anonymous> (assets/js/live-backend.js:209:15) | at Object.listWaiverRows (assets/js/api.js:244:20)"
+    }
+  ],
+  "TRANSPORT": [
+    {
+      "name": "[RULES row 18] grading bands tile 0..max_score with no gap or overlap — school.py:964",
+      "msg": "Scales with a gap or overlap: | Contract 8-4-4 starts at undefined, not 0 | Contract 8-4-4: A ends undefined, B starts undefined"
+    },
+    {
+      "name": "[RULES row 9] grade and points are derived from the bound scale, not the caller — school.py:1012",
+      "msg": "Cannot read properties of undefined (reading 'slice') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:50:31) | at process.processTicksAndRejections (node:internal/process"
+    },
+    {
+      "name": "[RULES row 10] a score outside 0..max_score is refused — school.py:166",
+      "msg": "Cannot read properties of undefined (reading '0') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:72:29) | at process.processTicksAndRejections (node:internal/process/tas"
+    },
+    {
+      "name": "[RULES row 10] a rejected mark sheet writes nothing at all",
+      "msg": "Cannot read properties of undefined (reading 'map') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:87:31) | at process.processTicksAndRejections (node:internal/process/t"
+    },
+    {
+      "name": "[RULES row 11] an exam's grading scale is frozen once results exist",
+      "msg": "Cannot read properties of undefined (reading 'grading_scale_id') | at /home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:104:56 | at Array.filter (<anonymous>)"
+    },
+    {
+      "name": "[RULES row 12] changing a saved mark clears its verification",
+      "msg": "Cannot read properties of undefined (reading 'filter') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:116:33) | at process.processTicksAndRejections (node:internal/proce"
+    },
+    {
+      "name": "[RULES row 13] the person who entered a mark cannot verify it",
+      "msg": "Cannot read properties of undefined (reading '0') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:134:40) | at process.processTicksAndRejections (node:internal/process/ta"
+    },
+    {
+      "name": "[RULES row 13] verification records who signed it off",
+      "msg": "Cannot read properties of undefined (reading 'filter') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:147:8) | at process.processTicksAndRejections (node:internal/proces"
+    },
+    {
+      "name": "[RULES row 14] a report card cannot be published while a feeding result is unverified — school.py:1331",
+      "msg": "Cannot read properties of undefined (reading 'filter') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:163:35) | at process.processTicksAndRejections (node:internal/proce"
+    },
+    {
+      "name": "[RULES row 15] a published card's comments cannot be rewritten",
+      "msg": "Cannot read properties of undefined (reading 'filter') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:185:32) | at process.processTicksAndRejections (node:internal/proce"
+    },
+    {
+      "name": "[RULES row 8] a link cannot be issued to a guardian on another pupil’s record",
+      "msg": "Cannot read properties of undefined (reading 'id') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/access.contract.test.js:202:59) | at process.processTicksAndRejections (node:internal/process/task"
+    },
+    {
+      "name": "[RULES row 3] a part payment leaves part_paid; a clearing payment leaves cleared — school.py:816",
+      "msg": "Cannot read properties of undefined (reading 'status') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/fees.contract.test.js:63:31) | at process.processTicksAndRejections (node:internal/process/tas"
+    }
+  ]
+}

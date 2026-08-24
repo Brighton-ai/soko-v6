@@ -92,3 +92,53 @@ function because(row, where) {
 }
 
 module.exports = { openAPI, MODE, BASE_URL, SCHOOL, rule, because };
+
+/**
+ * Fixture discovery.
+ *
+ * Contract tests must not hardcode demo ids — `cls-g4e` means nothing to a live
+ * backend, and a test that fails on an unrecognised id is reporting a fixture
+ * problem dressed up as a rule failure. Everything a test needs is discovered
+ * through the API, once, and cached.
+ */
+let FIXTURES = null;
+async function fixtures(API) {
+  if (FIXTURES) return FIXTURES;
+  const schoolId = SCHOOL;
+  const [classes, exams, scales] = await Promise.all([
+    API.listClasses(schoolId, {}).catch(() => []),
+    API.listExamRows(schoolId, {}).catch(() => []),
+    API.listGradingScaleRows(schoolId, {}).catch(() => [])
+  ]);
+  const list = (v) => (Array.isArray(v) ? v : (v && v.items) || []);
+  const cls = list(classes);
+  const exam = list(exams);
+  let subjects = [], teachers = [], structures = [];
+  try { subjects = list(await API.listSubjects(schoolId, {})); } catch (e) { subjects = []; }
+  try { teachers = list(await API.listTeachers(schoolId, {})); } catch (e) { teachers = []; }
+  try { structures = list(await API.listFeeStructures(schoolId, {})); } catch (e) { structures = []; }
+
+  FIXTURES = {
+    schoolId,
+    classId: cls[0] && (cls[0].id),
+    classId2: cls[1] && (cls[1].id),
+    classes: cls,
+    subjectId: subjects[0] && subjects[0].id,
+    subjects,
+    // prefer an exam that already has marks; otherwise the first one
+    examId: (exam.filter((e) => e.result_count > 0)[0] || exam[0] || {}).id,
+    exams: exam,
+    scales: list(scales),
+    teachers,
+    teacherId: teachers[0] && teachers[0].id,
+    teacherId2: (teachers[1] || teachers[0] || {}).id,
+    verifierId: (teachers[teachers.length - 1] || teachers[0] || {}).id,
+    structures,
+    structureId: structures[0] && structures[0].id
+  };
+  return FIXTURES;
+}
+function resetFixtures() { FIXTURES = null; }
+
+module.exports.fixtures = fixtures;
+module.exports.resetFixtures = resetFixtures;

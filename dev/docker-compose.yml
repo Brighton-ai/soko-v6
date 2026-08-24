@@ -1,0 +1,57 @@
+# Shule — development infrastructure for the SokoOS backend.
+#
+#     docker compose -f dev/docker-compose.yml up -d
+#
+# Postgres and Redis only. The API is run from a virtualenv rather than a
+# container so a failing boot shows a Python traceback rather than a container
+# exit code.
+#
+# Both services sit on non-default ports so they cannot collide with anything
+# already listening — this machine already has a Postgres on 5432, and an
+# accidental connection to it would seed a contract tenant into somebody's
+# real database.
+#
+# Named volumes, no host mounts: `docker compose down -v` is a clean slate and
+# nothing is written into the repo.
+
+name: shule-contract
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: shule-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shule
+      POSTGRES_PASSWORD: shule
+      POSTGRES_DB: sokoos
+      # deterministic collation, so ORDER BY in the contract tests is stable
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shule -d sokoos"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: shule-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "56379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  redisdata:
