@@ -940,17 +940,16 @@ function checkInvariants(win, after) {
     if (band.points !== r.points) problems.push(`result ${r.id} grade ${r.grade} carries ${band.points} points but is stored as ${r.points}`);
   });
 
-  // report card positions are dense-ranked by average, and class_size is the roll
+  // report card positions use COMPETITION ranking, and class_size is the roll
   const byClass = {};
   D.report_cards.forEach((c) => { (byClass[c.class_id] = byClass[c.class_id] || []).push(c); });
   Object.keys(byClass).forEach((classId) => {
     const cards = byClass[classId];
-    const ordered = cards.slice().sort((a, b) => b.average - a.average);
-    let rank = 0, previous = null;
-    ordered.forEach((card) => {
-      if (previous === null || card.average !== previous) { rank += 1; previous = card.average; }
+    cards.slice().sort((a, b) => b.average - a.average).forEach((card, i, ordered) => {
+      // ties share the rank of the first of them; the ranks they consume are skipped
+      const rank = ordered.findIndex((c) => c.average === card.average) + 1;
       if (card.position !== rank) {
-        problems.push(`report card ${card.id}: average ${card.average} dense-ranks to ${rank} but is stored as position ${card.position}`);
+        problems.push(`report card ${card.id}: average ${card.average} competition-ranks to ${rank} but is stored as position ${card.position}`);
       }
       if (card.class_size !== cards.length) {
         problems.push(`report card ${card.id} says class_size ${card.class_size}, but ${cards.length} cards are ranked in ${classId}`);
@@ -1900,26 +1899,65 @@ describe('Grading scales', () => {
     assert.ok(still.some((g) => g.id === bound.id), 'The scale went anyway.');
   });
 
-  it('editing a scale regrades every mark bound to it', async () => {
+  it('refuses to edit a scale that published report cards were graded on', async () => {
     const page = await openPage('app/grading-scales.html');
     const w = page.window;
     const scale = (await w.ShuleAPI.listGradingScaleRows('sch-riverside', {}))
       .filter((g) => g.result_count > 0)[0];
-    assert.ok(scale, 'No seeded scale has marks against it.');
+    const published = storeOf(w).report_cards.filter((c) => c.status === 'published');
+    assert.ok(published.length, 'No published cards in the seed, so the guard is never exercised.');
 
-    // move the top boundary down by two, so anyone on the old top two marks of
-    // the band below moves up a grade. Both bands stay valid.
     const bands = scale.bands.map((b) => Object.assign({}, b));
-    const top = bands[bands.length - 1], below = bands[bands.length - 2];
-    below.max = below.max - 2;
-    top.min = top.min - 2;
+    bands[bands.length - 2].max -= 2;
+    bands[bands.length - 1].min -= 2;
 
-    const r = await w.ShuleAPI.updateGradingScale('sch-riverside', scale.id, {
-      name: scale.name, maxScore: scale.max_score, bands: bands
+    let err = null;
+    await w.ShuleAPI.updateGradingScale('sch-riverside', scale.id, {
+      name: scale.name, maxScore: scale.max_score, bands
+    }).catch((e) => { err = e; });
+    const after = storeOf(w).grading_scales.filter((g) => g.id === scale.id)[0];
+    checkInvariants(w, 'a refused scale edit');
+    page.window.close();
+
+    assert.ok(err, 'A scale that published cards were graded on was edited.');
+    assert.equal(err.status, 409, `The refusal came back as ${err.status}, expected 409.`);
+    assert.ok(/published report card/i.test(err.message),
+      `The refusal does not say what is blocking it: ${err.message}`);
+    assert.ok(Array.isArray(err.classes) && err.classes.length,
+      'The refusal does not name the classes whose cards are affected.');
+    assert.ok(/regenerate/i.test(err.message),
+      `The refusal does not say what to do about it: ${err.message}`);
+    assert.equal(after.bands[after.bands.length - 1].min, scale.bands[scale.bands.length - 1].min,
+      'The bands changed anyway.');
+  });
+
+  it('regrades live marks once no published card depends on the scale', async () => {
+    const page = await openPage('app/grading-scales.html');
+    const w = page.window;
+    const API2 = w.ShuleAPI;
+    const scale = (await API2.listGradingScaleRows('sch-riverside', {}))
+      .filter((g) => g.result_count > 0)[0];
+
+    // put every published card back to draft, the way the refusal asks
+    const classes = [...new Set(storeOf(w).report_cards
+      .filter((c) => c.status === 'published').map((c) => c.class_id))];
+    for (const classId of classes) {
+      await API2.generateReportCards('sch-riverside', { classId, examId: 'exm-t2-mid' });
+    }
+    assert.equal(storeOf(w).report_cards.filter((c) => c.status === 'published').length, 0,
+      'Regenerating did not clear the published cards, so the edit would still be blocked.');
+
+    const bands = scale.bands.map((b) => Object.assign({}, b));
+    bands[bands.length - 2].max -= 2;
+    bands[bands.length - 1].min -= 2;
+
+    const r = await API2.updateGradingScale('sch-riverside', scale.id, {
+      name: scale.name, maxScore: scale.max_score, bands
     });
     checkInvariants(w, 'editing a grading scale');
     page.window.close();
-    assert.ok(r.regraded > 0, 'Widening a band regraded nothing, so stored grades have drifted from the scale.');
+    assert.ok(r.regraded > 0,
+      'Widening a band regraded nothing, so stored grades have drifted from the scale that produced them.');
   });
 });
 
@@ -2339,7 +2377,7 @@ describe('Results', () => {
       `The breakdown has ${a.subjects.length} subjects; ${subjects.length} were marked.`);
   });
 
-  it('the merit list ranks by total descending, with ties sharing a rank', async () => {
+  it('the merit list ranks by total descending, with ties sharing a rank and the next skipping', async () => {
     const m = await API.getMeritList('sch-riverside', EXAM, { classId: 'cls-g4e' });
     assert.ok(m.total > 0, 'The merit list is empty.');
 
@@ -2353,12 +2391,8 @@ describe('Results', () => {
     rows.forEach((r) => { byStudent[r.student_id] = (byStudent[r.student_id] || 0) + r.score; });
     const expected = Object.keys(byStudent).map((id) => ({ id, total: byStudent[id] }))
       .sort((a, b) => b.total - a.total);
-    let rank = 0, previous = null;
     const want = {};
-    expected.forEach((e) => {
-      if (previous === null || e.total !== previous) { rank += 1; previous = e.total; }
-      want[e.id] = rank;
-    });
+    expected.forEach((e) => { want[e.id] = expected.findIndex((x) => x.total === e.total) + 1; });
     const off = m.items.filter((e) => e.position !== want[e.student_id])
       .map((e) => `${e.name}: total ${e.total} ranks ${want[e.student_id]} but is shown at ${e.position}`);
     deepEqual(off.slice(0, 5), [], `Merit positions do not match a recount:\n  ${off.slice(0, 5).join('\n  ')}`);
@@ -2393,8 +2427,9 @@ describe('Results', () => {
     page.window.close();
 
     const positions = m.items.map((e) => e.position);
-    deepEqual(positions, [1, 1, 2, 3],
-      `Two pupils tied on 80, then 70 and 60, should rank 1, 1, 2, 3 — got ${positions.join(', ')}.`);
+    deepEqual(positions, [1, 1, 3, 4],
+      `Two pupils tied on 80, then 70 and 60, should rank 1, 1, 3, 4 under competition ranking — ` +
+      `got ${positions.join(', ')}. Dense ranking would give 1, 1, 2, 3.`);
   });
 });
 
@@ -2424,28 +2459,52 @@ describe('Report cards', () => {
     deepEqual(off.slice(0, 5), [], `Card totals are not recomputable from their results:\n  ${off.slice(0, 5).join('\n  ')}`);
   });
 
-  it('positions are dense-ranked by average, and class_size is the roll', async () => {
+  it('positions use competition ranking on the average, and class_size is the roll', async () => {
     const dom = await openPage('app/report-cards.html');
     const win = dom.window;
     const r = await win.ShuleAPI.listReportCardRows('sch-riverside', { classId: 'cls-g4e' });
     const cards = r.items;
 
     const ordered = cards.slice().sort((a, b) => b.average - a.average);
-    let rank = 0, previous = null;
     const want = {};
-    ordered.forEach((c) => {
-      if (previous === null || c.average !== previous) { rank += 1; previous = c.average; }
-      want[c.id] = rank;
-    });
+    ordered.forEach((c) => { want[c.id] = ordered.findIndex((x) => x.average === c.average) + 1; });
     const off = cards.filter((c) => c.position !== want[c.id])
       .map((c) => `${c.student_name}: average ${c.average} ranks ${want[c.id]} but is at ${c.position}`);
     const sizes = [...new Set(cards.map((c) => c.class_size))];
     dom.window.close();
 
-    deepEqual(off.slice(0, 5), [], `Positions do not dense-rank by average:\n  ${off.slice(0, 5).join('\n  ')}`);
+    deepEqual(off.slice(0, 5), [], `Positions do not use competition ranking:\n  ${off.slice(0, 5).join('\n  ')}`);
     deepEqual(sizes, [cards.length], `class_size reads ${sizes.join(', ')} but ${cards.length} pupils are ranked.`);
     const top = cards.filter((c) => c.position === 1);
     assert.ok(top.length >= 1, 'Nobody is ranked first.');
+    const highest = Math.max(...cards.map((c) => c.position));
+    assert.ok(highest <= cards.length,
+      `The lowest position is ${highest} in a class of ${cards.length}; a position cannot exceed the class size.`);
+  });
+
+  it('a tie shares a position and the rank after it skips', async () => {
+    const dom = await openPage('app/report-cards.html');
+    const win = dom.window;
+    const r = await win.ShuleAPI.listReportCardRows('sch-riverside', { classId: 'cls-g4e' });
+    const byAverage = {};
+    r.items.forEach((c) => { (byAverage[c.average] = byAverage[c.average] || []).push(c); });
+    const tied = Object.values(byAverage).filter((g) => g.length > 1)[0];
+    dom.window.close();
+
+    assert.ok(tied, 'No two pupils in Grade 4 East share an average, so the tie rule is never exercised.');
+    const positions = [...new Set(tied.map((c) => c.position))];
+    assert.equal(positions.length, 1,
+      `Pupils tied on ${tied[0].average} hold positions ${tied.map((c) => c.position).join(', ')}; a tie shares one position.`);
+
+    const shared = positions[0];
+    const next = r.items
+      .filter((c) => c.average < tied[0].average)
+      .sort((a, b) => b.average - a.average)[0];
+    assert.ok(next, 'Nobody scored below the tie, so the skip is not visible.');
+    assert.equal(next.position, shared + tied.length,
+      `Two pupils tied at ${shared} should be followed by position ${shared + tied.length}, ` +
+      `not ${next.position}. Dense ranking would say ${shared + 1} — and a card reading ` +
+      `"Position ${shared + 1} of ${next.class_size}" with ${tied.length} pupils ahead is what a head teacher spots.`);
   });
 
   it('refuses to publish while any result feeding a card is unverified, and names the subjects', async () => {
@@ -2574,5 +2633,549 @@ describe('Report cards', () => {
     }
     assert.ok(/page-break-after/.test(print), 'The print stylesheet does not break pages between cards.');
     assert.ok(/@page/.test(print), 'The print stylesheet sets no page size or margin.');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Step 5 — teacher scope, parent scope, guardian portal
+//
+// Every test below is about a data leak. A page that renders is not evidence
+// that the data on it belongs to the person reading it.
+// ══════════════════════════════════════════════════════════════════════════
+
+const ME_TEACHER = 'tch-04';
+const ME_PARENT = 'per-demo-parent';
+
+describe('Teacher scope', () => {
+  let dom, win, API, D;
+  before(async () => {
+    dom = await openPage('app/teacher/dashboard.html', { role: 'teacher' });
+    win = dom.window; API = win.ShuleAPI; D = storeOf(win);
+  });
+  after(() => { if (dom) dom.window.close(); });
+
+  const assigned = () => {
+    const ids = D.assignments.filter((a) => a.teacher_id === ME_TEACHER).map((a) => a.class_id);
+    D.classes.forEach((c) => { if (c.class_teacher_id === ME_TEACHER) ids.push(c.id); });
+    return [...new Set(ids)];
+  };
+
+  it('returns only the classes this teacher is assigned to', async () => {
+    const rows = await API.listTeacherClasses('sch-riverside', ME_TEACHER);
+    const got = rows.map((c) => c.id).sort();
+    const want = assigned().sort();
+    deepEqual(got, want,
+      `The teacher was handed [${got.join(', ')}] but is assigned to [${want.join(', ')}].`);
+    assert.ok(got.length < D.classes.length,
+      `The teacher was handed all ${D.classes.length} classes, so the scoping is doing nothing.`);
+  });
+
+  it('a class the teacher does not teach answers exactly as one that does not exist', async () => {
+    const mine = assigned();
+    const notMine = D.classes.filter((c) => !mine.includes(c.id)).map((c) => c.id);
+    assert.ok(notMine.length, 'This teacher is assigned to every class, so scoping cannot be tested.');
+
+    const refusals = [];
+    for (const classId of notMine) {
+      let err = null;
+      await API.getTeacherRegister('sch-riverside', ME_TEACHER, classId, {}).catch((e) => { err = e; });
+      assert.ok(err, `The teacher opened the register for ${classId}, which they do not teach.`);
+      refusals.push({ status: err.status, message: err.message });
+    }
+    let ghost = null;
+    await API.getTeacherRegister('sch-riverside', ME_TEACHER, 'cls-does-not-exist', {}).catch((e) => { ghost = e; });
+
+    for (const r of refusals) {
+      assert.equal(r.status, ghost.status,
+        `A class outside scope answers ${r.status} but a nonexistent one answers ${ghost.status}. ` +
+        'The difference tells an attacker which classes exist.');
+      assert.equal(r.message.replace(/cls-[\w-]+/, 'X'), ghost.message.replace(/cls-[\w-]+/, 'X'),
+        `The refusals read differently: "${r.message}" versus "${ghost.message}".`);
+    }
+  });
+
+  it('a subject the teacher does not teach is refused even in a class they do', async () => {
+    const mine = D.assignments.filter((a) => a.teacher_id === ME_TEACHER)[0];
+    const foreign = D.assignments.filter((a) => a.class_id === mine.class_id && a.teacher_id !== ME_TEACHER)[0];
+    assert.ok(foreign, 'Nobody else teaches in that class, so the subject check cannot be tested.');
+
+    let err = null;
+    await API.getTeacherMarkSheet('sch-riverside', ME_TEACHER, 'exm-t2-mid',
+      { classId: foreign.class_id, subjectId: foreign.subject_id }).catch((e) => { err = e; });
+    assert.ok(err, `The teacher opened ${foreign.subject_id} in ${foreign.class_id}, which is not their assignment.`);
+    assert.equal(err.status, 404, `The refusal came back as ${err.status}.`);
+  });
+
+  it('marks cannot be written to a class or subject outside the assignment', async () => {
+    const page = await openPage('app/teacher/marks.html', { role: 'teacher' });
+    const w = page.window;
+    const store = storeOf(w);
+    const before = store.exam_results.length;
+    const mine = store.assignments.filter((a) => a.teacher_id === ME_TEACHER)[0];
+    const foreign = store.assignments.filter((a) => a.teacher_id !== ME_TEACHER &&
+      !store.assignments.some((x) => x.teacher_id === ME_TEACHER && x.class_id === a.class_id && x.subject_id === a.subject_id))[0];
+    const victim = store.students.filter((s) => s.class_id === foreign.class_id)[0];
+
+    let err = null;
+    await w.ShuleAPI.saveTeacherResults('sch-riverside', ME_TEACHER, 'exm-t2-mid', {
+      classId: foreign.class_id, subjectId: foreign.subject_id,
+      scores: [{ student_id: victim.id, score: 99 }]
+    }).catch((e) => { err = e; });
+    const after = storeOf(w).exam_results.length;
+    checkInvariants(w, 'a refused out-of-scope mark');
+    page.window.close();
+
+    assert.ok(err, 'A teacher wrote marks for a subject they do not teach.');
+    assert.equal(after, before, `The refused write still added ${after - before} results.`);
+    assert.ok(mine, 'sanity: the teacher has at least one assignment');
+  });
+
+  it('attendance written through the teacher route is stamped with that teacher', async () => {
+    const page = await openPage('app/teacher/register.html', { role: 'teacher' });
+    const w = page.window;
+    const store = storeOf(w);
+    const own = store.classes.filter((c) => c.class_teacher_id === ME_TEACHER)[0];
+    assert.ok(own, 'This teacher is class teacher of nothing.');
+    const roll = store.students.filter((s) => s.class_id === own.id && s.status === 'active');
+
+    // markedBy is ignored: the route stamps whoever is signed in
+    await w.ShuleAPI.markTeacherAttendance('sch-riverside', ME_TEACHER, own.id, {
+      date: store.today, markedBy: 'tch-01',
+      records: roll.map((s) => ({ student_id: s.id, status: 'present' }))
+    });
+    const marks = storeOf(w).attendance.filter((a) => a.class_id === own.id && a.date === store.today);
+    checkInvariants(w, 'a teacher marking their register');
+    page.window.close();
+
+    const wrong = marks.filter((a) => a.marked_by !== ME_TEACHER).length;
+    assert.equal(wrong, 0,
+      `${wrong} records were stamped with someone other than the teacher who submitted them. ` +
+      'A caller must not be able to sign a register in another teacher’s name.');
+  });
+
+  it('the dashboard only counts work inside the teacher’s scope', async () => {
+    const d = await API.getTeacherDashboard('sch-riverside', ME_TEACHER, {});
+    const mine = assigned();
+    const strayPeriods = d.periods.filter((p) => !mine.includes(p.class_id)).map((p) => p.class_name);
+    deepEqual(strayPeriods, [], `Periods for classes the teacher does not teach: ${strayPeriods.join(', ')}`);
+    const strayRegisters = d.registers.filter((r) => {
+      const c = D.classes.filter((x) => x.id === r.class_id)[0];
+      return !c || c.class_teacher_id !== ME_TEACHER;
+    }).map((r) => r.class_name);
+    deepEqual(strayRegisters, [], `Registers the teacher does not own: ${strayRegisters.join(', ')}`);
+    const strayMarks = d.marks_outstanding.filter((m) =>
+      !D.assignments.some((a) => a.teacher_id === ME_TEACHER &&
+        a.class_id === m.class_id && a.subject_id === m.subject_id))
+      .map((m) => `${m.class_name} ${m.subject_name}`);
+    deepEqual(strayMarks, [], `Mark sheets outside the teacher's assignments: ${strayMarks.join(', ')}`);
+  });
+
+  it('the timetable holds only this teacher’s periods', async () => {
+    const t = await API.getTeacherTimetable('sch-riverside', ME_TEACHER, {});
+    const stray = t.items.filter((i) => i.teacher_id !== ME_TEACHER).length;
+    assert.equal(stray, 0, `${stray} periods on the timetable belong to another teacher.`);
+    assert.ok(t.items.length > 0, 'The timetable is empty, so nothing is being checked.');
+  });
+
+  it('the register page renders only classes this teacher can open', () => {
+    const options = $$(win, '#r-class option').map((o) => o.value);
+    if (!options.length) return;                       // dashboard page has no picker
+    const mine = assigned();
+    const stray = options.filter((v) => v && !mine.includes(v));
+    deepEqual(stray, [], `The class picker offers classes outside scope: ${stray.join(', ')}`);
+  });
+});
+
+describe('Parent scope', () => {
+  let dom, win, API, D;
+  before(async () => {
+    dom = await openPage('app/parent/index.html', { role: 'parent' });
+    win = dom.window; API = win.ShuleAPI; D = storeOf(win);
+  });
+  after(() => { if (dom) dom.window.close(); });
+
+  const myChildren = () => D.guardians.filter((g) => g.person_id === ME_PARENT).map((g) => g.student_id);
+
+  it('returns only children this guardian is a guardian of', async () => {
+    const rows = await API.listMyChildren('sch-riverside', ME_PARENT);
+    const got = rows.map((c) => c.student_id).sort();
+    const want = myChildren().sort();
+    deepEqual(got, want, `The guardian was handed [${got.join(', ')}] but guards [${want.join(', ')}].`);
+    assert.ok(got.length > 1, 'The demo guardian has one child, so the switcher is never exercised.');
+    assert.ok(got.length < D.students.length,
+      `The guardian was handed all ${D.students.length} pupils; the scoping is doing nothing.`);
+  });
+
+  it('another family’s child is refused on every child route', async () => {
+    const mine = myChildren();
+    const stranger = D.students.filter((s) => !mine.includes(s.id))[0];
+    const routes = [
+      ['getChildFees', (id) => API.getChildFees('sch-riverside', ME_PARENT, id)],
+      ['getChildAttendance', (id) => API.getChildAttendance('sch-riverside', ME_PARENT, id, {})],
+      ['getChildResults', (id) => API.getChildResults('sch-riverside', ME_PARENT, id)]
+    ];
+    for (const [name, call] of routes) {
+      let err = null;
+      await call(stranger.id).catch((e) => { err = e; });
+      assert.ok(err, `${name} handed over ${stranger.name}, who is not this guardian's child.`);
+      assert.equal(err.status, 404,
+        `${name} refused with ${err.status}; it should be 404, the same as a pupil that does not exist.`);
+    }
+  });
+
+  it('the fee statement contains only this child', async () => {
+    const mine = myChildren();
+    const f = await API.getChildFees('sch-riverside', ME_PARENT, mine[0]);
+    const strayInvoices = f.invoices.filter((i) => i.student_id !== mine[0]).map((i) => i.id);
+    deepEqual(strayInvoices, [], `Invoices for another pupil: ${strayInvoices.join(', ')}`);
+    const strayPayments = f.payments.filter((p) => p.student_id !== mine[0]).map((p) => p.id);
+    deepEqual(strayPayments, [], `Payments for another pupil: ${strayPayments.join(', ')}`);
+  });
+
+  it('only published report cards reach a parent', async () => {
+    const mine = myChildren();
+    for (const id of mine) {
+      const r = await API.getChildResults('sch-riverside', ME_PARENT, id);
+      const cardIds = r.cards.map((c) => c.card_id);
+      const drafts = D.report_cards
+        .filter((c) => cardIds.includes(c.id) && c.status !== 'published')
+        .map((c) => c.id);
+      deepEqual(drafts, [], `Draft cards reached the parent view: ${drafts.join(', ')}`);
+      const unpublished = r.cards.filter((c) => !c.published_at).map((c) => c.card_id);
+      deepEqual(unpublished, [], `Cards with no published_at reached the parent: ${unpublished.join(', ')}`);
+    }
+  });
+
+  it('only verified marks reach a parent', async () => {
+    const mine = myChildren();
+    const problems = [];
+    for (const id of mine) {
+      const r = await API.getChildResults('sch-riverside', ME_PARENT, id);
+      r.cards.forEach((c) => {
+        c.results.forEach((s) => {
+          const stored = D.exam_results.filter((x) =>
+            x.student_id === id && x.exam_id === c.exam_id && x.subject_id === s.subject_id)[0];
+          if (!stored) problems.push(`${s.subject_name} on ${c.exam_name} has no stored result`);
+          else if (!stored.verified) problems.push(`${s.subject_name} on ${c.exam_name} is unverified but was shown`);
+        });
+      });
+    }
+    deepEqual(problems, [], `Unverified marks reached a parent:\n  ${problems.join('\n  ')}`);
+  });
+
+  it('a draft card that exists is proven to be withheld', async () => {
+    // if nothing is in draft the previous test passes vacuously
+    const mine = myChildren();
+    const withDraft = mine.filter((id) =>
+      D.report_cards.some((c) => c.student_id === id && c.status === 'draft'));
+    if (!withDraft.length) {
+      // force one into draft, then check the parent view still refuses it
+      const page = await openPage('app/parent/results.html', { role: 'parent' });
+      const w = page.window;
+      const store = storeOf(w);
+      const child = store.guardians.filter((g) => g.person_id === ME_PARENT)[0].student_id;
+      const card = store.report_cards.filter((c) => c.student_id === child)[0];
+      await w.ShuleAPI.generateReportCards('sch-riverside',
+        { classId: card.class_id, examId: card.exam_id });
+      const r = await w.ShuleAPI.getChildResults('sch-riverside', ME_PARENT, child);
+      const leaked = r.cards.filter((c) => c.card_id === card.id).length;
+      page.window.close();
+      assert.equal(leaked, 0,
+        'A card put back into draft by a regenerate is still visible to the parent.');
+      return;
+    }
+    for (const id of withDraft) {
+      const r = await API.getChildResults('sch-riverside', ME_PARENT, id);
+      const drafts = D.report_cards.filter((c) => c.student_id === id && c.status === 'draft').map((c) => c.id);
+      const leaked = r.cards.filter((c) => drafts.includes(c.card_id)).map((c) => c.card_id);
+      deepEqual(leaked, [], `Draft cards reached the parent: ${leaked.join(', ')}`);
+    }
+  });
+
+  it('the child switcher offers exactly the guardian’s children', () => {
+    const offered = $$(win, '#childbar [data-child]').map((b) => b.getAttribute('data-child')).sort();
+    deepEqual(offered, myChildren().sort(),
+      `The switcher offers [${offered.join(', ')}] but the guardian guards [${myChildren().join(', ')}].`);
+  });
+
+  it('the rendered page carries no other pupil’s name', () => {
+    const mine = myChildren();
+    const mineNames = D.students.filter((s) => mine.includes(s.id)).map((s) => s.name);
+    const text = win.document.body.textContent;
+    const leaked = D.students
+      .filter((s) => !mine.includes(s.id))
+      .filter((s) => !mineNames.some((n) => n === s.name))   // a shared name is not a leak
+      .filter((s) => text.includes(s.name))
+      .map((s) => s.name);
+    deepEqual(leaked.slice(0, 5), [],
+      `These pupils are not this guardian's children but appear on the page: ${leaked.slice(0, 5).join(', ')}`);
+  });
+});
+
+describe('The guardian portal', () => {
+  const LIVE = 'gp-live-4f21c8a9';
+  const EXPIRED = 'gp-expired-91aa20d4';
+  const REVOKED = 'gp-revoked-3c8f7e62';
+
+  it('a live token resolves to exactly one student', async () => {
+    const dom = await openPage(`portal.html?token=${LIVE}`, { readySelector: 'body[data-ready]' });
+    const win = dom.window;
+    const D = storeOf(win);
+    const row = D.guardian_tokens.filter((t) => t.token === LIVE)[0];
+    const v = await win.ShuleAPI.getGuardianPortal(LIVE, {});
+    dom.window.close();
+
+    assert.equal(v.state, 'ok', `A live token resolved to state "${v.state}".`);
+    assert.equal(v.student.id, row.student_id,
+      `The token resolved to ${v.student.id} but points at ${row.student_id}.`);
+    assert.equal(Object.keys(v).filter((k) => k === 'students').length, 0,
+      'The portal response carries a "students" collection; it is for one child.');
+  });
+
+  it('the response contains no other student’s data at any nesting level', async () => {
+    const dom = await openPage(`portal.html?token=${LIVE}`, { readySelector: 'body[data-ready]' });
+    const win = dom.window;
+    const D = storeOf(win);
+    const v = await win.ShuleAPI.getGuardianPortal(LIVE, {});
+    const mine = v.student.id;
+    const blob = JSON.stringify(v);
+    dom.window.close();
+
+    const otherIds = D.students.filter((s) => s.id !== mine).map((s) => s.id);
+    const leakedIds = otherIds.filter((id) => blob.includes(id));
+    deepEqual(leakedIds.slice(0, 5), [],
+      `Another pupil's id appears in the portal payload: ${leakedIds.slice(0, 5).join(', ')}`);
+
+    const myName = D.students.filter((s) => s.id === mine)[0].name;
+    const leakedNames = D.students
+      .filter((s) => s.id !== mine && s.name !== myName)
+      .filter((s) => blob.includes(s.name))
+      .map((s) => s.name);
+    deepEqual(leakedNames.slice(0, 5), [],
+      `Another pupil's name appears in the portal payload: ${leakedNames.slice(0, 5).join(', ')}`);
+  });
+
+  it('the rendered page carries no other pupil’s name either', async () => {
+    const dom = await openPage(`portal.html?token=${LIVE}`, { readySelector: 'body[data-ready]' });
+    const win = dom.window;
+    const D = storeOf(win);
+    const mine = win.document.body.getAttribute('data-student');
+    const myName = D.students.filter((s) => s.id === mine)[0].name;
+    const text = win.document.body.textContent;
+    dom.window.close();
+    const leaked = D.students
+      .filter((s) => s.id !== mine && s.name !== myName)
+      .filter((s) => text.includes(s.name))
+      .map((s) => s.name);
+    deepEqual(leaked.slice(0, 5), [], `Other pupils named on the portal page: ${leaked.slice(0, 5).join(', ')}`);
+  });
+
+  it('only published cards and verified marks appear on the portal', async () => {
+    const dom = await openPage(`portal.html?token=${LIVE}`, { readySelector: 'body[data-ready]' });
+    const win = dom.window;
+    const D = storeOf(win);
+    const v = await win.ShuleAPI.getGuardianPortal(LIVE, {});
+    const mine = v.student.id;
+    dom.window.close();
+
+    const publishedExams = D.report_cards
+      .filter((c) => c.student_id === mine && c.status === 'published')
+      .map((c) => c.exam_id);
+    const shownExams = v.results.map((c) => c.exam_name);
+    assert.equal(v.results.length, publishedExams.length,
+      `The portal shows ${v.results.length} cards but ${publishedExams.length} are published. Shown: ${shownExams.join(', ')}`);
+
+    const problems = [];
+    v.results.forEach((c) => {
+      c.subjects.forEach((s) => {
+        const stored = D.exam_results.filter((r) => r.student_id === mine &&
+          r.grade === s.grade && r.score === s.score)[0];
+        if (stored && !stored.verified) problems.push(`${s.subject_name} is unverified but shown`);
+      });
+    });
+    deepEqual(problems, [], `Unverified marks on the portal:\n  ${problems.join('\n  ')}`);
+  });
+
+  it('an expired token returns the expiry state and no data', async () => {
+    const dom = await openPage(`portal.html?token=${EXPIRED}`, { readySelector: 'body[data-ready]' });
+    const win = dom.window;
+    const v = await win.ShuleAPI.getGuardianPortal(EXPIRED, {});
+    const state = win.document.body.getAttribute('data-token-state');
+    const shown = !$(win, '[data-region="content"]').hidden;
+    const closed = !$(win, '[data-region="closed"]').hidden;
+    const text = win.document.body.textContent;
+    const D = storeOf(win);
+    const row = D.guardian_tokens.filter((t) => t.token === EXPIRED)[0];
+    const pupil = D.students.filter((s) => s.id === row.student_id)[0];
+    dom.window.close();
+
+    assert.equal(v.state, 'expired', `An expired token resolved to "${v.state}".`);
+    for (const key of ['student', 'fees', 'attendance', 'results', 'school', 'guardian']) {
+      assert.equal(v[key], undefined,
+        `The expired response carries "${key}". An expired link must return a state and nothing else.`);
+    }
+    assert.equal(state, 'expired', `The page reported data-token-state="${state}".`);
+    assert.ok(!shown, 'The open state is showing for an expired token.');
+    assert.ok(closed, 'The closed state is not showing for an expired token.');
+    assert.ok(!text.includes(pupil.name),
+      `The expired page names the pupil (${pupil.name}). It must show no pupil information at all.`);
+    assert.ok(/expired/i.test(text), 'The expired page does not tell the reader the link expired.');
+  });
+
+  it('a revoked token returns the revoked state and no data', async () => {
+    const dom = await openPage(`portal.html?token=${REVOKED}`, { readySelector: 'body[data-ready]' });
+    const win = dom.window;
+    const v = await win.ShuleAPI.getGuardianPortal(REVOKED, {});
+    const text = win.document.body.textContent;
+    const D = storeOf(win);
+    const pupil = D.students.filter((s) =>
+      s.id === D.guardian_tokens.filter((t) => t.token === REVOKED)[0].student_id)[0];
+    dom.window.close();
+    assert.equal(v.state, 'revoked', `A revoked token resolved to "${v.state}".`);
+    assert.equal(v.student, undefined, 'The revoked response carries a student.');
+    assert.ok(!text.includes(pupil.name), `The revoked page names the pupil (${pupil.name}).`);
+  });
+
+  it('an unknown or missing token returns the unknown state and no data', async () => {
+    for (const token of ['not-a-real-token', '']) {
+      const url = token ? `portal.html?token=${token}` : 'portal.html';
+      const dom = await openPage(url, { readySelector: 'body[data-ready]' });
+      const win = dom.window;
+      const v = await win.ShuleAPI.getGuardianPortal(token || null, {});
+      const state = win.document.body.getAttribute('data-token-state');
+      const closed = !$(win, '[data-region="closed"]').hidden;
+      dom.window.close();
+      assert.equal(v.state, 'unknown', `Token "${token}" resolved to "${v.state}".`);
+      assert.equal(v.student, undefined, `The response for "${token}" carries a student.`);
+      assert.equal(state, 'unknown', `The page reported "${state}" for token "${token}".`);
+      assert.ok(closed, `The closed state is not showing for token "${token}".`);
+    }
+  });
+
+  it('a token cannot be made to resolve to a different student', async () => {
+    const dom = await openPage(`portal.html?token=${LIVE}`, { readySelector: 'body[data-ready]' });
+    const win = dom.window;
+    const D = storeOf(win);
+    const tokens = D.guardian_tokens.filter((t) => !t.revoked && t.expires_at >= D.today);
+    assert.ok(tokens.length >= 2, 'Fewer than two live tokens, so cross-resolution cannot be tested.');
+    const seen = {};
+    for (const t of tokens) {
+      const v = await win.ShuleAPI.getGuardianPortal(t.token, {});
+      assert.equal(v.state, 'ok', `Live token ${t.token} resolved to "${v.state}".`);
+      assert.equal(v.student.id, t.student_id,
+        `Token ${t.token} points at ${t.student_id} but resolved to ${v.student.id}.`);
+      assert.ok(!seen[v.student.id] || seen[v.student.id] === t.token,
+        `Two different tokens both resolved to ${v.student.id}.`);
+      seen[v.student.id] = t.token;
+    }
+    dom.window.close();
+  });
+
+  it('issuing a link creates a token for that pupil and nobody else', async () => {
+    const dom = await openPage('app/students.html');
+    const win = dom.window;
+    const D = storeOf(win);
+    const student = D.students[5];
+    const before = D.guardian_tokens.length;
+
+    const t = await win.ShuleAPI.issueGuardianToken('sch-riverside', student.id, { days: 30 });
+    const after = storeOf(win).guardian_tokens;
+    const v = await win.ShuleAPI.getGuardianPortal(t.token, {});
+    checkInvariants(win, 'issuing a guardian token');
+    dom.window.close();
+
+    assert.equal(after.length, before + 1, `Issuing created ${after.length - before} tokens.`);
+    assert.equal(t.student_id, student.id, `The token was issued against ${t.student_id}, not ${student.id}.`);
+    assert.equal(v.state, 'ok', `A freshly issued token resolved to "${v.state}".`);
+    assert.equal(v.student.id, student.id, `The new token resolved to ${v.student.id}.`);
+    assert.ok(t.expires_at > D.today, `The new token expires on ${t.expires_at}, which is not in the future.`);
+  });
+
+  it('a link cannot be issued to a guardian on another pupil’s record', async () => {
+    const dom = await openPage('app/students.html');
+    const win = dom.window;
+    const D = storeOf(win);
+    const student = D.students[7];
+    const foreign = D.guardians.filter((g) => g.student_id !== student.id)[0];
+    const before = D.guardian_tokens.length;
+
+    let err = null;
+    await win.ShuleAPI.issueGuardianToken('sch-riverside', student.id, { guardianId: foreign.id })
+      .catch((e) => { err = e; });
+    const after = storeOf(win).guardian_tokens.length;
+    dom.window.close();
+    assert.ok(err, 'A link was issued to a guardian who is not on that pupil’s record.');
+    assert.equal(after, before, 'The refused issue still created a token.');
+  });
+
+  it('an expiry beyond 180 days is refused', async () => {
+    const dom = await openPage('app/students.html');
+    const win = dom.window;
+    let err = null;
+    await win.ShuleAPI.issueGuardianToken('sch-riverside', storeOf(win).students[9].id, { days: 3650 })
+      .catch((e) => { err = e; });
+    dom.window.close();
+    assert.ok(err, 'A ten-year portal link was issued.');
+    assert.ok(/1 and 180/.test(err.message), `The refusal reads "${err.message}".`);
+  });
+});
+
+describe('Teacher and parent pages render inside their scope', () => {
+  const TEACHER_PAGES = ['app/teacher/dashboard.html', 'app/teacher/register.html',
+                         'app/teacher/marks.html', 'app/teacher/timetable.html'];
+  const PARENT_PAGES = ['app/parent/index.html', 'app/parent/fees.html',
+                        'app/parent/attendance.html', 'app/parent/results.html',
+                        'app/parent/messages.html'];
+
+  for (const page of TEACHER_PAGES) {
+    it(`${page} loads and resolves every panel`, async () => {
+      const errors = [];
+      const dom = await openPage(page, { role: 'teacher', onConsoleError: (a) => errors.push(a) });
+      const win = dom.window;
+      const stuck = $$(win, '[data-panel]')
+        .filter((p) => !['content', 'empty'].includes(p.getAttribute('data-state')))
+        .map((p) => p.getAttribute('data-panel'));
+      const role = win.document.body.getAttribute('data-role');
+      const nav = $(win, '#sidenav').getAttribute('data-nav-role');
+      dom.window.close();
+      deepEqual(stuck, [], `${page} left these panels loading: ${stuck.join(', ')}`);
+      assert.equal(role, 'teacher', `${page} rendered as role "${role}".`);
+      assert.equal(nav, 'teacher', `${page} stamped the "${nav}" nav.`);
+      deepEqual(errors, [], `${page} logged errors:\n  ${errors.join('\n  ')}`);
+    });
+  }
+
+  for (const page of PARENT_PAGES) {
+    it(`${page} loads and resolves every panel`, async () => {
+      const errors = [];
+      const dom = await openPage(page, { role: 'parent', onConsoleError: (a) => errors.push(a) });
+      const win = dom.window;
+      const stuck = $$(win, '[data-panel]')
+        .filter((p) => !['content', 'empty'].includes(p.getAttribute('data-state')))
+        .map((p) => p.getAttribute('data-panel'));
+      const children = $$(win, '#childbar [data-child]').length;
+      dom.window.close();
+      deepEqual(stuck, [], `${page} left these panels loading: ${stuck.join(', ')}`);
+      assert.ok(children > 0, `${page} rendered no child switcher.`);
+    });
+  }
+
+  it('a teacher opening an admin page gets the teacher nav', async () => {
+    const dom = await openPage('app/dashboard.html', { role: 'teacher' });
+    const win = dom.window;
+    const groups = $$(win, '.side .navg[data-group]').map((g) => g.getAttribute('data-group'));
+    const expected = win.ShuleShell.ROLE_NAV.teacher.map((g) => g.group);
+    dom.window.close();
+    deepEqual(groups, expected,
+      `A teacher on an admin page sees [${groups.join(', ')}]; navigation follows who you are, not which page you opened.`);
+  });
+
+  it('an admin opening a teacher page gets the admin nav', async () => {
+    const dom = await openPage('app/teacher/dashboard.html', { role: 'admin' });
+    const win = dom.window;
+    const groups = $$(win, '.side .navg[data-group]').map((g) => g.getAttribute('data-group'));
+    const expected = win.ShuleShell.ROLE_NAV.admin.map((g) => g.group);
+    dom.window.close();
+    deepEqual(groups, expected, `An admin on a teacher page sees [${groups.join(', ')}].`);
   });
 });

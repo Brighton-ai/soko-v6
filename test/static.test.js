@@ -5,11 +5,20 @@
  * Every assertion carries a message that explains what broke in plain words,
  * because whoever reads this output may not have the repo in front of them.
  */
-const { test, describe, it } = require('node:test');
+const { test, describe, it, before } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const cheerio = require('cheerio');
+
+/**
+ * tools/shell.mjs is ESM and this suite is CommonJS, so it comes in through a
+ * dynamic import in a root before-hook. Importing it is the point: the drift
+ * test generates the shell from its actual source and compares that to what is
+ * stamped in every page, which comparing pages to each other never could.
+ */
+let SHELL_GEN = null;
+before(async () => { SHELL_GEN = await import('../tools/shell.mjs'); });
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -21,8 +30,15 @@ const APP_PAGES = [
   'app/invoices.html', 'app/payments.html', 'app/defaulters.html',
   'app/waivers.html', 'app/fee-structures.html',
   'app/grading-scales.html', 'app/attendance.html', 'app/exams.html',
-  'app/results.html', 'app/report-cards.html'
+  'app/results.html', 'app/report-cards.html',
+  'app/teacher/dashboard.html', 'app/teacher/register.html',
+  'app/teacher/marks.html', 'app/teacher/timetable.html',
+  'app/parent/index.html', 'app/parent/fees.html', 'app/parent/attendance.html',
+  'app/parent/results.html', 'app/parent/messages.html'
 ];
+
+/** The tokenised guardian surface. No shell, no nav, no login — its own rules. */
+const PORTAL_PAGE = 'portal.html';
 
 /** Pages built by steps 3 and 4. None may still be marked as unbuilt anywhere. */
 const BUILT_PAGES = [
@@ -32,8 +48,12 @@ const BUILT_PAGES = [
   'results.html', 'report-cards.html'
 ];
 
-/** Steps still to come. An href="#" must name one of these. */
-const FUTURE_STEPS = ['5'];
+/**
+ * What an href="#" may declare. "6" is the FastAPI wiring; "later" means the
+ * module is planned but not scheduled. Marking Boarding as "step 6" would
+ * claim step 6 builds it, which is worse than admitting it is unscheduled.
+ */
+const FUTURE_STEPS = ['6', 'later'];
 
 /** Every page in the repo, marketing and app alike. */
 const ALL_PAGES = [...PAGES, ...APP_PAGES];
@@ -306,7 +326,7 @@ describe('Links', () => {
         const step = $(el).attr('data-step');
         const label = $(el).text().trim().replace(/\s+/g, ' ').slice(0, 40) || '(no text)';
         if (!FUTURE_STEPS.includes(step)) {
-          bad.push(`${page}: "${label}" has href="#" but data-step="${step ?? 'unset'}" — an unbuilt link must name a step still to come (${FUTURE_STEPS.join(' or ')})`);
+          bad.push(`${page}: "${label}" has href="#" but data-step="${step ?? 'unset'}" — an unbuilt link must declare when it arrives (${FUTURE_STEPS.join(' or ')})`);
         }
       });
     }
@@ -317,7 +337,7 @@ describe('Links', () => {
     const stale = [];
     for (const page of ALL_PAGES) {
       const $ = load(page);
-      $('[data-step="3"], [data-step="4"]').each((_, el) => {
+      $('[data-step="3"], [data-step="4"], [data-step="5"]').each((_, el) => {
         const step = $(el).attr('data-step');
         stale.push(`${page}: "${$(el).text().trim().replace(/\s+/g, ' ').slice(0, 40)}" is still marked data-step="${step}"`);
       });
@@ -493,20 +513,22 @@ describe('App shell', () => {
 
       it('links theme.css and app.css and loads the data layer in order', () => {
         const $ = load(page);
+        // pages nested under app/ climb further; the prefix is derived, not assumed
+        const up = '../'.repeat(page.split('/').length - 1);
         const css = $('link[rel="stylesheet"]').toArray().map((el) => $(el).attr('href'));
-        for (const want of ['../assets/css/theme.css', '../assets/css/app.css']) {
+        for (const want of [`${up}assets/css/theme.css`, `${up}assets/css/app.css`]) {
           assert.ok(css.includes(want), `${page} does not link ${want}. Stylesheets found: ${css.join(', ') || 'none'}`);
         }
         const js = $('script[src]').toArray().map((el) => $(el).attr('src'));
-        for (const want of ['../assets/js/data/demo-data.js', '../assets/js/demo-backend.js',
-                            '../assets/js/api.js', '../assets/js/shell.js']) {
+        for (const want of [`${up}assets/js/data/demo-data.js`, `${up}assets/js/demo-backend.js`,
+                            `${up}assets/js/api.js`, `${up}assets/js/shell.js`]) {
           assert.ok(js.includes(want), `${page} does not load ${want}. Scripts found: ${js.join(', ') || 'none'}`);
         }
-        assert.ok(js.indexOf('../assets/js/data/demo-data.js') < js.indexOf('../assets/js/demo-backend.js'),
+        assert.ok(js.indexOf(`${up}assets/js/data/demo-data.js`) < js.indexOf(`${up}assets/js/demo-backend.js`),
           `${page} loads demo-backend.js before demo-data.js; the backend throws if the seed is not there yet.`);
-        assert.ok(js.indexOf('../assets/js/demo-backend.js') < js.indexOf('../assets/js/api.js'),
+        assert.ok(js.indexOf(`${up}assets/js/demo-backend.js`) < js.indexOf(`${up}assets/js/api.js`),
           `${page} loads api.js before demo-backend.js; api.js resolves its adapter at load time.`);
-        assert.ok(js.indexOf('../assets/js/api.js') < js.indexOf('../assets/js/shell.js'),
+        assert.ok(js.indexOf(`${up}assets/js/api.js`) < js.indexOf(`${up}assets/js/shell.js`),
           `${page} loads shell.js before api.js; the shell reads the school name through the API.`);
       });
 
@@ -522,7 +544,12 @@ describe('App shell', () => {
         const $ = load(page);
         assert.equal($('aside.side').length, 1, `${page} has no <aside class="side"> in the served HTML — the sidebar must be static markup, not JS-rendered.`);
         assert.equal($('header.top').length, 1, `${page} has no <header class="top"> in the served HTML — the topbar must be static markup.`);
-        assert.ok($('.side .navg[data-group]').length >= 8, `${page} sidebar has ${$('.side .navg[data-group]').length} groups; all eight should be present in the markup before any role gating runs.`);
+        // each role's nav is its own list, so the count is read from that role's map
+        const role = $('#sidenav').attr('data-nav-role');
+        assert.ok(role, `${page} does not declare data-nav-role on #sidenav, so nothing says which nav was stamped.`);
+        const expected = SHELL_GEN.ROLE_NAV[role].length;
+        assert.equal($('.side .navg[data-group]').length, expected,
+          `${page} stamps ${$('.side .navg[data-group]').length} nav groups but ROLE_NAV.${role} has ${expected}.`);
       });
 
       it('declares a role on <body>', () => {
@@ -552,17 +579,54 @@ describe('App shell', () => {
   }
 
   /**
-   * The shell is duplicated into every page under app/ because the tests read
-   * it out of the served HTML. That duplication is the risk this test covers:
-   * it is doing the job a build step would.
+   * The shell is duplicated into every page under app/, and there is no build
+   * step. Two things can go wrong, and this covers both:
+   *
+   *   1. pages diverge from each other — a hand edit to one of them;
+   *   2. every page stays identical while all of them drift from the generator
+   *      — someone edits tools/shell.mjs and forgets to restamp.
+   *
+   * Comparing pages to each other catches (1) and is blind to (2), which is why
+   * the generator is imported and run here rather than trusted.
    */
-  it('the sidebar is byte-identical across every page in app/', () => {
-    const shells = APP_PAGES.map((p) => ({ page: p, markup: normaliseShell(shellOf(p, 'aside.side')) }));
-    const first = shells[0];
-    const drifted = shells.slice(1)
-      .filter((s) => s.markup !== first.markup)
-      .map((s) => `${s.page} differs from ${first.page}${firstDiff(first.markup, s.markup)}`);
-    assert.deepEqual(drifted, [], `The sidebar has drifted between pages in app/:\n  ${drifted.join('\n  ')}`);
+  it('every page matches the shell tools/shell.mjs generates for it', () => {
+    const drifted = [];
+    for (const page of APP_PAGES) {
+      const rel = page.replace(/^app\//, '');
+      const html = raw(page);
+      const { changed } = SHELL_GEN.restamp(rel, html);
+      if (changed) drifted.push(rel);
+    }
+    assert.deepEqual(drifted, [],
+      `These pages do not match tools/shell.mjs:\n  ${drifted.join('\n  ')}\n` +
+      'Run `node tools/shell.mjs` to restamp them, or `--check` to see it in CI.');
+  });
+
+  it('the generator knows about every page that exists under app/', () => {
+    const onDisk = SHELL_GEN.appPages().map((p) => `app/${p}`).sort();
+    const listed = APP_PAGES.slice().sort();
+    assert.deepEqual(onDisk, listed,
+      `The generator walks [${onDisk.join(', ')}] but the test list is [${listed.join(', ')}]. ` +
+      'A page missing from either side is a page nothing checks.');
+  });
+
+  it('the sidebar is byte-identical across pages built for the same role', () => {
+    const byRole = {};
+    for (const page of APP_PAGES) {
+      const $ = load(page);
+      const role = $('#sidenav').attr('data-nav-role') || 'admin';
+      (byRole[role] = byRole[role] || []).push({ page, markup: normaliseShell(shellOf(page, 'aside.side')) });
+    }
+    const drifted = [];
+    for (const [role, pages] of Object.entries(byRole)) {
+      const first = pages[0];
+      for (const p of pages.slice(1)) {
+        if (p.markup !== first.markup) {
+          drifted.push(`${p.page} differs from ${first.page} (both ${role})${firstDiff(first.markup, p.markup)}`);
+        }
+      }
+    }
+    assert.deepEqual(drifted, [], `The sidebar has drifted within a role:\n  ${drifted.join('\n  ')}`);
   });
 
   it('the topbar is byte-identical across every page in app/', () => {
@@ -605,24 +669,51 @@ describe('Role navigation map', () => {
       'The teacher nav has no teacher-shaped destinations, so it is still just admin with items removed.');
   });
 
-  it('the teacher and parent navs are placeholders marked for step 5', () => {
+  it('the teacher and parent navs point at pages that exist', () => {
     const teacher = shellSource.slice(shellSource.indexOf('teacher: ['), shellSource.indexOf('parent: ['));
     const parent = shellSource.slice(shellSource.indexOf('parent: ['), shellSource.indexOf('};', shellSource.indexOf('parent: [')));
     for (const [name, body] of [['teacher', teacher], ['parent', parent]]) {
-      const hrefs = body.match(/href:/g) || [];
-      assert.equal(hrefs.length, 0, `The ${name} nav has ${hrefs.length} live href entries; step 3 only ships placeholders for it.`);
-      assert.ok(/step:\s*'5'/.test(body), `The ${name} nav does not mark its items step: '5'.`);
+      const hrefs = [...body.matchAll(/href:\s*'([^']+)'/g)].map((m) => m[1]);
+      assert.ok(hrefs.length >= 3, `The ${name} nav has ${hrefs.length} live destinations; step 5 built more than that.`);
+      const missing = hrefs.filter((h) => !exists(`app/${h}`));
+      assert.deepEqual(missing, [], `The ${name} nav points at pages that do not exist: ${missing.join(', ')}`);
+      const wrongDir = hrefs.filter((h) => !h.startsWith(`${name}/`));
+      assert.deepEqual(wrongDir, [], `The ${name} nav links outside app/${name}/: ${wrongDir.join(', ')}`);
     }
   });
 
-  it('the served admin sidebar matches ROLE_NAV.admin exactly', () => {
-    const $ = load('app/dashboard.html');
-    const inMarkup = $('.side .navg[data-group]').toArray().map((el) => $(el).attr('data-group'));
-    const adminBody = shellSource.slice(shellSource.indexOf('admin: ['), shellSource.indexOf('teacher: ['));
-    const inMap = (adminBody.match(/group:\s*'([\w-]+)'/g) || []).map((m) => m.split("'")[1]);
-    assert.deepEqual(inMarkup, inMap,
-      `The sidebar written into app/*.html is [${inMarkup.join(', ')}] but ROLE_NAV.admin is [${inMap.join(', ')}]. ` +
-      'The served markup and the map must not drift — the shell only re-renders the nav for non-admin roles.');
+  it('the served sidebar matches ROLE_NAV for each role', () => {
+    const BOUNDS = { admin: ['admin: [', 'teacher: ['], teacher: ['teacher: [', 'parent: ['], parent: ['parent: [', '\n  };'] };
+    const SAMPLE = { admin: 'app/dashboard.html', teacher: 'app/teacher/dashboard.html', parent: 'app/parent/index.html' };
+    for (const [role, page] of Object.entries(SAMPLE)) {
+      const $ = load(page);
+      const inMarkup = $('.side .navg[data-group]').toArray().map((el) => $(el).attr('data-group'));
+      const [from, to] = BOUNDS[role];
+      const body = shellSource.slice(shellSource.indexOf(from), shellSource.indexOf(to, shellSource.indexOf(from)));
+      const inMap = (body.match(/group:\s*'([\w-]+)'/g) || []).map((m) => m.split("'")[1]);
+      assert.deepEqual(inMarkup, inMap,
+        `The ${role} sidebar stamped into ${page} is [${inMarkup.join(', ')}] but ROLE_NAV.${role} is [${inMap.join(', ')}].`);
+    }
+  });
+
+  it('shell.js and tools/shell.mjs carry the same three navs', () => {
+    const gen = readFile('tools/shell.mjs');
+    for (const role of ['admin', 'teacher', 'parent']) {
+      // slice from this role's key to the next one, so formatting cannot matter
+      const ORDER = ['admin', 'teacher', 'parent'];
+      const grab = (src) => {
+        const at = src.indexOf(`${role}: [`);
+        const next = ORDER.slice(ORDER.indexOf(role) + 1)
+          .map((r) => src.indexOf(`${r}: [`, at))
+          .filter((i) => i > at);
+        const body = src.slice(at, next.length ? Math.min(...next) : src.indexOf('\n  };', at));
+        return [...body.matchAll(/group:\s*'([\w-]+)'/g)].map((m) => m[1]);
+      };
+      const inShell = grab(shellSource), inGen = grab(gen);
+      assert.deepEqual(inShell, inGen,
+        `ROLE_NAV.${role} differs between assets/js/shell.js [${inShell.join(', ')}] and tools/shell.mjs [${inGen.join(', ')}]. ` +
+        'The browser re-renders from one and the pages are stamped from the other; they cannot disagree.');
+    }
   });
 });
 
@@ -943,6 +1034,122 @@ describe('Data access discipline', () => {
     assert.ok(/mulberry32|seed/i.test(src), 'assets/js/data/demo-data.js does not look seeded; the dataset must be identical on every load.');
     assert.ok(!/Math\.random\(\)/.test(src), 'assets/js/data/demo-data.js calls Math.random(); use the seeded generator so two loads agree.');
     assert.ok(!/Date\.now\(\)|new Date\(\)/.test(src), 'assets/js/data/demo-data.js reads the wall clock; the dataset must not shift between runs.');
+  });
+});
+
+describe('The allowSelf escape hatch', () => {
+  /**
+   * verifyExamResults refuses when the person verifying is the person who
+   * entered the marks. `allowSelf` exists so test setup can seed verified marks
+   * without inventing a second teacher for every fixture — and a control with a
+   * bypass is only a control while nothing in the product uses the bypass.
+   */
+  it('no file outside test/ passes allowSelf', () => {
+    const offenders = [];
+    const walk = (dir) => {
+      if (!fs.existsSync(abs(dir))) return;
+      for (const entry of fs.readdirSync(abs(dir), { withFileTypes: true })) {
+        const rel = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) { walk(rel); continue; }
+        if (!/\.(js|mjs|html)$/.test(entry.name)) continue;
+        codeOf(rel).split('\n').forEach((line, i) => {
+          // the definition and the refusal message live in the backend; passing it does not
+          if (/allowSelf\s*:/.test(line) || /allowSelf\s*=/.test(line)) {
+            offenders.push(`${rel}:${i + 1} — ${line.trim().slice(0, 90)}`);
+          }
+        });
+      }
+    };
+    ['app', 'assets/js', 'tools'].forEach(walk);
+    const outsideBackend = offenders.filter((o) => !o.startsWith('assets/js/demo-backend.js'));
+    assert.deepEqual(outsideBackend, [],
+      'These files pass allowSelf, which turns off the rule that a teacher cannot verify their own marks:\n  ' +
+      outsideBackend.join('\n  '));
+  });
+
+  it('the backend only reads allowSelf, never sets it', () => {
+    const src = codeOf('assets/js/demo-backend.js');
+    const sets = src.split('\n')
+      .map((line, i) => ({ line: line.trim(), n: i + 1 }))
+      .filter((x) => /allowSelf\s*[:=][^=]/.test(x.line))
+      .map((x) => `demo-backend.js:${x.n} — ${x.line.slice(0, 90)}`);
+    assert.deepEqual(sets, [],
+      'demo-backend.js assigns allowSelf rather than only reading it from the caller:\n  ' + sets.join('\n  '));
+    assert.ok(/payload\.allowSelf/.test(src),
+      'demo-backend.js no longer reads payload.allowSelf; the same-person check may have gone with it.');
+  });
+
+  it('the same-person check is still in place', () => {
+    const src = codeOf('assets/js/demo-backend.js');
+    assert.ok(/entered_by === payload\.verifiedBy/.test(src),
+      'verifyExamResults no longer compares entered_by against the verifier. ' +
+      'Entry and verification being separate steps is then only a naming convention.');
+  });
+});
+
+describe('The guardian portal page', () => {
+  it('exists and is structurally sound', () => {
+    assert.ok(exists(PORTAL_PAGE), 'portal.html is missing.');
+    const $ = load(PORTAL_PAGE);
+    assert.equal($('h1').length, 2,
+      `portal.html has ${$('h1').length} <h1> elements; one for the open state and one for the closed state.`);
+    assert.equal($('html').attr('lang'), 'en', 'portal.html must declare lang="en".');
+    const d = ($('meta[name="description"]').attr('content') || '').trim();
+    assert.ok(d.length >= 50 && d.length <= 160, `portal.html meta description is ${d.length} characters.`);
+    assert.ok(/noindex/.test($('meta[name="robots"]').attr('content') || ''),
+      'portal.html is not marked noindex. A private link to one child must not be crawled.');
+  });
+
+  it('carries no shell, no navigation and no login', () => {
+    const $ = load(PORTAL_PAGE);
+    for (const [sel, what] of [['aside.side', 'a sidebar'], ['header.top', 'the app topbar'],
+                               ['#usermenu', 'a user menu'], ['form', 'a form'],
+                               ['input[type="password"]', 'a password field']]) {
+      assert.equal($(sel).length, 0,
+        `portal.html carries ${what}. It opens from an SMS link with no account behind it.`);
+    }
+    const js = $('script[src]').toArray().map((el) => $(el).attr('src'));
+    assert.ok(!js.includes('assets/js/shell.js'),
+      'portal.html loads the app shell. It has no shell to run.');
+    assert.ok(js.includes('assets/js/portal.js'), 'portal.html does not load its own script.');
+  });
+
+  it('has an open state, a closed state and a loading state', () => {
+    const $ = load(PORTAL_PAGE);
+    for (const region of ['loading', 'content', 'closed']) {
+      assert.equal($(`[data-region="${region}"]`).length, 1,
+        `portal.html has no [data-region="${region}"] block.`);
+    }
+    assert.ok($('[data-region="content"]').attr('hidden') !== undefined,
+      'portal.html shows its content region before a token has resolved.');
+    assert.ok($('[data-region="closed"]').attr('hidden') !== undefined,
+      'portal.html shows its closed region before a token has resolved.');
+  });
+
+  it('is mobile first', () => {
+    const css = readFile('assets/css/portal.css');
+    const media = [...css.matchAll(/@media\s*\(([^)]*)\)/g)].map((m) => m[1]);
+    const desktopFirst = media.filter((q) => /max-width/.test(q) && !/reduced-motion/.test(q));
+    assert.deepEqual(desktopFirst, [],
+      `portal.css uses max-width queries (${desktopFirst.join('; ')}). This page opens on a phone; ` +
+      'the base styles should be the phone and min-width should add to them.');
+    assert.ok(/min-width/.test(css), 'portal.css has no min-width query, so nothing adapts on a wider screen.');
+  });
+
+  it('renders no pupil data in its static markup', () => {
+    /*
+     * Every value in the OPEN state is filled in at runtime from one scoped
+     * call. The closed state is allowed its own static copy — it is what a
+     * reader sees when the token is dead, and it says nothing about a pupil.
+     */
+    const $ = load(PORTAL_PAGE);
+    const bound = $('[data-region="content"] [data-bind]').toArray().map((el) => $(el).text().trim());
+    const filled = bound.filter((t) => t && t !== '—');
+    assert.deepEqual(filled, [],
+      `portal.html ships these values in its open state: ${filled.join(', ')}. ` +
+      'Everything must come from the token call, or a stale name reaches the wrong reader.');
+    assert.ok(bound.length >= 10,
+      `Only ${bound.length} runtime-bound values in the open state; the page should be entirely data-driven.`);
   });
 });
 
