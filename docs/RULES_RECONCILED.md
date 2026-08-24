@@ -4,11 +4,17 @@
 were read from `soko-V4.2-main`. Every row below carries a line reference or an
 explicit "absent — searched for X". No row is a guess.
 
+> **Correction against my first pass.** I initially recorded rows 27 and 28 as
+> gaps on a `grep` that missed them. `POST /{school_id}/students/import` exists
+> at `:2242` with the same six columns and per-row error collection, and
+> `/defaulters` at `:861` returns `days_overdue` without bucketing it. Both are
+> corrected below. Counts in the summary reflect the corrected table.
+
 | Verdict | Count | Meaning |
 |---|---|---|
-| **backend has it** | 7 | Enforced in `school.py`; our rule and theirs agree |
-| **backend gap** | 15 | Not enforced anywhere; the rule lives only in our demo half |
-| **modelled differently** | 5 | Both enforce something, by different mechanics |
+| **backend has it** | 8 | Enforced in `school.py`; our rule and theirs agree |
+| **backend gap** | 13 | Not enforced anywhere; the rule lives only in our demo half |
+| **modelled differently** | 6 | Both enforce something, by different mechanics |
 | **frontend-only by design** | 6 | Correctly a client concern |
 
 The arithmetic mostly holds. **Everything protecting a parent from bad data is
@@ -44,8 +50,8 @@ missing**, and the guardian portal is a 500 on every valid link.
 | 24 | A token resolves to exactly one student | `token.student_id` | `:2465-2467` joins `school_guardian_tokens` to one `student_id` | **backend has it** |
 | 25 | An expired token returns a state, not data | expiry state, no payload | `:2467` `AND gt.expires_at > NOW()`, 404 at `:2470` | **backend has it** |
 | 26 | Token revocation | `revoked` flag | No `revoked_at` column — searched | **backend gap** |
-| 27 | Defaulter aging buckets | `bucketFor()` | Absent — searched `aging`, `days_past`, `0-30` | **backend gap** |
-| 28 | CSV import column contract | `CSV_COLUMNS` | No import route — searched | **backend gap** |
+| 27 | Defaulter aging buckets | `bucketFor()` into 0–30 / 31–60 / 61–90 / 90+ | `:861-875` returns a flat list with `days_overdue` and a `threshold_days` filter. The raw number is there; the buckets are not | **modelled differently** |
+| 28 | CSV import column contract | `CSV_COLUMNS`, per-row errors with line numbers | `:2242-2264` exists and takes `full_name, date_of_birth, gender, class_name, guardian_name, guardian_phone` — the same six columns, different order. It collects `errors` per row from `start=2`, so partial import works too | **backend has it** |
 | 29 | Three reminders maximum | `MAX_REMINDERS` | `:2033-2068` sends reminders; no per-invoice counter or cap | **backend gap** |
 | 30 | Payment and GL posting are atomic | one operation | `:1981` `async with pool.acquire()` without `conn.transaction()`. The invoice UPDATE commits, then a GL failure raises 500 at `:1998` — money moved, ledger did not | **backend gap** |
 | 31 | Waiver posts to the GL | DR bursary / CR receivable | `approve_waiver` `:900-921` posts nothing. A waived shilling leaves the fee book and never reaches the ledger | **backend gap** |
