@@ -10,7 +10,8 @@
     "test:app": "node --test \"test/*.test.js\"",
     "test:contract": "node --test \"test/contract/*.contract.test.js\"",
     "test:live": "SHULE_BACKEND=live node --test \"test/contract/*.contract.test.js\"",
-    "shell:check": "node tools/shell.mjs --check"
+    "shell:check": "node tools/shell.mjs --check",
+    "counts": "node tools/counts.mjs"
   },
   "repository": {
     "type": "git",

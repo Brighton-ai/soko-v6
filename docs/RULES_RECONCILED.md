@@ -21,10 +21,15 @@ explicit "absent — searched for X". No row is a guess.
 
 | Verdict | Count | Meaning |
 |---|---|---|
-| **backend has it** | 8 | Enforced in `school.py`; our rule and theirs agree |
-| **backend gap** | 13 | Not enforced anywhere; the rule lives only in our demo half |
-| **modelled differently** | 6 | Both enforce something, by different mechanics |
+| **backend has it** | 5 | Enforced in `school.py`; our rule and theirs agree |
+| **backend gap** | 21 | Not enforced anywhere; the rule lives only in our demo half |
+| **modelled differently** | 7 | Both enforce something, by different mechanics |
 | **frontend-only by design** | 6 | Correctly a client concern |
+| | **39 rows** | **28 of them are enforced by the demo alone** |
+
+> These counts are parsed from the table below by `npm run counts` (E27). They
+> are not maintained by hand, and any figure quoted elsewhere that disagrees
+> with `npm run counts` is wrong.
 
 The arithmetic mostly holds. **Everything protecting a parent from bad data is
 missing**, and the guardian portal is a 500 on every valid link.
