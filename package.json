@@ -1,7 +1,7 @@
 {
   "name": "shule",
   "version": "0.1.0",
-  "description": "Shule — school management for Kenyan schools. Marketing site.",
+  "description": "Shule \u2014 school management for Kenyan schools. Marketing site.",
   "directories": {
     "test": "test"
   },
@@ -11,7 +11,12 @@
     "test:contract": "node --test \"test/contract/*.contract.test.js\"",
     "test:live": "SHULE_BACKEND=live node --test \"test/contract/*.contract.test.js\"",
     "shell:check": "node tools/shell.mjs --check",
-    "counts": "node tools/counts.mjs"
+    "counts": "node tools/counts.mjs",
+    "routes": "python3 dev/routes.py",
+    "routes:probe": "node dev/probe-routes.mjs",
+    "routes:shadow": "node dev/shadowed.mjs",
+    "db:columns": "python3 dev/check-columns.py",
+    "audit": "node dev/shadowed.mjs && python3 dev/check-columns.py && node dev/probe-routes.mjs"
   },
   "repository": {
     "type": "git",
