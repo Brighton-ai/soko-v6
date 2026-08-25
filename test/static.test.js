@@ -1295,3 +1295,74 @@ describe('Budget', () => {
     assert.deepEqual(over, [], `CSS files over the 60 KB budget:\n  ${over.join('\n  ')}`);
   });
 });
+
+/**
+ * M5 — nothing unbuilt may carry a price.
+ *
+ * Boarding, transport and library were each priced on three pages while none
+ * of them existed. That is the one defect on the register that is a commercial
+ * problem rather than a technical one: a school can pay for a module that will
+ * not appear. The rule is enforced by name, because "we removed it once" is not
+ * a guarantee — the price came from the design source and would come back with
+ * the next copy edit.
+ */
+describe('Unbuilt modules carry no price', () => {
+  /** Modules with no page, no route and no data model behind them. */
+  const UNBUILT = ['boarding', 'transport', 'library'];
+
+  /** A number next to a module name is a price, whatever the currency shape. */
+  const PRICE = /KES\s*[\d.,]+|\b\d+\s*(?:\/|per)\s*(?:boarder|rider|pupil|student|child)\b/i;
+
+  for (const page of PAGES) {
+    it(`${page} prices nothing unbuilt`, () => {
+      if (!exists(page)) return;
+      const $ = load(page);
+      const offenders = [];
+
+      // A price counts against a module only when the module is the *subject*
+      // of the element carrying it. A whole card is too coarse a unit: the
+      // fees card mentions boarding fees in prose and quotes a fees figure,
+      // and those two facts are unrelated. So rows, list items and add-on
+      // lines are read whole, while a module card is read as its own heading
+      // plus its own note — the name and the claim, nothing borrowed from the
+      // paragraph in between.
+      const claims = [];
+      $('tr, li, .addons span').each((_, el) => {
+        claims.push($(el).text().replace(/\s+/g, ' ').trim());
+      });
+      $('.mo').each((_, el) => {
+        const card = $(el);
+        const title = card.find('h2, h3, .mo__name').first().text().replace(/\s+/g, ' ').trim();
+        card.find('.mo__note').each((__, n) => {
+          claims.push(`${title} ${$(n).text().replace(/\s+/g, ' ').trim()}`);
+        });
+      });
+
+      for (const text of claims) {
+        if (!text) continue;
+        const named = UNBUILT.find((m) => new RegExp(`\\b${m}`, 'i').test(text));
+        if (!named) continue;
+        const price = text.match(PRICE);
+        if (price) offenders.push(`${named}: "${text.slice(0, 90)}" (${price[0]})`);
+      }
+
+      assert.deepEqual(offenders, [],
+        `${page} attaches a price to a module that does not exist:\n  ${offenders.join('\n  ')}`);
+    });
+  }
+
+  it('each unbuilt module is labelled as roadmap where it appears priced-adjacent', () => {
+    const missing = [];
+    for (const page of ['index.html', 'pricing.html', 'features.html']) {
+      if (!exists(page)) continue;
+      const text = load(page).root().text().toLowerCase();
+      for (const m of UNBUILT) {
+        if (!text.includes(m)) continue;
+        if (!/roadmap|not yet built|coming later/.test(text)) {
+          missing.push(`${page} mentions ${m} without saying it is unbuilt`);
+        }
+      }
+    }
+    assert.deepEqual(missing, [], missing.join('\n  '));
+  });
+});
