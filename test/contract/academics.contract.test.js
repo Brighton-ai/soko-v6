@@ -140,8 +140,14 @@ describe('Contract — academics', () => {
       scores: [{ student_id: sheet.roll[0].student_id, score: 61 }]
     });
     let err = null;
+    // asEnterer says who is attempting this: the same person who just entered
+    // the marks. The demo takes the verifier from the payload; the live backend
+    // takes it from the token and cannot be told otherwise — a client that can
+    // name its own verifier can name the person whose marks it is signing off.
+    // So the test has to say which identity is calling, not only which id.
     await API.verifyExamResults(SCHOOL, F.examId, {
-      classId: F.classId, subjectId: F.subjectId, verifiedBy: F.teacherId2 || null
+      classId: F.classId, subjectId: F.subjectId,
+      verifiedBy: F.teacherId2 || null, asEnterer: true
     }).catch((e) => { err = e; });
     assert.ok(err,
       'The teacher who entered the marks verified them. Separation is then only a naming convention.' +
@@ -201,7 +207,14 @@ describe('Contract — academics', () => {
   });
 
   it(rule(19, 'report card positions use competition ranking', 'school.py:1254'), async () => {
-    const cards = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items;
+    const all = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items;
+    // A pupil who sat nothing has no position. Ranking them anyway put every
+    // unmarked pupil at 1st, because "nobody scored higher than nothing" is
+    // true and meaningless. They are excluded from the ranking, not given one.
+    const cards = all.filter((c) => c.position != null);
+    const unranked = all.filter((c) => c.position == null);
+    assert.deepEqual(unranked.filter((c) => c.total_marks > 0).map((c) => c.student_name), [],
+      'A pupil with marks was left unranked.' + because(19));
     assert.ok(cards.length > 2, 'Too few cards to rank.');
 
     const ordered = cards.slice().sort((a, b) => b.average - a.average);
@@ -221,7 +234,8 @@ describe('Contract — academics', () => {
   });
 
   it(rule(19, 'a tie shares a position and the rank after it skips'), async () => {
-    const cards = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items;
+    const cards = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items
+      .filter((c) => c.position != null);
     const byAverage = {};
     cards.forEach((c) => { (byAverage[c.average] = byAverage[c.average] || []).push(c); });
     const tied = Object.values(byAverage).filter((g) => g.length > 1)[0];

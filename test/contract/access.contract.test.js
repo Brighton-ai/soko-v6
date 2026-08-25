@@ -3,11 +3,15 @@
  * Access control. Every test here is a data-leak test, and every one of them
  * is a rule the backend does not currently enforce.
  */
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures } = require('./backend.js');
+const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures, authenticate } = require('./backend.js');
 
 let API, F;
+// node runs each test file in its own process, so a token obtained in
+// another file is not available here. Without this every call 401s and the
+// suite reports "your session has ended" for rules that were never reached.
+before(async () => { await authenticate(); });
 beforeEach(async () => { API = openAPI(); resetFixtures(); F = await fixtures(API); });
 
 const TEACHER = process.env.SHULE_TEACHER_ID || 'tch-04';

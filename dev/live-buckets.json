@@ -1,18 +1,6 @@
 {
   "RULE": [
     {
-      "name": "[RULES row 18] grading bands tile 0..max_score with no gap or overlap — school.py:964",
-      "msg": "Scales with a gap or overlap: | Holed scale 1787583351777: C ends 49, B starts 51 | Holed scale 1787583628747: C ends 49, B starts 51"
-    },
-    {
-      "name": "[RULES row 18] a scale with a hole is refused on save",
-      "msg": "A scale with no band covering 50 was saved. A pupil scoring 50 would get no grade. | Rule: docs/RULES_RECONCILED.md row 18 | Backend under test: live"
-    },
-    {
-      "name": "[RULES row 10] a score outside 0..max_score is refused — school.py:166",
-      "msg": "A score of -1 was accepted against an exam out of 100. | Rule: docs/RULES_RECONCILED.md row 10 | Backend: school.py:166 score: float, unbounded; :1014 then finds no band and grade stays NULL"
-    },
-    {
       "name": "[RULES row 12] changing a saved mark clears its verification",
       "msg": "No verified result to disturb. | Rule: docs/RULES_RECONCILED.md row 12 | Backend under test: live"
     },
@@ -22,39 +10,7 @@
     },
     {
       "name": "[RULES row 19] report card positions use competition ranking — school.py:1254",
-      "msg": "Positions are not competition-ranked: | Grace Chebet: average 0 ranks 33 but is at 1 | Lucy Atieno: average 0 ranks 33 but is at 1"
-    },
-    {
-      "name": "[RULES row 32] a live token returns a payload rather than an error — school.py:2498",
-      "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
-    },
-    {
-      "name": "[RULES row 24] a token resolves to exactly one student — school.py:2465",
-      "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
-    },
-    {
-      "name": "[RULES row 23] the portal shows only published cards and verified marks — school.py:2498",
-      "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
-    },
-    {
-      "name": "[RULES row 25] an expired token returns a state and no data — school.py:2467",
-      "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
-    },
-    {
-      "name": "[RULES row 25] an unknown token returns a state and no data",
-      "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
-    },
-    {
-      "name": "[RULES row 26] a revoked token stops working",
-      "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
-    },
-    {
-      "name": "[RULES row 8] a link cannot be issued to a guardian on another pupil’s record",
-      "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
-    },
-    {
-      "name": "[RULES row 6] approving a waiver twice discounts once — school.py:908",
-      "msg": "The second approval did not report the waiver as already applied. | Rule: docs/RULES_RECONCILED.md row 6 | Backend: school.py:908 sets status='approved' unconditionally, then :919 discounts again"
+      "msg": "Positions are not competition-ranked: | David Ochieng: average 40 ranks 7 but is at 4 | Rule: docs/RULES_RECONCILED.md row 19"
     },
     {
       "name": "[RULES row 7] bulk generate skips pupils already invoiced for that term — school.py:793",
@@ -62,58 +18,55 @@
     },
     {
       "name": "[RULES row 29] reminders never pass three",
-      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:67:13) | at unwrap (assets/js/live-backend.js:189:13)"
+      "msg": "Internal Server Error | at apiError (assets/js/live-backend.js:72:13) | at unwrap (assets/js/live-backend.js:205:13)"
     }
   ],
   "ROUTE": [
     {
-      "name": "[RULES row 13] verification records who signed it off",
-      "msg": "verifyExamResults has no route in school.py. See docs/RULES_RECONCILED.md row 13 and docs/BACKEND-PATCHES.md. | at Object.verifyExamResults (assets/js/live-backend.js:209:15) | at Object.verifyExamResults (assets/js/api."
-    },
-    {
-      "name": "[RULES row 15] a published card's comments cannot be rewritten",
-      "msg": "verifyExamResults has no route in school.py. See docs/RULES_RECONCILED.md row 13 and docs/BACKEND-PATCHES.md. | at Object.verifyExamResults (assets/js/live-backend.js:209:15) | at Object.verifyExamResults (assets/js/api."
-    },
-    {
       "name": "[RULES row 16] marking the same register twice updates rather than duplicates — school.py:634",
-      "msg": "getDashboardSummary has no route in school.py. See docs/RULES_RECONCILED.md row 1 and docs/BACKEND-PATCHES.md. | at Object.getDashboardSummary (assets/js/live-backend.js:209:15) | at Object.getDashboardSummary (assets/js"
+      "msg": "getDashboardSummary has no route in school.py. See docs/RULES_RECONCILED.md row 1 and docs/BACKEND-PATCHES.md. | at Object.getDashboardSummary (assets/js/live-backend.js:228:15) | at Object.getDashboardSummary (assets/js"
     },
     {
       "name": "[RULES row 21] a teacher is handed only the classes they are assigned to",
-      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:209:15) | at Object.listTeacherClasses (assets/js/a"
+      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:228:15) | at Object.listTeacherClasses (assets/js/a"
     },
     {
       "name": "[RULES row 21] a class the teacher does not teach is refused",
-      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:209:15) | at Object.listTeacherClasses (assets/js/a"
+      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:228:15) | at Object.listTeacherClasses (assets/js/a"
     },
     {
       "name": "[RULES row 21] a teacher cannot write marks outside their assignment",
-      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:209:15) | at Object.listTeacherClasses (assets/js/a"
+      "msg": "listTeacherClasses has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.listTeacherClasses (assets/js/live-backend.js:228:15) | at Object.listTeacherClasses (assets/js/a"
     },
     {
       "name": "[RULES row 21] a teacher's dashboard counts only their own work",
-      "msg": "getTeacherDashboard has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.getTeacherDashboard (assets/js/live-backend.js:209:15) | at Object.getTeacherDashboard (assets/j"
+      "msg": "getTeacherDashboard has no route in school.py. See docs/RULES_RECONCILED.md row 21 and docs/BACKEND-PATCHES.md. | at Object.getTeacherDashboard (assets/js/live-backend.js:228:15) | at Object.getTeacherDashboard (assets/j"
     },
     {
       "name": "[RULES row 22] a guardian is handed only their own children",
-      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:401:20"
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:228:15) | at Object.listMyChildren (assets/js/api.js:401:20"
     },
     {
       "name": "[RULES row 22] another family's child is refused on every child route",
-      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:401:20"
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:228:15) | at Object.listMyChildren (assets/js/api.js:401:20"
     },
     {
       "name": "[RULES row 23] a guardian sees only published report cards",
-      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:401:20"
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:228:15) | at Object.listMyChildren (assets/js/api.js:401:20"
     },
     {
       "name": "[RULES row 23] a guardian sees only verified marks",
-      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:401:20"
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:228:15) | at Object.listMyChildren (assets/js/api.js:401:20"
     },
     {
       "name": "[RULES row 23] a card put back into draft stops being visible",
-      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:209:15) | at Object.listMyChildren (assets/js/api.js:401:20"
+      "msg": "listMyChildren has no route in school.py. See docs/RULES_RECONCILED.md row 22 and docs/BACKEND-PATCHES.md. | at Object.listMyChildren (assets/js/live-backend.js:228:15) | at Object.listMyChildren (assets/js/api.js:401:20"
     }
   ],
-  "TRANSPORT": []
+  "TRANSPORT": [
+    {
+      "name": "[RULES row 11] an exam's grading scale is frozen once results exist",
+      "msg": "Cannot read properties of undefined (reading 'id') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/academics.contract.test.js:113:69) | at process.processTicksAndRejections (node:internal/process/t"
+    }
+  ]
 }

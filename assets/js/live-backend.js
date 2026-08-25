@@ -38,6 +38,11 @@
     try { return s ? s.getItem(CONFIG.tokenKey) : null; } catch (e) { return null; }
   }
   function setSession(access, refresh) {
+    // SHULE_API_TOKEN is read before storage by getToken(), so a token injected
+    // that way shadows everything written here. Leaving it in place after a
+    // refresh meant the stale token kept being sent, the refresh succeeded, and
+    // the next call failed again — a session that could never recover.
+    if (access && global.SHULE_API_TOKEN) global.SHULE_API_TOKEN = access;
     var s = store();
     if (!s) return;
     try {
@@ -74,6 +79,14 @@
         }).join('; ');
       } else if (typeof body.detail === 'string') {
         e.message = body.detail;
+      } else if (body.detail && typeof body.detail === 'object') {
+        // A refusal that names what is wrong carries it as data as well as
+        // prose — the publish gate names the unverified subjects so a page can
+        // highlight those rows instead of parsing them out of a sentence.
+        e.message = body.detail.message || e.message;
+        Object.keys(body.detail).forEach(function (k) {
+          if (k !== 'message' && e[k] === undefined) e[k] = body.detail[k];
+        });
       }
     }
     e.body = body;
@@ -111,7 +124,10 @@
     var timer = controller && global.setTimeout(function () { controller.abort(); }, CONFIG.timeoutMs);
 
     var headers = { 'Accept': 'application/json' };
-    var token = getToken();
+    // opts.asToken lets one call go out as somebody else. Verification is the
+    // only user of it: the backend takes the verifier from the token, so a
+    // client verifying marks must be authenticated as the person verifying.
+    var token = opts.asToken || getToken();
     if (token) headers.Authorization = 'Bearer ' + token;
     var init = { method: method, headers: headers };
     if (controller) init.signal = controller.signal;
@@ -201,6 +217,9 @@
   var GET = function (p, q) { return request('GET', p, { query: q }); };
   var POST = function (p, b, q) { return request('POST', p, { body: b, query: q }); };
   var PUT = function (p, b, q) { return request('PUT', p, { body: b, query: q }); };
+  var POST_AS = function (tok, p, b, q) {
+    return request('POST', p, { body: b, query: q, asToken: tok });
+  };
 
   function notInBackendLater(name, row) { return notInBackend(name, row); }
 
@@ -436,9 +455,16 @@
     return PUT('/fee-waivers/' + waiverId + '/approve', payload || {})
       .then(function (v) {
         var d = (v && v.data) || v || {};
+        // request() unwraps to body.data, so the message never reaches here.
+        // The flag has to be in the data, and the backend puts it there.
+        var already = d.already === true;
         return {
           waiver: d.waiver || d,
-          invoice: d.invoice ? normaliseInvoice(d.invoice) : null
+          invoice: d.invoice ? normaliseInvoice(d.invoice) : null,
+          // a repeat approval is a no-op that has to say so, or a page cannot
+          // tell "we applied it" from "it was already applied"
+          already: already,
+          applied: !already
         };
       });
   };
@@ -461,15 +487,20 @@
     });
   };
   B.listGradingScaleRows = B.listGradingScales;
+  // The scale and its bands go in one call. Creating the scale and then adding
+  // bands one at a time is how a scale with a hole in it got persisted: each
+  // individual band was valid, and nothing ever looked at the set (E12).
   B.createGradingScale = function (schoolId, payload) {
-    return POST('/grading-scales', { school_id: schoolId, name: payload.name, is_default: false })
-      .then(function (scale) {
-        return Promise.all((payload.bands || []).map(function (b) {
-          return POST('/grading-scales/' + (scale.id || scale.data && scale.data.id) + '/bands', {
-            grade: b.grade, min_score: b.min, max_score: b.max, points: b.points, remark: b.remark
-          });
-        })).then(function () { return scale; });
-      });
+    return POST('/grading-scales', {
+      school_id: schoolId,
+      name: payload.name,
+      is_default: !!payload.isDefault,
+      max_score: payload.maxScore != null ? Number(payload.maxScore) : 100,
+      bands: (payload.bands || []).map(function (b) {
+        return { grade: b.grade, min_score: b.min, max_score: b.max,
+                 points: b.points, remark: b.remark };
+      })
+    });
   };
   // GET /api/school/exams?school_id=
   B.listExams = function (schoolId, opts) {
@@ -718,7 +749,27 @@
   // than being quietly reimplemented here — see docs/BACKEND-PATCHES.md.
   // ══════════════════════════════════════════════════════════════════════
   B.updateExam = notInBackend('updateExam', 11);
-  B.verifyExamResults = notInBackend('verifyExamResults', 13);
+  // POST /api/school/exams/{exam_id}/results/verify
+  //
+  // Who verified is the caller, taken from the token by the backend and never
+  // from the body — a client that can name its own verifier can name the person
+  // whose marks it is signing off, which is the one thing this control exists
+  // to prevent. So verifying as somebody else means authenticating as them.
+  B.verifyExamResults = function (schoolId, examId, payload) {
+    payload = payload || {};
+    var body = { class_id: payload.classId || null, subject_id: payload.subjectId || null };
+    // asEnterer means "attempt this as whoever entered the marks", which live
+    // expresses as the default identity rather than the separate verifier.
+    var as = payload.asEnterer ? null
+           : (payload.asToken || global.SHULE_VERIFIER_TOKEN || null);
+    var call = as ? POST_AS(as, '/exams/' + examId + '/results/verify', body)
+                  : POST('/exams/' + examId + '/results/verify', body);
+    return call.then(function (v) {
+      var d = (v && v.data) || v || {};
+      return { exam_id: String(examId), verified: Number(d.verified || 0),
+               verified_by: d.verified_by || null };
+    });
+  };
   B.updateReportCard = notInBackend('updateReportCard', 15);
   B.updateGradingScale = notInBackend('updateGradingScale', 20);
   B.deleteGradingScale = notInBackend('deleteGradingScale', 20);

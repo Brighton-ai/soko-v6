@@ -20,6 +20,15 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..', '..');
 const MODE = (process.env.SHULE_BACKEND || 'demo').toLowerCase();
 const BASE_URL = process.env.SHULE_API_URL || 'http://localhost:8000/api';
+/** A field from the seed manifest, when the seed has been run. */
+function seedField(key) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(ROOT, 'dev', 'seed-live.json'), 'utf8'))[key] || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 const EMAIL = process.env.SEED_EMAIL || 'contract@shule.test';
 const PASSWORD = process.env.SEED_PASSWORD || 'ContractTest!2026-local-only';
 const SCHOOL = process.env.SHULE_SCHOOL_ID || 'sch-riverside';
@@ -68,6 +77,10 @@ function openAPI() {
     // a token from a file goes stale in minutes; log in for each context
     sandbox.SHULE_API_TOKEN = LIVE_TOKEN || process.env.SHULE_API_TOKEN || null;
     sandbox.SHULE_GL_URL = process.env.SHULE_GL_URL || null;
+    // seed the adapter's own store, so its refresh path has something to use
+    if (LIVE_TOKEN) sandbox.localStorage.setItem('shule.jwt', LIVE_TOKEN);
+    if (LIVE_REFRESH) sandbox.localStorage.setItem('shule.refresh', LIVE_REFRESH);
+    sandbox.SHULE_VERIFIER_TOKEN = VERIFIER_TOKEN;
     loadInto(sandbox, 'assets/js/live-backend.js');
     sandbox.SHULE_BACKEND = sandbox.ShuleLiveBackend;
   } else {
@@ -101,6 +114,8 @@ function because(row, where) {
  * Call this once before the suite runs.
  */
 let LIVE_TOKEN = null;
+let LIVE_REFRESH = null;
+let VERIFIER_TOKEN = null;
 async function authenticate() {
   if (MODE !== 'live') return null;
   const res = await fetch(BASE_URL + '/auth/login', {
@@ -113,7 +128,33 @@ async function authenticate() {
   }
   const body = await res.json();
   LIVE_TOKEN = body.access_token || (body.data && body.data.access_token);
+  // The refresh token matters as much as the access token. Access tokens are
+  // short-lived, and a suite that runs longer than one of them was failing its
+  // later rules with "Your session has ended" — which reads as a rule failure
+  // and is not one. With this stored, the adapter's own refresh path works.
+  LIVE_REFRESH = body.refresh_token || (body.data && body.data.refresh_token) || null;
   if (!LIVE_TOKEN) throw new Error('Login returned no access token: ' + JSON.stringify(body).slice(0, 200));
+
+  // A second identity, for the rules that are about two people.
+  //
+  // Verification exists precisely so that the person who entered a mark is not
+  // the person who signs it off, and the backend takes the verifier from the
+  // token rather than the request body — a client that can name its own
+  // verifier can name the person whose marks it is signing off. So a suite with
+  // one identity cannot exercise verification at all, and every rule
+  // downstream of a verified mark fails for want of a fixture rather than for
+  // want of a rule.
+  const hodEmail = process.env.SHULE_VERIFIER_EMAIL || seedField('hod_email');
+  if (hodEmail) {
+    const r2 = await fetch(BASE_URL + '/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: hodEmail, password: PASSWORD })
+    });
+    if (r2.ok) {
+      const b2 = await r2.json();
+      VERIFIER_TOKEN = b2.access_token || (b2.data && b2.data.access_token) || null;
+    }
+  }
   return LIVE_TOKEN;
 }
 

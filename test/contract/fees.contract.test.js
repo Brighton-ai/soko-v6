@@ -94,7 +94,7 @@ describe('Contract — fees', () => {
     assert.equal(part.invoice.balance, inv.balance - 1000,
       `The balance is ${part.invoice.balance}, expected ${inv.balance - 1000}.` + because(3));
 
-    const rest = await API.recordPayment(SCHOOL, inv.id, { amount: part.invoice.balance, method: 'mpesa', reference: 'C1' });
+    const rest = await API.recordPayment(SCHOOL, inv.id, { amount: part.invoice.balance, method: 'mpesa', reference: 'C1-' + Date.now().toString(36) });
     assert.equal(rest.invoice.balance, 0, `The balance is ${rest.invoice.balance} after paying it off.` + because(3));
     assert.equal(rest.invoice.status, 'cleared',
       `The invoice reads "${rest.invoice.status}" after being paid in full.` + because(3));
@@ -103,7 +103,7 @@ describe('Contract — fees', () => {
   it(rule(4, 'every payment posts a balanced double entry', 'school.py:1985, test_school_fees.py:63'), async () => {
     const before = await API.listJournalLines(SCHOOL, {});
     const inv = await owing(2000);
-    await API.recordPayment(SCHOOL, inv.id, { amount: 1500, method: 'mpesa', reference: 'GL1' });
+    await API.recordPayment(SCHOOL, inv.id, { amount: 1500, method: 'mpesa', reference: 'GL1-' + Date.now().toString(36) });
     const after = await API.listJournalLines(SCHOOL, {});
 
     assert.ok(after.balanced,

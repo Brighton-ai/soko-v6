@@ -118,6 +118,55 @@ async function main() {
                           login_attempts=0, locked_until=NULL WHERE id='${user[0]}'`);
     log('user adopted and unlocked', user[0]);
   }
+
+  // ── the school module, activated ───────────────────────────────────────────
+  //
+  // E22 — require_module('school') returns 402 until someone grants the module
+  // by hand, and only is_super_admin bypasses it. So the seeded admin worked
+  // (it is a super admin) while every ordinary user in the same tenant was
+  // paywalled out of the product the school had just bought. Granting it here
+  // is what registration will do for itself in gate 7.
+  const [mod] = sql(`SELECT 1 FROM subscription_modules
+                      WHERE tenant_id='${tenantId}' AND module_slug='school' AND is_active=TRUE`);
+  if (!mod) {
+    sql(`INSERT INTO subscription_modules (tenant_id, module_slug, is_active, expires_at)
+         VALUES ('${tenantId}', 'school', TRUE, NOW() + INTERVAL '365 days')
+         ON CONFLICT DO NOTHING`);
+    log('school module activated');
+  } else {
+    log('school module already active');
+  }
+
+  // ── a second, ORDINARY user ────────────────────────────────────────────────
+  //
+  // The admin above is is_super_admin, which bypasses every check there is. A
+  // suite that only ever calls as a super admin cannot tell an enforced rule
+  // from an absent one, so the fixture carries a second person with no special
+  // standing: a head of department who can verify marks the admin entered
+  // (E13 — entry and verification must be different people) and who is the
+  // caller the access-control rules are actually written about (E16-E19).
+  const HOD_EMAIL = 'hod.' + EMAIL;
+  let [hodRole] = sql(`SELECT id FROM roles WHERE tenant_id='${tenantId}' AND name='teacher'`);
+  if (!hodRole) {
+    [hodRole] = sql(`INSERT INTO roles (tenant_id, name, permissions)
+                     VALUES ('${tenantId}', 'teacher', '["school:read","school:write"]'::jsonb)
+                     RETURNING id`);
+    log('teacher role created', hodRole[0]);
+  }
+  let [hod] = sql(`SELECT id FROM users WHERE email='${HOD_EMAIL}'`);
+  const hodHash = bcryptHash(PASSWORD).replace(/'/g, "''");
+  if (!hod) {
+    [hod] = sql(`INSERT INTO users (tenant_id, role_id, email, password_hash, full_name,
+                                    is_active, is_super_admin)
+                 VALUES ('${tenantId}', '${hodRole[0]}', '${HOD_EMAIL}', '${hodHash}',
+                         'Contract Head of Department', TRUE, FALSE)
+                 RETURNING id`);
+    log('hod created', hod[0]);
+  } else {
+    sql(`UPDATE users SET password_hash='${hodHash}', is_active=TRUE, is_super_admin=FALSE,
+                          login_attempts=0, locked_until=NULL WHERE id='${hod[0]}'`);
+    log('hod adopted and unlocked', hod[0]);
+  }
   /*
    * is_super_admin bypasses require_module (shared.py:265-269). The alternative
    * is seeding a subscription and its module rows, which tests the billing
@@ -202,7 +251,19 @@ async function main() {
   for (const [full_name, admission_number, classIdx] of roster) {
     // school_students.admission_no is the column; admission_number exists only on StudentIn
     const found = studentRows.filter((s) => (s.admission_no || s.admission_number) === admission_number)[0];
-    if (found) { students.push(found); log('student adopted', admission_number); continue; }
+    if (found) {
+      // A pupil seeded before E30 has no class_id. Place them, so a re-seeded
+      // tenant behaves the same as a fresh one.
+      if (!found.class_id) {
+        sql(`UPDATE school_students SET class_id='${cls.id}', class_name='${cls.name.replace(/'/g, "''")}'
+              WHERE id='${found.id}'`);
+        log('student placed', admission_number, cls.name);
+      } else {
+        log('student adopted', admission_number);
+      }
+      students.push(found);
+      continue;
+    }
     /*
      * school_students has no class_id — membership is the grade/stream text
      * pair (E30). Passing class_id would be silently dropped by the model.
@@ -210,6 +271,8 @@ async function main() {
     const cls = classes[classIdx];
     const made = await POST('/school/students', {
       school_id: schoolId, admission_number, full_name,
+      // E30 — place the pupil in a real class, not only in a grade and a stream
+      class_id: cls.id, class_name: cls.name,
       grade: cls.grade, stream: cls.stream, gender: 'F',
       parent_name: 'Mercy Ouma', parent_phone: '0722418067',
       date_of_birth: '2015-04-09'
@@ -250,6 +313,53 @@ async function main() {
   } else {
     log('exam adopted', exam.id);
   }
+
+  // ── marks ──────────────────────────────────────────────────────────────────
+  //
+  // The suite used to rely on whatever marks earlier tests had left behind, so
+  // ranking was different on every run and rule 19 passed or failed by
+  // accident. These are fixed, spread across the range, and include a
+  // deliberate three-way tie so competition ranking has something to prove:
+  // the three tied pupils must share a place and the next must skip to 4th.
+  console.log('\n── marks (API) ──');
+  sql(`DELETE FROM school_exam_results WHERE tenant_id = '${tenantId}' AND exam_id = '${exam.id}'`);
+  const SPREAD = [88, 76, 76, 76, 64, 58, 52, 47, 41, 35, 28, 19];
+  const byClass = {};
+  students.forEach((st, i) => {
+    const cls = classes[i % classes.length];
+    (byClass[cls.id] = byClass[cls.id] || []).push({ student: st, mark: SPREAD[i % SPREAD.length] });
+  });
+  for (const [classId, entries] of Object.entries(byClass)) {
+    const results = [];
+    for (const { student, mark } of entries) {
+      for (const subj of subjects) {
+        results.push({ student_id: student.id, subject_id: subj.id, score: mark });
+      }
+    }
+    const saved = await POST(`/school/exams/${exam.id}/results`, {
+      exam_id: exam.id, class_id: classId, results
+    }).catch((e) => ({ error: e.message }));
+    log('marks entered', classId, JSON.stringify(saved).slice(0, 90));
+  }
+
+  // ── guardian portal tokens ─────────────────────────────────────────────────
+  //
+  // The portal rules used hardcoded demo tokens, so against a live tenant they
+  // all resolved to "unknown" and six rules failed for want of a fixture. One
+  // live token, one already expired, and one that will be revoked — all three
+  // states the portal has to tell apart.
+  console.log('\n── guardian portal tokens (API + SQL) ──');
+  sql(`DELETE FROM school_guardian_tokens WHERE tenant_id = '${tenantId}'`);
+  const portal = await POST(`/school/students/${students[0].id}/guardian-token`, {});
+  log('portal token', portal.token);
+
+  const expiredTok = 'expired' + Math.random().toString(36).slice(2, 12).padEnd(10, '0');
+  sql(`INSERT INTO school_guardian_tokens (tenant_id, student_id, token, expires_at)
+       VALUES ('${tenantId}', '${students[1].id}', '${expiredTok}', NOW() - INTERVAL '1 day')`);
+  log('expired token', expiredTok);
+
+  const revokeMe = await POST(`/school/students/${students[2].id}/guardian-token`, {});
+  log('token to revoke', revokeMe.token);
 
   console.log('\n── fee structure and invoices (API) ──');
   const haveStructures = await GET(`/school/fee-structures?school_id=${schoolId}`).catch(() => []);
@@ -300,6 +410,9 @@ async function main() {
     tenant_id: tenantId,
     email: EMAIL,
     password: PASSWORD,
+    // the ordinary user: no super-admin bypass, so rules can be observed
+    hod_email: HOD_EMAIL,
+    hod_id: hod[0],
     token: TOKEN,
     school_id: schoolId,
     term_id: term.id,
@@ -307,6 +420,9 @@ async function main() {
     subject_ids: subjects.map((s) => s.id),
     student_ids: students.map((s) => s.id),
     scale_id: scale.id,
+    portal_token: portal.token,
+    portal_token_expired: expiredTok,
+    portal_token_revocable: revokeMe.token,
     exam_id: exam.id,
     fee_structure_id: structure.id,
     invoice_ids: invoiceRows.map((i) => i.id)
