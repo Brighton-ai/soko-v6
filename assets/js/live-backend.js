@@ -560,8 +560,25 @@
     return GET('/exams/' + examId + '/class-analysis', { class_id: opts && opts.classId });
   };
   // GET /api/school/exams/{exam_id}/merit-list
+  // The route answers {exam_id, merit_list:[...]} with per-row total_marks and
+  // average_marks; the app reads {items:[{total, average, position}]}. Renaming
+  // only — the order and the ranks are the backend's, untouched, because rule
+  // 19 is about what it returned.
   B.getMeritList = function (schoolId, examId, opts) {
-    return GET('/exams/' + examId + '/merit-list', { class_id: opts && opts.classId });
+    return GET('/exams/' + examId + '/merit-list', { class_id: opts && opts.classId })
+      .then(function (v) {
+        var raw = (v && v.merit_list) || (v && v.data && v.data.merit_list) || asList(v);
+        var items = raw.map(function (e) {
+          return Object.assign({}, e, {
+            position: e.rank != null ? Number(e.rank) : null,
+            total: Number(e.total_marks != null ? e.total_marks : e.total || 0),
+            average: Number(e.average_marks != null ? e.average_marks : e.average || 0),
+            subjects_sat: Number(e.subjects_sat || 0),
+            student_name: e.full_name || e.student_name
+          });
+        });
+        return { items: items, total: items.length };
+      });
   };
   // GET /api/school/report-cards
   B.listReportCardRows = function (schoolId, opts) {
