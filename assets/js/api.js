@@ -358,6 +358,10 @@
   async function publishReportCardsFor(schoolId, payload) {
     return BACKEND.publishReportCardsFor(schoolId, payload);
   }
+  // POST /api/school/report-cards/bulk-withdraw
+  async function withdrawReportCardsFor(schoolId, payload) {
+    return BACKEND.withdrawReportCardsFor(schoolId, payload);
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // TEACHER SCOPE
@@ -428,6 +432,10 @@
   // GET /api/school/{school_id}/students/{student_id}/guardian-tokens
   async function listGuardianTokens(schoolId, studentId) {
     return BACKEND.listGuardianTokens(schoolId, studentId);
+  }
+  // POST /api/school/guardian-tokens/{id}/revoke
+  async function revokeGuardianToken(schoolId, tokenId) {
+    return BACKEND.revokeGuardianToken(schoolId, tokenId);
   }
   // GET /api/school/guardian-portal/{token}
   async function getGuardianPortal(token, opts) {
@@ -521,6 +529,7 @@
     getReportCard: getReportCard,
     updateReportCard: updateReportCard,
     publishReportCardsFor: publishReportCardsFor,
+    withdrawReportCardsFor: withdrawReportCardsFor,
 
     listTeacherClasses: listTeacherClasses,
     getTeacherTimetable: getTeacherTimetable,
@@ -536,6 +545,7 @@
     getGuardianMessages: getGuardianMessages,
     issueGuardianToken: issueGuardianToken,
     listGuardianTokens: listGuardianTokens,
+    revokeGuardianToken: revokeGuardianToken,
     getGuardianPortal: getGuardianPortal,
 
     // constants the backend owns; re-exported so pages read one source

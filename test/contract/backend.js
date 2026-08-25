@@ -201,7 +201,13 @@ async function fixtures(API) {
     teacherId2: (teachers[1] || teachers[0] || {}).id,
     verifierId: (teachers[teachers.length - 1] || teachers[0] || {}).id,
     structures,
-    structureId: structures[0] && structures[0].id
+    structureId: structures[0] && structures[0].id,
+    // A fee structure for a term nobody has been billed for. Rule 7 needs the
+    // first run to have something to do; against a tenant where every pupil is
+    // already invoiced, it fails on its own setup rather than on the rule.
+    unbilledStructureId: process.env.SHULE_UNBILLED_STRUCTURE
+      || (structures.filter((f) => /term 3/i.test(f.name || ''))[0] || {}).id
+      || (structures[1] || {}).id
   };
   return FIXTURES;
 }

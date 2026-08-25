@@ -773,24 +773,24 @@
   // The tokenised surface a guardian reaches from an SMS link: one token, one
   // child, an expiry. An expired token must render an expiry state and no data.
   var guardianTokens = [
-    { token: 'gp-live-4f21c8a9', school_id: SCHOOL_ID,
+    { id: 'gtk-00001', token: 'gp-live-4f21c8a9', school_id: SCHOOL_ID,
       student_id: demoChildren[0].id, guardian_id: 'gdn-demo-1',
       issued_to: DEMO_PARENT.phone, issued_by: 'tch-06',
       created_at: '2026-08-14T09:00:00+03:00', expires_at: '2026-09-30',
       revoked: false, uses: 6, last_used_at: '2026-08-19T18:22:00+03:00' },
-    { token: 'gp-live-b7d3e015', school_id: SCHOOL_ID,
+    { id: 'gtk-00002', token: 'gp-live-b7d3e015', school_id: SCHOOL_ID,
       student_id: demoChildren[1].id, guardian_id: 'gdn-demo-2',
       issued_to: DEMO_PARENT.phone, issued_by: 'tch-06',
       created_at: '2026-08-14T09:00:00+03:00', expires_at: '2026-09-30',
       revoked: false, uses: 2, last_used_at: '2026-08-16T07:40:00+03:00' },
-    { token: 'gp-expired-91aa20d4', school_id: SCHOOL_ID,
+    { id: 'gtk-00003', token: 'gp-expired-91aa20d4', school_id: SCHOOL_ID,
       student_id: students[0].id, guardian_id: guardians.filter(function (g) {
         return g.student_id === students[0].id && g.is_primary;
       })[0].id,
       issued_to: students[0].guardian_phone, issued_by: 'tch-06',
       created_at: '2026-05-06T09:00:00+03:00', expires_at: '2026-06-01',
       revoked: false, uses: 11, last_used_at: '2026-05-30T12:04:00+03:00' },
-    { token: 'gp-revoked-3c8f7e62', school_id: SCHOOL_ID,
+    { id: 'gtk-00004', token: 'gp-revoked-3c8f7e62', school_id: SCHOOL_ID,
       student_id: students[1].id, guardian_id: guardians.filter(function (g) {
         return g.student_id === students[1].id && g.is_primary;
       })[0].id,

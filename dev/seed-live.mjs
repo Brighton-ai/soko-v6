@@ -342,6 +342,44 @@ async function main() {
     log('marks entered', classId, JSON.stringify(saved).slice(0, 90));
   }
 
+  // ── a second grading scale ─────────────────────────────────────────────────
+  //
+  // Rule 11 is "an exam's scale is frozen once marks exist against it", and it
+  // needs a second scale to attempt the rebinding with. One scale in the tenant
+  // meant the rule could not be tested at all.
+  const haveScales2 = await GET(`/school/grading-scales?school_id=${schoolId}`).catch(() => []);
+  const scaleRows2 = Array.isArray(haveScales2) ? haveScales2 : haveScales2.items || [];
+  let scale2 = scaleRows2.filter((x) => x.name === 'Contract CBC')[0];
+  if (!scale2) {
+    scale2 = await POST('/school/grading-scales', {
+      school_id: schoolId, name: 'Contract CBC', is_default: false, max_score: 100,
+      bands: [
+        { grade: 'BE', min_score: 0,  max_score: 39,  points: 1, remark: 'Below expectation' },
+        { grade: 'AE', min_score: 40, max_score: 59,  points: 2, remark: 'Approaching' },
+        { grade: 'ME', min_score: 60, max_score: 79,  points: 3, remark: 'Meeting' },
+        { grade: 'EE', min_score: 80, max_score: 100, points: 4, remark: 'Exceeding' }
+      ]
+    });
+    log('second scale created', scale2.id);
+  }
+
+  // ── some marks verified ────────────────────────────────────────────────────
+  //
+  // Rules about verification need something verified to start from, and
+  // verification is deliberately a second person's act — so it is done here,
+  // as the head of department, rather than by a test signing off its own work.
+  //
+  // Half the marks, not all: rules on both sides of the line need an example.
+  const someResults = sql(`SELECT id FROM school_exam_results
+                            WHERE tenant_id='${tenantId}' AND exam_id='${exam.id}'
+                            ORDER BY created_at LIMIT 6`).map((r) => r[0]);
+  if (someResults.length) {
+    sql(`UPDATE school_exam_results
+            SET verified = TRUE, verified_by = '${hod[0]}', verified_at = NOW()
+          WHERE id IN (${someResults.map((i) => `'${i}'`).join(',')})`);
+    log('verified', someResults.length, 'of the marks (as the head of department)');
+  }
+
   // ── guardian portal tokens ─────────────────────────────────────────────────
   //
   // The portal rules used hardcoded demo tokens, so against a live tenant they
@@ -375,6 +413,22 @@ async function main() {
     log('fee structure adopted', structure.id);
   }
 
+  // A second fee structure, for a term nobody has been billed for yet.
+  //
+  // Rule 7 is "bulk generate skips pupils already invoiced for that term", and
+  // it needs a term where the first run has something to do. Against a tenant
+  // where every pupil is already billed, the rule fails on its own setup.
+  let structure3 = structureRows.filter((f) => f.name === 'Contract Term 3 fees')[0];
+  if (!structure3) {
+    structure3 = await POST('/school/fee-structures', {
+      school_id: schoolId, name: 'Contract Term 3 fees',
+      amount: 38000, term: 3, year: Number(YEAR)
+    });
+    log('term 3 fee structure created', structure3.id);
+  }
+  sql(`DELETE FROM school_fee_invoices
+        WHERE tenant_id = '${tenantId}' AND fee_structure_id = '${structure3.id}'`);
+
   const gen = await POST('/school/fee-invoices/bulk-generate', {
     school_id: schoolId, fee_structure_id: structure.id, due_date: '2026-05-22'
   }).catch((e) => ({ error: e.message }));
@@ -401,6 +455,168 @@ async function main() {
   sql(`DELETE FROM school_fee_payments WHERE tenant_id = '${tenantId}'`);
   log('money reset to unpaid for a reproducible run');
 
+  // ── teacher and guardian logins ────────────────────────────────────────────
+  //
+  // Nobody could *be* a teacher or a parent: school_teachers and
+  // school_guardians had no link to a login, so there was nothing for an access
+  // check to check against, and every access rule failed for want of a subject
+  // rather than for want of a rule (E16, E17).
+  //
+  // Miss Wanjiru teaches ONE of the two classes. That is the point: a teacher
+  // scoped to every class proves nothing, and the rule under test is that the
+  // other class is invisible to her.
+  console.log('\n── teacher and guardian logins (SQL — no routes exist) ──');
+  const TEACHER_EMAIL  = 'teacher.' + EMAIL;
+  const GUARDIAN_EMAIL = 'parent.' + EMAIL;
+  const pw = () => bcryptHash(PASSWORD).replace(/'/g, "''");
+
+  function upsertUser(email, name, roleId) {
+    let [u] = sql(`SELECT id FROM users WHERE email='${email}'`);
+    if (!u) {
+      [u] = sql(`INSERT INTO users (tenant_id, role_id, email, password_hash, full_name,
+                                    is_active, is_super_admin)
+                 VALUES ('${tenantId}','${roleId}','${email}','${pw()}','${name}',TRUE,FALSE)
+                 RETURNING id`);
+    } else {
+      sql(`UPDATE users SET password_hash='${pw()}', is_active=TRUE, is_super_admin=FALSE,
+                            role_id='${roleId}', login_attempts=0, locked_until=NULL
+            WHERE id='${u[0]}'`);
+    }
+    return u[0];
+  }
+
+  const teacherUserId  = upsertUser(TEACHER_EMAIL,  'Miss Wanjiru', hodRole[0]);
+  const guardianUserId = upsertUser(GUARDIAN_EMAIL, 'Mercy Ouma',   hodRole[0]);
+  log('teacher user', teacherUserId, '| guardian user', guardianUserId);
+
+  let [teacherRow] = sql(`SELECT id FROM school_teachers
+                           WHERE tenant_id='${tenantId}' AND user_id='${teacherUserId}'`);
+  if (!teacherRow) {
+    [teacherRow] = sql(`INSERT INTO school_teachers
+                          (tenant_id, school_id, full_name, email, user_id, is_active)
+                        VALUES ('${tenantId}','${schoolId}','Miss Wanjiru',
+                                '${TEACHER_EMAIL}','${teacherUserId}',TRUE)
+                        RETURNING id`);
+  }
+  const teacherId = teacherRow[0];
+
+  // Assigned to the FIRST class only, for both subjects.
+  const scopedClass = classes[0], unscopedClass = classes[1];
+  sql(`DELETE FROM school_teacher_assignments
+        WHERE tenant_id='${tenantId}' AND teacher_id='${teacherId}'`);
+  for (const subj of subjects) {
+    sql(`INSERT INTO school_teacher_assignments (tenant_id, teacher_id, class_id, subject_id)
+         VALUES ('${tenantId}','${teacherId}','${scopedClass.id}','${subj.id}')
+         ON CONFLICT DO NOTHING`);
+  }
+  sql(`UPDATE school_classes SET class_teacher_id='${teacherId}' WHERE id='${scopedClass.id}'`);
+  log('teacher', teacherId, 'teaches', scopedClass.name, 'and NOT', unscopedClass.name);
+
+  // The guardian has exactly one of the twelve pupils.
+  const myChild = students[0];
+  sql(`DELETE FROM school_guardians WHERE tenant_id='${tenantId}' AND user_id='${guardianUserId}'`);
+  sql(`INSERT INTO school_guardians
+         (tenant_id, student_id, full_name, relationship, phone, email, user_id, is_primary)
+       VALUES ('${tenantId}','${myChild.id}','Mercy Ouma','mother','0722418067',
+               '${GUARDIAN_EMAIL}','${guardianUserId}',TRUE)`);
+  log('guardian', guardianUserId, 'has', myChild.full_name, 'and none of the other 11');
+
+  // ── a SECOND school, permanently ───────────────────────────────────────────
+  //
+  // Isolation cannot be tested with one tenant. Every cross-tenant rule was
+  // failing for want of a second school to be refused access to, and a fixture
+  // built inside one test disappears with it — so the next test has nothing to
+  // check against and the gap reopens quietly.
+  //
+  // St Monica's is a whole second school: its own tenant, admin, pupils,
+  // classes, grading scale and invoices. Nothing in it shares a row with the
+  // first, and every id it holds is a valid id that the first school's users
+  // must not be able to touch.
+  console.log('\n── second tenant: cross-tenant fixture (SQL) ──');
+  const OTHER_NAME  = 'St Monica Contract School';
+  const OTHER_EMAIL = 'other.' + EMAIL;
+
+  let [other] = sql(`SELECT id FROM tenants WHERE name = '${OTHER_NAME}'`);
+  if (!other) {
+    [other] = sql(`INSERT INTO tenants (name, email)
+                   VALUES ('${OTHER_NAME}', '${OTHER_EMAIL}') RETURNING id`);
+  }
+  const otherTenantId = other[0];
+
+  let [otherRole] = sql(`SELECT id FROM roles WHERE tenant_id='${otherTenantId}' AND name='admin'`);
+  if (!otherRole) {
+    [otherRole] = sql(`INSERT INTO roles (tenant_id, name, permissions)
+                       VALUES ('${otherTenantId}','admin','["*"]'::jsonb) RETURNING id`);
+  }
+
+  let [otherUser] = sql(`SELECT id FROM users WHERE email='${OTHER_EMAIL}'`);
+  if (!otherUser) {
+    [otherUser] = sql(`INSERT INTO users (tenant_id, role_id, email, password_hash, full_name,
+                                          is_active, is_super_admin)
+                       VALUES ('${otherTenantId}','${otherRole[0]}','${OTHER_EMAIL}','${pw()}',
+                               'St Monica Admin', TRUE, FALSE) RETURNING id`);
+  } else {
+    sql(`UPDATE users SET password_hash='${pw()}', is_active=TRUE, is_super_admin=FALSE,
+                          login_attempts=0, locked_until=NULL WHERE id='${otherUser[0]}'`);
+  }
+
+  sql(`INSERT INTO subscription_modules (tenant_id, module_slug, is_active, expires_at)
+       VALUES ('${otherTenantId}','school',TRUE, NOW() + INTERVAL '365 days')
+       ON CONFLICT (tenant_id, module_slug) DO UPDATE SET is_active=TRUE`);
+
+  let [otherSchool] = sql(`SELECT id FROM schools WHERE tenant_id='${otherTenantId}' LIMIT 1`);
+  if (!otherSchool) {
+    [otherSchool] = sql(`INSERT INTO schools (tenant_id, name, is_active)
+                         VALUES ('${otherTenantId}','St Monica Primary',TRUE) RETURNING id`);
+  }
+  const otherSchoolId = otherSchool[0];
+
+  let [otherClass] = sql(`SELECT id FROM school_classes WHERE tenant_id='${otherTenantId}' LIMIT 1`);
+  if (!otherClass) {
+    [otherClass] = sql(`INSERT INTO school_classes (tenant_id, school_id, name, grade, stream, academic_year)
+                        VALUES ('${otherTenantId}','${otherSchoolId}','Grade 5 North','5','North','${YEAR}')
+                        RETURNING id`);
+  }
+
+  let [otherStudent] = sql(`SELECT id FROM school_students WHERE tenant_id='${otherTenantId}' LIMIT 1`);
+  if (!otherStudent) {
+    [otherStudent] = sql(`INSERT INTO school_students
+                            (tenant_id, school_id, admission_no, full_name, class_id, class_name,
+                             grade, stream, is_active)
+                          VALUES ('${otherTenantId}','${otherSchoolId}','SM/001','Njeri Kamau',
+                                  '${otherClass[0]}','Grade 5 North','5','North',TRUE)
+                          RETURNING id`);
+  }
+
+  let [otherScale] = sql(`SELECT id FROM school_grading_scales WHERE tenant_id='${otherTenantId}' LIMIT 1`);
+  if (!otherScale) {
+    [otherScale] = sql(`INSERT INTO school_grading_scales (tenant_id, school_id, name, is_default)
+                        VALUES ('${otherTenantId}','${otherSchoolId}','St Monica 8-4-4',TRUE) RETURNING id`);
+    for (const [g, lo, hi, pt] of [['E',0,29,1],['D',30,44,2],['C',45,59,3],['B',60,74,4],['A',75,100,5]]) {
+      sql(`INSERT INTO school_grading_bands (scale_id, grade, min_score, max_score, points, remark)
+           VALUES ('${otherScale[0]}','${g}',${lo},${hi},${pt},'${g}')`);
+    }
+  }
+
+  let [otherStructure] = sql(`SELECT id FROM school_fee_structures WHERE tenant_id='${otherTenantId}' LIMIT 1`);
+  if (!otherStructure) {
+    [otherStructure] = sql(`INSERT INTO school_fee_structures
+                              (tenant_id, school_id, name, amount, term, year, is_active)
+                            VALUES ('${otherTenantId}','${otherSchoolId}','St Monica Term 2',
+                                    31000, ${TERM}, ${Number(YEAR)}, TRUE) RETURNING id`);
+  }
+
+  let [otherInvoice] = sql(`SELECT id FROM school_fee_invoices WHERE tenant_id='${otherTenantId}' LIMIT 1`);
+  if (!otherInvoice) {
+    [otherInvoice] = sql(`INSERT INTO school_fee_invoices
+                            (tenant_id, school_id, student_id, fee_structure_id, term, year,
+                             amount_due, balance, due_date, status)
+                          VALUES ('${otherTenantId}','${otherSchoolId}','${otherStudent[0]}',
+                                  '${otherStructure[0]}', ${TERM}, ${Number(YEAR)},
+                                  31000, 31000, '2026-05-22', 'pending') RETURNING id`);
+  }
+  log('second tenant', otherTenantId, '· school', otherSchoolId, '· pupil', otherStudent[0]);
+
   const invoices = await GET(`/school/fee-invoices?school_id=${schoolId}&per_page=100`);
   const invoiceRows = invoices.items || invoices || [];
   log('invoices now:', invoiceRows.length);
@@ -420,11 +636,29 @@ async function main() {
     subject_ids: subjects.map((s) => s.id),
     student_ids: students.map((s) => s.id),
     scale_id: scale.id,
+    scale_id_2: scale2.id,
+    // the cross-tenant fixture: every id here is real and must be untouchable
+    other_email: OTHER_EMAIL,
+    other_tenant_id: otherTenantId,
+    other_school_id: otherSchoolId,
+    other_class_id: otherClass[0],
+    other_student_id: otherStudent[0],
+    other_scale_id: otherScale[0],
+    other_invoice_id: otherInvoice[0],
+    teacher_email: TEACHER_EMAIL,
+    teacher_id: teacherId,
+    teacher_user_id: teacherUserId,
+    teacher_class_id: scopedClass.id,
+    teacher_not_class_id: unscopedClass.id,
+    guardian_email: GUARDIAN_EMAIL,
+    guardian_user_id: guardianUserId,
+    guardian_child_id: myChild.id,
     portal_token: portal.token,
     portal_token_expired: expiredTok,
     portal_token_revocable: revokeMe.token,
     exam_id: exam.id,
     fee_structure_id: structure.id,
+    fee_structure_id_unbilled: structure3.id,
     invoice_ids: invoiceRows.map((i) => i.id)
   };
   fs.writeFileSync(path.join(process.cwd(), 'dev', 'seed-live.json'), JSON.stringify(out, null, 2));

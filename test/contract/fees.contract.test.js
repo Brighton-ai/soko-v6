@@ -210,15 +210,17 @@ describe('Contract — fees', () => {
   it(rule(7, 'bulk generate skips pupils already invoiced for that term', 'school.py:793'), async () => {
     const classes = Array.isArray(await API.listClasses(SCHOOL, {})) ? await API.listClasses(SCHOOL, {}) : [];
     const cls = classes[1] || classes[0];
+    // A structure for a term the class has not been billed for, so the first
+    // run has something to do and the second has something to skip.
+    const structureId = F.unbilledStructureId || F.structureId || `fee-${cls.id}-t3-2026`;
     const first = await API.bulkGenerateInvoices(SCHOOL, {
-      classId: cls.id, termId: 't3-2026', dueDate: '2026-10-02',
-      structureId: F.structureId || `fee-${cls.id}-t2-2026`
+      classId: cls.id, termId: 't3-2026', dueDate: '2026-10-02', structureId
     });
-    assert.ok(first.created > 0, 'The first run created nothing.' + because(7));
+    assert.ok(first.created > 0,
+      'The first run created nothing, so there is nothing for the second to skip.' + because(7));
 
     const second = await API.bulkGenerateInvoices(SCHOOL, {
-      classId: cls.id, termId: 't3-2026', dueDate: '2026-10-02',
-      structureId: F.structureId || `fee-${cls.id}-t2-2026`
+      classId: cls.id, termId: 't3-2026', dueDate: '2026-10-02', structureId
     });
     assert.equal(second.created, 0,
       `Running bulk generate twice created ${second.created} more invoices.` +

@@ -2627,6 +2627,29 @@
    * names the subjects, because "publish is greyed out" is not an explanation
    * anyone can act on.
    */
+  /**
+   * Take a whole class's cards back.
+   *
+   * Publishing is deliberately hard to undo — a published card is what a family
+   * has already read. But "cannot be undone" is not the same as "must never be
+   * undone": a mark goes out wrong, a class is published a week early, a
+   * dispute is opened. A school with no way back publishes nothing, or
+   * publishes and lies about it. So the way back is explicit and separate from
+   * the ordinary edit path: you have to mean it.
+   */
+  function withdrawReportCardsFor(schoolId, payload) {
+    if (!payload || !payload.classId) return reject(422, 'Choose a class to withdraw.');
+    var d = db();
+    var termId = payload.termId || d.current_term_id;
+    var cards = d.report_cards.filter(function (c) {
+      return c.school_id === schoolId && c.class_id === payload.classId &&
+             c.term_id === termId && c.status === 'published';
+    });
+    cards.forEach(function (c) { c.status = 'draft'; c.published_at = null; });
+    persist();
+    return resolve({ class_id: payload.classId, term_id: termId, withdrawn: cards.length });
+  }
+
   function publishReportCardsFor(schoolId, payload) {
     if (!payload || !payload.classId) return reject(422, 'Choose a class to publish.');
     var d = db();
@@ -3045,6 +3068,11 @@
 
     var token = 'gp-' + hash32(studentId + '|' + guardian.id + '|' + d.guardian_tokens.length + '|' + d.today);
     var row = {
+      // A link needs an identity separate from the secret. Without one, the
+      // only handle a caller has on a link is the link itself, so revoking one
+      // means sending the working credential back over the wire to say which
+      // to kill.
+      id: 'gtk-' + String(d.guardian_tokens.length + 1).padStart(5, '0'),
       token: token, school_id: schoolId,
       student_id: studentId, guardian_id: guardian.id,
       issued_to: guardian.phone, issued_by: payload.issuedBy || 'tch-06',
@@ -3187,6 +3215,33 @@
     return resolve(rows);
   }
 
+  /**
+   * E24 — stop a link now.
+   *
+   * A guardian link is a bearer credential with no password behind it: whoever
+   * holds the URL is the parent. Forwarded to a WhatsApp group it stayed valid
+   * for the rest of its ninety days, and there was nothing anybody could do.
+   *
+   * Revoking twice is a no-op that says so, not an error: the second click
+   * comes from someone who wanted the link dead, and it is.
+   */
+  function revokeGuardianToken(schoolId, tokenId) {
+    var d = db();
+    if (!tokenId) return reject(422, 'Name the link to revoke.');
+    var t = d.guardian_tokens.filter(function (x) {
+      return x.school_id === schoolId && (x.id === tokenId || x.token === tokenId);
+    })[0];
+    if (!t) return reject(404, 'No link ' + tokenId);
+    if (t.revoked) {
+      return resolve({ id: t.id, state: 'revoked', already: true,
+                       message: 'That link was already revoked. Nothing changed.' });
+    }
+    t.revoked = true;
+    t.revoked_at = d.today;
+    persist();
+    return resolve({ id: t.id, state: 'revoked', already: false });
+  }
+
   global.DemoBackend = {
     // people
     listStudents: listStudents,
@@ -3285,6 +3340,7 @@
     getReportCard: getReportCard,
     updateReportCard: updateReportCard,
     publishReportCardsFor: publishReportCardsFor,
+    withdrawReportCardsFor: withdrawReportCardsFor,
     // teacher scope
     listTeacherClasses: listTeacherClasses,
     getTeacherTimetable: getTeacherTimetable,
@@ -3302,6 +3358,7 @@
     // guardian portal
     issueGuardianToken: issueGuardianToken,
     listGuardianTokens: listGuardianTokens,
+    revokeGuardianToken: revokeGuardianToken,
     getGuardianPortal: getGuardianPortal,
     PORTAL_STATES: PORTAL_STATES,
     normalisePhone: normalisePhone,

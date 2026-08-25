@@ -356,7 +356,16 @@
     return request('POST', '/' + schoolId + '/students/import', { form: form });
   };
   // GET /api/school/{school_id}/classes
-  B.listClasses = function (schoolId, opts) { return GET('/' + schoolId + '/classes', opts); };
+  B.listClasses = function (schoolId, opts) {
+    return GET('/' + schoolId + '/classes', opts).then(function (v) {
+      return asList(v).map(function (c) {
+        return Object.assign({}, c, {
+          full_name: c.name,
+          roll: Number(c.student_count != null ? c.student_count : c.roll || 0)
+        });
+      });
+    });
+  };
   // GET /api/school/{school_id}/teachers
   B.listTeachers = function (schoolId) { return GET('/' + schoolId + '/teachers'); };
   // GET /api/school/{school_id}/subjects
@@ -402,7 +411,13 @@
     // BulkFeeGenerateIn (school.py:141): fee_structure_id, not structure_id
     return POST('/fee-invoices/bulk-generate', {
       school_id: schoolId, fee_structure_id: payload.structureId,
-      grade: payload.grade, due_date: payload.dueDate
+      class_id: payload.classId, grade: payload.grade, due_date: payload.dueDate
+    }).then(function (v) {
+      var d = (v && v.data) || v || {};
+      // "nothing happened" and "42 pupils were already billed" are different
+      // answers, and a bursar re-running this needs to be told which.
+      return { created: Number(d.created || 0), skipped: Number(d.skipped || 0),
+               considered: Number(d.considered || 0) };
     });
   };
   /*
@@ -434,7 +449,21 @@
   B.listDefaulters = function (schoolId, opts) {
     return GET('/defaulters', { school_id: schoolId, threshold_days: opts && opts.thresholdDays });
   };
-  B.listDefaulterRows = B.listDefaulters;
+  // The pages read a page, not a bare array, and they read how many times a
+  // family has already been chased — the cap is three (rule 29).
+  B.listDefaulterRows = function (schoolId, opts) {
+    return B.listDefaulters(schoolId, opts).then(function (v) {
+      var items = asList(v).map(function (r) {
+        return Object.assign({}, r, {
+          invoice_id: r.invoice_id || r.id,
+          balance: Number(r.balance || 0),
+          reminders_sent: Number(r.reminders_sent || 0),
+          exhausted: r.exhausted === true || Number(r.reminders_sent || 0) >= 3
+        });
+      });
+      return { items: items, total: items.length };
+    });
+  };
   /*
    * school.py has POST /fee-waivers but NO list route — searched. Waivers can
    * be created and approved and never read back, so the demo's list has no
@@ -522,6 +551,10 @@
   // GET /api/school/exams/{id}/results
   B.listExamResults = function (schoolId, examId, opts) {
     opts = opts || {};
+    // Asking for the results of no exam is an empty list, not a bad request.
+    // Without this a caller iterating cards hits a card with no marks behind it
+    // and gets "not a valid UUID" for a question that has a fine answer.
+    if (!examId) return Promise.resolve({ items: [], total: 0 });
     return GET('/exams/' + examId + '/results', { class_id: opts.classId }).then(function (v) {
       var page = asPage(v, opts);
       page.items = page.items.map(normaliseResult)
@@ -593,8 +626,23 @@
         })
     });
   };
+  // PUT /api/school/{school_id}/teachers/{teacher_id}/exams/{exam_id}/results
+  //
+  // Not the same route as saveExamResults. Sending a teacher's marks through
+  // the unscoped route is how a teacher writes into a class they do not teach:
+  // the check lives on the scoped route, and skipping it here would mean the
+  // whole scope is a naming convention.
   B.saveTeacherResults = function (schoolId, teacherId, examId, payload) {
-    return B.saveExamResults(schoolId, examId, payload);
+    payload = payload || {};
+    if (!teacherId) return B.saveExamResults(schoolId, examId, payload);
+    return PUT('/' + schoolId + '/teachers/' + teacherId + '/exams/' + examId + '/results', {
+      exam_id: String(examId),
+      class_id: payload.classId,
+      results: (payload.scores || []).map(function (r) {
+        return { student_id: r.student_id, subject_id: r.subject_id || payload.subjectId,
+                 score: Number(r.score), teacher_comment: r.comment || null };
+      })
+    });
   };
   // GET /api/school/exams/{id}/class-analysis
   B.getClassAnalysis = function (schoolId, examId, opts) {
@@ -650,31 +698,40 @@
     if (payload.studentId) {
       return POST('/report-cards', { student_id: payload.studentId, term_id: payload.termId });
     }
-    return B.listStudents(schoolId, { classId: payload.classId, pageSize: 100 }).then(function (page) {
-      var roll = asList(page.items || page);
-      return Promise.all(roll.map(function (s2) {
-        return POST('/report-cards', { student_id: s2.id, term_id: payload.termId })
-          .catch(function (e) { return { error: e.message, student_id: s2.id }; });
-      })).then(function (cards) {
-        var made = cards.filter(function (c) { return !c.error; });
-        if (!made.length && cards.length) {
-          var e = new Error('Every report card failed: ' + (cards[0].error || 'unknown'));
-          e.status = 500; throw e;
-        }
-        return { class_id: payload.classId, generated: made.length, cards: made };
+    // POST /api/school/report-cards/bulk-generate — one call for a class (E28)
+    return POST('/report-cards/bulk-generate',
+                { class_id: payload.classId, term_id: payload.termId || null })
+      .then(function (v) {
+        var d = (v && v.data) || v || {};
+        return { class_id: payload.classId, generated: Number(d.generated || 0),
+                 skipped: d.skipped || [], roll: Number(d.roll || 0) };
       });
-    });
   };
   // POST /api/school/report-cards/{id}/publish — one card at a time
+  // POST /api/school/report-cards/bulk-publish
+  // One call, one transaction (E28). Publishing card by card meant a dropped
+  // connection could leave half a class published — half the families having
+  // seen a mark and the other half not, with no way back for the half that had.
   B.publishReportCardsFor = function (schoolId, payload) {
-    return B.listReportCardRows(schoolId, { classId: payload.classId, status: 'draft' })
-      .then(function (page) {
-        var items = page.items || page || [];
-        return Promise.all(items.map(function (c) { return POST('/report-cards/' + c.id + '/publish', {}); }))
-          .then(function () { return { class_id: payload.classId, published: items.length }; });
+    return POST('/report-cards/bulk-publish',
+                { class_id: payload.classId, term_id: payload.termId || null })
+      .then(function (v) {
+        var d = (v && v.data) || v || {};
+        return { class_id: payload.classId, published: Number(d.published || 0),
+                 already_published: Number(d.already_published || 0) };
       });
   };
   B.publishReportCards = B.publishReportCardsFor;
+
+  // POST /api/school/report-cards/bulk-withdraw
+  B.withdrawReportCardsFor = function (schoolId, payload) {
+    return POST('/report-cards/bulk-withdraw',
+                { class_id: payload.classId, term_id: payload.termId || null })
+      .then(function (v) {
+        var d = (v && v.data) || v || {};
+        return { class_id: payload.classId, withdrawn: Number(d.withdrawn || 0) };
+      });
+  };
 
   // ══════════════════════════════════════════════════════════════════════
   // Attendance
@@ -685,12 +742,31 @@
     return POST('/attendance/mark', {
       school_id: schoolId, class_id: classId, date: payload.date,
       records: (payload.records || []).map(function (r) {
-        return { student_id: r.student_id, status: r.status, notes: r.note };
+        return { student_id: r.student_id, status: r.status, notes: r.note || r.reason };
       })
+    }).then(function (v) {
+      var d = (v && v.data) || v || {};
+      // created vs updated matters: re-marking a register must not report
+      // forty new records every morning.
+      return Object.assign({}, d, {
+        created: Number(d.created || 0),
+        updated: Number(d.updated || 0),
+        marked: Number(d.marked || 0)
+      });
     });
   };
+  // POST /api/school/{school_id}/teachers/{teacher_id}/classes/{class_id}/attendance
   B.markTeacherAttendance = function (schoolId, teacherId, classId, payload) {
-    return B.markAttendance(schoolId, classId, payload);
+    if (!teacherId) return B.markAttendance(schoolId, classId, payload);
+    return POST('/' + schoolId + '/teachers/' + teacherId + '/classes/' + classId + '/attendance', {
+      date: payload.date,
+      records: (payload.records || []).map(function (r) {
+        return { student_id: r.student_id, status: r.status, reason: r.note || r.reason };
+      })
+    }).then(function (v) {
+      var d = (v && v.data) || v || {};
+      return Object.assign({}, d, { created: Number(d.created || 0), marked: Number(d.marked || 0) });
+    });
   };
   // GET /api/school/attendance/report
   B.getAttendanceReport = function (schoolId, opts) {
@@ -748,7 +824,15 @@
   // No route in school.py. These reject with 501 and name the rule, rather
   // than being quietly reimplemented here — see docs/BACKEND-PATCHES.md.
   // ══════════════════════════════════════════════════════════════════════
-  B.updateExam = notInBackend('updateExam', 11);
+  // PUT /api/school/exams/{id}
+  B.updateExam = function (schoolId, examId, payload) {
+    return PUT('/exams/' + examId, {
+      name: payload.name, exam_type: payload.examType,
+      date_from: payload.dateFrom, date_to: payload.dateTo,
+      max_score: payload.maxScore,
+      grading_scale_id: payload.gradingScaleId
+    });
+  };
   // POST /api/school/exams/{exam_id}/results/verify
   //
   // Who verified is the caller, taken from the token by the backend and never
@@ -778,16 +862,130 @@
   B.deleteFeeStructure = notInBackend('deleteFeeStructure', 30);
   B.cloneFeeStructure = notInBackend('cloneFeeStructure', 30);
   B.rejectWaiver = notInBackend('rejectWaiver', 6);
-  B.listTeacherClasses = notInBackend('listTeacherClasses', 21);
-  B.getTeacherDashboard = notInBackend('getTeacherDashboard', 21);
-  B.getTeacherRegister = notInBackend('getTeacherRegister', 21);
-  B.getTeacherMarkSheet = notInBackend('getTeacherMarkSheet', 21);
-  B.getClassRegister = notInBackend('getClassRegister', 16);
-  B.listMyChildren = notInBackend('listMyChildren', 22);
-  B.getChildFees = notInBackend('getChildFees', 22);
-  B.getChildAttendance = notInBackend('getChildAttendance', 22);
-  B.getChildResults = notInBackend('getChildResults', 23);
-  B.listGuardianTokens = notInBackend('listGuardianTokens', 26);
+  // ══════════════════════════════════════════════════════════════════════
+  // Teacher and parent surfaces — E16, E17
+  //
+  // These were stubs until school.py grew the routes. Every one of them is
+  // scoped by the backend from the caller's token, not by anything here: a
+  // filter in the client is a convenience, not a control, and the whole point
+  // of these rules is that a teacher asking for a class they do not teach gets
+  // the same answer as one asking for a class that does not exist.
+  // ══════════════════════════════════════════════════════════════════════
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/classes
+  B.listTeacherClasses = function (schoolId, teacherId) {
+    return GET('/' + schoolId + '/teachers/' + teacherId + '/classes').then(function (v) {
+      return asList(v).map(function (c) {
+        return Object.assign({}, c, {
+          full_name: c.name, roll: Number(c.roll || 0),
+          subjects: typeof c.subjects === 'string' ? JSON.parse(c.subjects) : (c.subjects || [])
+        });
+      });
+    });
+  };
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/dashboard
+  B.getTeacherDashboard = function (schoolId, teacherId, opts) {
+    opts = opts || {};
+    return GET('/' + schoolId + '/teachers/' + teacherId + '/dashboard', { date: opts.date });
+  };
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/classes/{class_id}/register
+  B.getTeacherRegister = function (schoolId, teacherId, classId, opts) {
+    opts = opts || {};
+    return GET('/' + schoolId + '/teachers/' + teacherId + '/classes/' + classId + '/register',
+               { date: opts.date }).then(normaliseRegister);
+  };
+
+  function normaliseRegister(v) {
+    var d = (v && v.data) || v || {};
+    return Object.assign({}, d, {
+      roll: asList(d.roll).map(function (r) {
+        return Object.assign({}, r, {
+          name: r.full_name || r.name,
+          note: r.reason != null ? r.reason : r.note,
+          record_id: r.attendance_id || null
+        });
+      })
+    });
+  }
+
+  // GET /api/school/{school_id}/classes/{class_id}/register
+  // The register without naming a teacher — a head walking into a classroom is
+  // not that class's teacher. Scope still applies at the backend.
+  B.getClassRegister = function (schoolId, classId, opts) {
+    opts = opts || {};
+    return GET('/' + schoolId + '/classes/' + classId + '/register', { date: opts.date })
+      .then(normaliseRegister);
+  };
+
+  // GET /api/school/{school_id}/teachers/{teacher_id}/exams/{exam_id}/marksheet
+  B.getTeacherMarkSheet = function (schoolId, teacherId, examId, opts) {
+    opts = opts || {};
+    return GET('/' + schoolId + '/teachers/' + teacherId + '/exams/' + examId + '/mark-sheet',
+               { class_id: opts.classId, subject_id: opts.subjectId })
+      .then(function (v) {
+        var d = (v && v.data) || v || {};
+        var scale = d.scale ? normaliseScale(Object.assign({}, d.scale,
+          { bands: d.scale.bands, max_score: d.max_score })) : null;
+        return Object.assign({}, d, {
+          scale: scale,
+          roll: asList(d.roll).map(function (r) {
+            return Object.assign({}, r, { name: r.full_name || r.name, verified: !!r.verified });
+          })
+        });
+      });
+  };
+
+  // GET /api/school/{school_id}/guardians/{person_id}/children
+  B.listMyChildren = function (schoolId, personId) {
+    return GET('/' + schoolId + '/guardians/' + personId + '/children').then(function (v) {
+      return asList(v).map(function (k) {
+        return Object.assign({}, k, {
+          id: k.student_id,
+          balance: Number(k.balance || 0),
+          attendance_rate: k.marked_30 ? Math.round(Number(k.present_30) / Number(k.marked_30) * 100) : null
+        });
+      });
+    });
+  };
+
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/fees
+  B.getChildFees = function (schoolId, personId, studentId) {
+    return GET('/' + schoolId + '/guardians/' + personId + '/children/' + studentId + '/fees')
+      .then(function (v) {
+        var d = (v && v.data) || v || {};
+        return Object.assign({}, d, { invoices: asList(d.invoices).map(normaliseInvoice) });
+      });
+  };
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/attendance
+  B.getChildAttendance = function (schoolId, personId, studentId, opts) {
+    opts = opts || {};
+    return GET('/' + schoolId + '/guardians/' + personId + '/children/' + studentId + '/attendance',
+               { days: opts.days });
+  };
+  // GET /api/school/{school_id}/guardians/{person_id}/children/{student_id}/results
+  B.getChildResults = function (schoolId, personId, studentId) {
+    return GET('/' + schoolId + '/guardians/' + personId + '/children/' + studentId + '/results');
+  };
+
+  // GET /api/school/students/{student_id}/guardian-tokens
+  // The token itself never comes back — only its last four characters and its
+  // state, because a list route that returns working links turns one leaked
+  // screenshot into every family's records.
+  B.listGuardianTokens = function (schoolId, studentId) {
+    return GET('/students/' + studentId + '/guardian-tokens').then(function (v) {
+      return asList(v).map(function (t) {
+        return Object.assign({}, t, { token: '\u2026' + (t.token_tail || ''), active: t.state === 'active' });
+      });
+    });
+  };
+
+  // POST /api/school/guardian-tokens/{id}/revoke
+  B.revokeGuardianToken = function (schoolId, tokenId) {
+    return POST('/guardian-tokens/' + tokenId + '/revoke', {});
+  };
+
   B.updateGuardian = notInBackend('updateGuardian', 8);
   B.setPrimaryGuardian = notInBackend('setPrimaryGuardian', 8);
   B.removeGuardian = notInBackend('removeGuardian', 8);
@@ -820,7 +1018,15 @@
   B.sendMessage = notInBackend('sendMessage', 29);
   B.listWaivers = B.listWaiverRows;
   B.getNeedsAttention = notInBackend('getNeedsAttention', 14);
-  B.getDashboardSummary = notInBackend('getDashboardSummary', 1);
+  // GET /api/school/{school_id}/dashboard
+  // Every figure carries what it was, because a number with nothing to compare
+  // it to is not information: 72% collected means one thing after 68% and
+  // another after 81%.
+  B.getDashboardSummary = function (schoolId, opts) {
+    opts = opts || {};
+    return GET('/' + schoolId + '/dashboard/summary', { term_id: opts.termId, date: opts.date })
+      .then(function (v) { return (v && v.data) || v || {}; });
+  };
   B.generateInvoices = B.bulkGenerateInvoices;
 
   // demo-only hooks the live backend cannot honour

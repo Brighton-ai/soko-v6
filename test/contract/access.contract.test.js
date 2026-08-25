@@ -136,8 +136,10 @@ describe('Contract — parent scope', () => {
     const before = await API.getChildResults(SCHOOL, GUARDIAN, kid.student_id);
     assert.ok(before.cards.length, 'The child has no visible cards.');
 
-    // regenerating puts a published card back to draft
-    await API.generateReportCards(SCHOOL, { classId: kid.class_id, examId: before.cards[0].exam_id });
+    // Withdrawing, not regenerating. Regenerating a published card is refused
+    // now — a card a family has read must not be rewritten underneath them —
+    // so taking one back is its own deliberate act (E14).
+    await API.withdrawReportCardsFor(SCHOOL, { classId: kid.class_id, termId: before.cards[0].term_id });
     const after = await API.getChildResults(SCHOOL, GUARDIAN, kid.student_id);
     const still = after.cards.filter((c) => c.card_id === before.cards[0].card_id).length;
     assert.equal(still, 0,
@@ -197,6 +199,35 @@ describe('Contract — guardian portal', () => {
     assert.notEqual(v.state, 'ok',
       'A withdrawn link still serves data. Revocation means nothing without it.' +
       because(26, 'school_guardian_tokens has no revoked_at column — searched'));
+  });
+
+  it(rule(35, 'a link can be withdrawn, and stops that moment'), async () => {
+    const page = await API.searchStudents(SCHOOL, { pageSize: 20 });
+    const student = page.items[0];
+    assert.ok(student, 'No pupil to issue a link for.');
+
+    const issued = await API.issueGuardianToken(SCHOOL, student.id, {}).catch(() => null);
+    if (!issued) return;                       // no issuing route; rule 26 covers the rest
+    const token = issued.token || issued.data?.token;
+    assert.ok(token, 'Issuing a link returned no link.');
+
+    const before = await API.getGuardianPortal(token, {});
+    assert.equal(before.state, 'ok', 'A link did not work the moment it was issued.' + because(35));
+
+    const listed = await API.listGuardianTokens(SCHOOL, student.id);
+    const mine = listed.filter((t) => t.active)[0];
+    assert.ok(mine, 'The link that was just issued is not listed as active.' + because(35));
+
+    // A list of links must not hand back working links. One screenshot of an
+    // admin screen would otherwise be every family's records.
+    assert.ok(!listed.some((t) => t.token && t.token.length > 12 && !/…/.test(t.token)),
+      'The token list returns whole tokens.' + because(35));
+
+    await API.revokeGuardianToken(SCHOOL, mine.id);
+    const after = await API.getGuardianPortal(token, {});
+    assert.notEqual(after.state, 'ok',
+      'A withdrawn link still serves the child\'s fees, attendance and results.' +
+      because(35, 'school_guardian_tokens had no revoked_at column and no revoke route'));
   });
 
   it(rule(8, 'a link cannot be issued to a guardian on another pupil’s record'), async () => {

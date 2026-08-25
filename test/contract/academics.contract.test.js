@@ -176,6 +176,11 @@ describe('Contract — academics', () => {
     assert.ok(unverified.length, 'Everything is verified, so the gate is never exercised.');
     const classId = unverified[0].class_id;
 
+    // Start from drafts. An earlier rule in this file may have published this
+    // class legitimately, and counting cards it published would say the gate
+    // failed when it was never asked.
+    await API.withdrawReportCardsFor(SCHOOL, { classId }).catch(() => null);
+
     await API.generateReportCards(SCHOOL, { classId, examId: F.examId });
     let err = null;
     await API.publishReportCardsFor(SCHOOL, { classId }).catch((e) => { err = e; });
