@@ -195,11 +195,17 @@ async function main() {
     ['Esther Nafula', 'ADM/C005', 1], ['Felix Mwangi', 'ADM/C006', 1]
   ];
   for (const [full_name, admission_number, classIdx] of roster) {
-    const found = studentRows.filter((s) => s.admission_number === admission_number)[0];
+    // school_students.admission_no is the column; admission_number exists only on StudentIn
+    const found = studentRows.filter((s) => (s.admission_no || s.admission_number) === admission_number)[0];
     if (found) { students.push(found); log('student adopted', admission_number); continue; }
+    /*
+     * school_students has no class_id — membership is the grade/stream text
+     * pair (E30). Passing class_id would be silently dropped by the model.
+     */
+    const cls = classes[classIdx];
     const made = await POST('/school/students', {
       school_id: schoolId, admission_number, full_name,
-      class_id: classes[classIdx].id, gender: 'F',
+      grade: cls.grade, stream: cls.stream, gender: 'F',
       parent_name: 'Mercy Ouma', parent_phone: '0722418067',
       date_of_birth: '2015-04-09'
     });
@@ -258,6 +264,21 @@ async function main() {
     school_id: schoolId, fee_structure_id: structure.id, due_date: '2026-05-22'
   }).catch((e) => ({ error: e.message }));
   log('bulk generate:', JSON.stringify(gen).slice(0, 160));
+
+  /*
+   * Reset the money on this tenant to a known state.
+   *
+   * Contract runs record payments and approve waivers, so a second run would
+   * otherwise find every invoice already cleared and have nothing to test
+   * against. This is SQL because no route un-pays an invoice, and it is safe
+   * only because the tenant is `shule-contract-test` and nothing else.
+   */
+  sql(`UPDATE school_fee_invoices
+         SET amount_paid = 0, discount_amount = 0, balance = amount_due, status = 'pending'
+       WHERE tenant_id = '${tenantId}'`);
+  sql(`DELETE FROM school_fee_waivers WHERE tenant_id = '${tenantId}'`);
+  sql(`DELETE FROM journal_lines WHERE tenant_id = '${tenantId}'`);
+  log('money reset to unpaid for a reproducible run');
 
   const invoices = await GET(`/school/fee-invoices?school_id=${schoolId}&per_page=100`);
   const invoiceRows = invoices.items || invoices || [];

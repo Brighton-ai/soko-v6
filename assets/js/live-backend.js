@@ -214,6 +214,86 @@
     };
   }
 
+
+  // ══════════════════════════════════════════════════════════════════════
+  // E26 — shape normalisation.
+  //
+  // The adapter's job is to present the same shape demo-backend does, so a
+  // contract test and a page behave identically against either. This is
+  // renaming and assembling, never guarding: nothing below rejects anything
+  // the backend accepted, because that would hide the rule failure the
+  // contract suite exists to surface.
+  // ══════════════════════════════════════════════════════════════════════
+
+  /** school.py returns bare arrays where the demo returns {items, total}. */
+  function asList(v) {
+    if (Array.isArray(v)) return v;
+    if (v && Array.isArray(v.items)) return v.items;
+    return v ? [v] : [];
+  }
+  function asPage(v, opts) {
+    var items = asList(v);
+    var size = (opts && opts.pageSize) || 25;
+    return { items: items, total: (v && v.total) || items.length,
+             page: (v && v.page) || 1, page_size: size,
+             pages: Math.max(1, Math.ceil(items.length / size)) };
+  }
+
+  /** Bands are min_score/max_score on the wire, min/max in the app. */
+  function normaliseBand(b) {
+    return {
+      id: b.id, grade: b.grade,
+      min: Number(b.min_score), max: Number(b.max_score),
+      min_score: Number(b.min_score), max_score: Number(b.max_score),
+      points: Number(b.points), remark: b.remark || b.grade
+    };
+  }
+  /**
+   * A scale carries no maximum of its own — GradingScaleIn (school.py:173) is
+   * school_id, name, is_default and nothing else. The top band's ceiling is
+   * the only maximum that exists, so that is what max_score means here.
+   */
+  function normaliseScale(sc) {
+    var bands = asList(sc.bands).map(normaliseBand).sort(function (a, b) { return a.min - b.min; });
+    var top = bands.length ? bands[bands.length - 1].max : 100;
+    return Object.assign({}, sc, {
+      bands: bands, max_score: top, band_count: bands.length,
+      tiles: bandsTile(bands, top),
+      exam_count: sc.exam_count || 0, result_count: sc.result_count || 0
+    });
+  }
+  /** Reports whether bands tile 0..max. Does not enforce it — that is the backend's job. */
+  function bandsTile(bands, max) {
+    if (!bands.length) return false;
+    if (bands[0].min !== 0) return false;
+    for (var i = 1; i < bands.length; i++) {
+      if (bands[i].min !== bands[i - 1].max + 1) return false;
+    }
+    return bands[bands.length - 1].max === max;
+  }
+
+  function normaliseResult(r) {
+    return Object.assign({}, r, {
+      score: r.score === null || r.score === undefined ? null : Number(r.score),
+      points: r.points === null || r.points === undefined ? null : Number(r.points),
+      verified: !!r.verified,
+      comment: r.comment !== undefined ? r.comment : r.teacher_comment
+    });
+  }
+  function normaliseInvoice(i) {
+    return Object.assign({}, i, {
+      amount_due: Number(i.amount_due || 0),
+      amount_paid: Number(i.amount_paid || 0),
+      discount_amount: Number(i.discount_amount || 0),
+      balance: Number(i.balance || 0),
+      reminders_sent: Number(i.reminders_sent || 0),
+      term_id: i.term_id || (i.term !== undefined ? String(i.term) + '-' + i.year : null),
+      term_name: i.term_name || (i.term !== undefined ? 'Term ' + i.term + ' ' + i.year : null),
+      status: i.status === 'paid' ? 'cleared' : i.status === 'partial' ? 'part_paid'
+            : i.status === 'pending' ? 'unpaid' : i.status
+    });
+  }
+
   // ══════════════════════════════════════════════════════════════════════
   // People
   // ══════════════════════════════════════════════════════════════════════
@@ -289,7 +369,13 @@
   B.listFeeInvoices = function (schoolId, opts) {
     opts = opts || {};
     return GET('/fee-invoices',
-      { school_id: schoolId, status: opts.status, page: opts.page, per_page: pageSize(opts.pageSize) });
+      { school_id: schoolId, status: opts.status, page: opts.page, per_page: pageSize(opts.pageSize) })
+      .then(function (v) {
+        var page = asPage(v, opts);
+        page.items = page.items.map(normaliseInvoice)
+          .filter(function (i) { return !opts.studentId || i.student_id === opts.studentId; });
+        return page;
+      });
   };
   B.listInvoiceRows = B.listFeeInvoices;
   // POST /api/school/fee-invoices/bulk-generate
@@ -308,6 +394,17 @@
   B.recordPayment = function (schoolId, invoiceId, payload) {
     return POST('/fee-invoices/' + invoiceId + '/pay-with-journal', {
       amount: payload.amount, method: payload.method, reference: payload.reference
+    }).then(function (v) {
+      // the route returns the updated invoice row, not {payment, invoice}
+      var inv = normaliseInvoice(v || {});
+      return {
+        invoice: inv,
+        payment: {
+          id: null, invoice_id: invoiceId, amount: Number(payload.amount),
+          method: payload.method || 'mpesa', reference: payload.reference || null,
+          paid_at: new Date().toISOString()
+        }
+      };
     });
   };
   // GET /api/school/fee-invoices/{id}/receipt
@@ -325,6 +422,12 @@
    * counterpart. RULES row 6.
    */
   B.listWaiverRows = notInBackendLater('listWaiverRows', 6);
+  // POST /api/school/fee-waivers — FeeWaiverIn (school.py:148)
+  B.createWaiver = function (schoolId, payload) {
+    return POST('/fee-waivers', {
+      invoice_id: payload.invoiceId, amount: payload.amount, reason: payload.reason
+    });
+  };
   // PUT /api/school/fee-waivers/{id}/approve
   B.approveWaiver = function (schoolId, waiverId, payload) {
     return PUT('/fee-waivers/' + waiverId + '/approve', payload || {});
@@ -342,7 +445,11 @@
   // ══════════════════════════════════════════════════════════════════════
 
   // GET /api/school/grading-scales?school_id=
-  B.listGradingScales = function (schoolId) { return GET('/grading-scales', { school_id: schoolId }); };
+  B.listGradingScales = function (schoolId) {
+    return GET('/grading-scales', { school_id: schoolId }).then(function (v) {
+      return asList(v).map(normaliseScale);
+    });
+  };
   B.listGradingScaleRows = B.listGradingScales;
   B.createGradingScale = function (schoolId, payload) {
     return POST('/grading-scales', { school_id: schoolId, name: payload.name, is_default: false })
@@ -355,15 +462,85 @@
       });
   };
   // GET /api/school/exams?school_id=
-  B.listExams = function (schoolId, opts) { return GET('/exams', { school_id: schoolId, term_id: opts && opts.termId }); };
+  B.listExams = function (schoolId, opts) {
+    return GET('/exams', { school_id: schoolId, term_id: opts && opts.termId }).then(function (v) {
+      return asList(v).map(function (e) {
+        return Object.assign({}, e, {
+          max_score: Number(e.max_score || 100),
+          starts_on: e.date_from || e.starts_on, ends_on: e.date_to || e.ends_on,
+          type: e.exam_type || e.type,
+          result_count: Number(e.result_count || 0),
+          class_ids: e.class_ids || [],
+          grading_scale_id: e.grading_scale_id || null
+        });
+      });
+    });
+  };
   B.listExamRows = B.listExams;
   B.createExam = function (schoolId, payload) { return POST('/exams', payload); };
   // GET /api/school/exams/{id}/results
   B.listExamResults = function (schoolId, examId, opts) {
-    return GET('/exams/' + examId + '/results', { class_id: opts && opts.classId });
+    opts = opts || {};
+    return GET('/exams/' + examId + '/results', { class_id: opts.classId }).then(function (v) {
+      var page = asPage(v, opts);
+      page.items = page.items.map(normaliseResult)
+        .filter(function (r) { return !opts.subjectId || r.subject_id === opts.subjectId; })
+        .filter(function (r) { return opts.verified == null || r.verified === opts.verified; });
+      return page;
+    });
   };
+
+  /**
+   * There is no mark-sheet route: school.py returns marks that exist, never the
+   * roll they belong to. The sheet is assembled here from four calls — the
+   * exam, its scale, the class roll and the marks — so an unmarked pupil has a
+   * row to type into. Nothing is validated on the way through.
+   */
   B.getMarkSheet = function (schoolId, examId, opts) {
-    return GET('/exams/' + examId + '/results', { class_id: opts.classId, subject_id: opts.subjectId });
+    opts = opts || {};
+    return Promise.all([
+      B.listExams(schoolId, {}),
+      B.listGradingScales(schoolId),
+      B.listStudents(schoolId, { classId: opts.classId, pageSize: 100 }),
+      GET('/exams/' + examId + '/results', { class_id: opts.classId }),
+      B.listClasses(schoolId, {}),
+      B.listSubjects(schoolId, {})
+    ]).then(function (r) {
+      var exam = asList(r[0]).filter(function (e) { return String(e.id) === String(examId); })[0] || {};
+      var scale = asList(r[1]).filter(function (s2) {
+        return String(s2.id) === String(exam.grading_scale_id);
+      })[0] || asList(r[1])[0] || { bands: [], max_score: 100 };
+      var roll = asList(r[2]);
+      var marks = {};
+      asList(r[3]).map(normaliseResult).forEach(function (m) {
+        if (!opts.subjectId || m.subject_id === opts.subjectId) marks[m.student_id] = m;
+      });
+      var cls = asList(r[4]).filter(function (c) { return String(c.id) === String(opts.classId); })[0] || {};
+      var sub = asList(r[5]).filter(function (x) { return String(x.id) === String(opts.subjectId); })[0] || {};
+
+      var rows2 = roll.map(function (s2) {
+        var m = marks[s2.id] || {};
+        return {
+          student_id: s2.id, name: s2.full_name || s2.name,
+          admission_no: s2.admission_number || s2.admission_no,
+          result_id: m.id || null, score: m.score != null ? m.score : null,
+          grade: m.grade || null, points: m.points != null ? m.points : null,
+          remark: m.remark || null, comment: m.comment || null,
+          verified: !!m.verified, entered_by: m.entered_by || null,
+          entered_by_name: null, verified_by_name: null
+        };
+      });
+      return {
+        exam: exam, scale: scale,
+        class_id: opts.classId, class_name: cls.name || cls.full_name || '—',
+        subject_id: opts.subjectId, subject_name: sub.name || '—',
+        teacher_id: null, teacher_name: null,
+        max_score: Number(exam.max_score || scale.max_score || 100),
+        roll: rows2,
+        entered: rows2.filter(function (x) { return x.score != null; }).length,
+        unverified: rows2.filter(function (x) { return x.score != null && !x.verified; }).length
+      };
+    });
   };
   // POST /api/school/exams/{id}/results
   B.saveExamResults = function (schoolId, examId, payload) {
@@ -388,13 +565,47 @@
   };
   // GET /api/school/report-cards
   B.listReportCardRows = function (schoolId, opts) {
-    return GET('/report-cards', { school_id: schoolId, class_id: opts && opts.classId, status: opts && opts.status });
+    opts = opts || {};
+    return GET('/report-cards', { school_id: schoolId, class_id: opts.classId, status: opts.status })
+      .then(function (v) {
+        var items = asList(v).map(function (c) {
+          return Object.assign({}, c, {
+            average: Number(c.average_marks != null ? c.average_marks : c.average || 0),
+            total_marks: Number(c.total_marks || 0),
+            position: c.class_position != null ? Number(c.class_position) : null,
+            class_size: c.class_size != null ? Number(c.class_size) : 0,
+            teacher_comment: c.teacher_comment, principal_comment: c.principal_comment,
+            unverified_subjects: 0, publishable: true
+          });
+        });
+        return { items: items, total: items.length, term_id: opts.termId };
+      });
   };
   B.listReportCards = B.listReportCardRows;
   B.getReportCard = function (schoolId, cardId) { return GET('/report-cards/' + cardId); };
   // POST /api/school/report-cards
+  /*
+   * school.py's ReportCardIn is per-STUDENT, not per-class: there is no bulk
+   * generate. One call per pupil, which is also E28's problem in reverse.
+   */
   B.generateReportCards = function (schoolId, payload) {
-    return POST('/report-cards', { school_id: schoolId, class_id: payload.classId, exam_id: payload.examId, term_id: payload.termId });
+    if (payload.studentId) {
+      return POST('/report-cards', { student_id: payload.studentId, term_id: payload.termId });
+    }
+    return B.listStudents(schoolId, { classId: payload.classId, pageSize: 100 }).then(function (page) {
+      var roll = asList(page.items || page);
+      return Promise.all(roll.map(function (s2) {
+        return POST('/report-cards', { student_id: s2.id, term_id: payload.termId })
+          .catch(function (e) { return { error: e.message, student_id: s2.id }; });
+      })).then(function (cards) {
+        var made = cards.filter(function (c) { return !c.error; });
+        if (!made.length && cards.length) {
+          var e = new Error('Every report card failed: ' + (cards[0].error || 'unknown'));
+          e.status = 500; throw e;
+        }
+        return { class_id: payload.classId, generated: made.length, cards: made };
+      });
+    });
   };
   // POST /api/school/report-cards/{id}/publish — one card at a time
   B.publishReportCardsFor = function (schoolId, payload) {
@@ -507,7 +718,25 @@
   B.getDailyCollections = notInBackend('getDailyCollections', 4);
   B.listPaymentLedger = notInBackend('listPaymentLedger', 4);
   B.listPayments = notInBackend('listPayments', 4);
-  B.listJournalLines = notInBackend('listJournalLines', 4);
+  /*
+   * There is no journal route in school.py — searched. The GL is written by
+   * shared.post_journal and never exposed. A contract test that needs to see
+   * the ledger has to be told where it is; SHULE_GL_URL points at a read-only
+   * endpoint if one is ever added, and until then this reports the gap.
+   */
+  B.listJournalLines = global.SHULE_GL_URL
+    ? function () {
+        return global.fetch(global.SHULE_GL_URL).then(function (r) { return r.json(); })
+          .then(function (v) {
+            var lines = asList(v);
+            var dr = lines.filter(function (l) { return l.side === 'debit' || Number(l.debit) > 0; })
+              .reduce(function (n, l) { return n + Number(l.amount || l.debit || 0); }, 0);
+            var cr = lines.filter(function (l) { return l.side === 'credit' || Number(l.credit) > 0; })
+              .reduce(function (n, l) { return n + Number(l.amount || l.credit || 0); }, 0);
+            return { lines: lines, debits: dr, credits: cr, balanced: Math.round((dr - cr) * 100) === 0 };
+          });
+      }
+    : notInBackend('listJournalLines', 4);
   B.exportPaymentsCSV = notInBackend('exportPaymentsCSV', 4);
   B.exportStudentsCSV = notInBackend('exportStudentsCSV', 28);
   B.sendMessage = notInBackend('sendMessage', 29);

@@ -1,11 +1,31 @@
 'use strict';
 /** Money rules. Every one of these must hold against production. */
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures } = require('./backend.js');
+const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures, authenticate } = require('./backend.js');
+
+before(async () => { await authenticate(); });
 
 let API, F;
 beforeEach(async () => { API = openAPI(); resetFixtures(); F = await fixtures(API); });
+
+
+/**
+ * A pending waiver the test owns.
+ *
+ * school.py has POST /fee-waivers and no list route, so a test that starts by
+ * listing pending waivers is testing plumbing rather than the rule. This makes
+ * one and returns it with the invoice it is against — the same on both backends.
+ */
+async function pendingWaiver(amount) {
+  const page = await API.listInvoiceRows(SCHOOL, { pageSize: 100 });
+  const inv = page.items.filter((i) => i.balance > amount + 1000)[0];
+  if (!inv) return null;
+  const created = await API.createWaiver(SCHOOL, {
+    invoiceId: inv.id, amount, reason: 'Contract test bursary'
+  });
+  return { waiver: created, invoice: inv };
+}
 
 const owing = async (min = 1) =>
   (await API.listInvoiceRows(SCHOOL, { pageSize: 100000 })).items
@@ -87,11 +107,10 @@ describe('Contract — fees', () => {
   });
 
   it(rule(5, 'a waiver discounts the charge and never reduces amount_due', 'school.py:919'), async () => {
-    const waivers = await API.listWaiverRows(SCHOOL, { status: 'pending' });
-    const w = waivers.items[0];
-    assert.ok(w, 'No pending waiver to approve.');
-    const before = (await API.listInvoiceRows(SCHOOL, { pageSize: 100000 })).items
-      .filter((i) => i.student_id === w.student_id)[0];
+    const made = await pendingWaiver(5000);
+    assert.ok(made, 'No invoice with enough balance to waive against.');
+    const w = { id: made.waiver.id, amount: 5000 };
+    const before = made.invoice;
 
     const r = await API.approveWaiver(SCHOOL, w.id, {});
     assert.equal(r.invoice.amount_due, before.amount_due,
@@ -104,7 +123,9 @@ describe('Contract — fees', () => {
   });
 
   it(rule(6, 'approving a waiver twice discounts once', 'school.py:908'), async () => {
-    const w = (await API.listWaiverRows(SCHOOL, { status: 'pending' })).items[0];
+    const made = await pendingWaiver(2000);
+    assert.ok(made, 'No invoice with enough balance to waive against.');
+    const w = { id: made.waiver.id, amount: 2000 };
     const first = await API.approveWaiver(SCHOOL, w.id, {});
     const afterFirst = { due: first.invoice.amount_due, discount: first.invoice.discount_amount, balance: first.invoice.balance };
 
@@ -122,7 +143,9 @@ describe('Contract — fees', () => {
   });
 
   it(rule(31, 'approving a waiver posts to the general ledger'), async () => {
-    const w = (await API.listWaiverRows(SCHOOL, { status: 'pending' })).items[0];
+    const made = await pendingWaiver(3000);
+    assert.ok(made, 'No invoice with enough balance to waive against.');
+    const w = { id: made.waiver.id, amount: 3000 };
     const before = await API.listJournalLines(SCHOOL, {});
     await API.approveWaiver(SCHOOL, w.id, {});
     const after = await API.listJournalLines(SCHOOL, {});

@@ -1638,6 +1638,28 @@
     });
   }
 
+  // POST /api/school/fee-waivers
+  function createWaiver(schoolId, payload) {
+    if (!payload || !payload.invoiceId) return reject(422, 'A waiver needs an invoice.');
+    if (!(Number(payload.amount) > 0)) return reject(422, 'A waiver needs an amount greater than zero.');
+    if (!String(payload.reason || '').trim()) return reject(422, 'Say why the waiver is being requested.');
+    var d = db();
+    var inv = byId(d.invoices, payload.invoiceId);
+    if (!inv) return reject(404, 'No invoice ' + payload.invoiceId);
+    var w = {
+      id: 'wvr-' + String(d.waivers.length + 1).padStart(3, '0'),
+      school_id: schoolId, term_id: inv.term_id,
+      student_id: inv.student_id, class_id: inv.class_id,
+      invoice_id: inv.id,
+      amount: Number(payload.amount), reason: String(payload.reason).trim(),
+      status: 'pending', requested_by: payload.requestedBy || 'tch-06',
+      requested_on: d.today, approved_by: null, approved_on: null, applied: false
+    };
+    d.waivers.push(w);
+    persist();
+    return resolve(w);
+  }
+
   // POST /api/school/{school_id}/fee-waivers/{waiver_id}/approve
   /**
    * Idempotent. The `applied` flag is what stops a second approval deducting a
@@ -3269,6 +3291,7 @@
     GUARDIAN_KEY_IS_PHONE: GUARDIAN_KEY_IS_PHONE,
     // waivers
     listWaiverRows: listWaiverRows,
+    createWaiver: createWaiver,
     approveWaiver: approveWaiver,
     rejectWaiver: rejectWaiver,
     // store

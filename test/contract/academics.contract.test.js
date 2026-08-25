@@ -1,8 +1,10 @@
 'use strict';
 /** Grading, marks, verification, publication and ranking. */
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures } = require('./backend.js');
+const { openAPI, SCHOOL, rule, because, fixtures, resetFixtures, authenticate } = require('./backend.js');
+
+before(async () => { await authenticate(); });
 
 let API, F;
 beforeEach(async () => { API = openAPI(); resetFixtures(); F = await fixtures(API); });
@@ -99,7 +101,11 @@ describe('Contract — academics', () => {
 
   it(rule(11, "an exam's grading scale is frozen once results exist"), async () => {
     const exams = await API.listExamRows(SCHOOL, {});
-    const marked = exams.filter((e) => e.result_count > 0)[0];
+    // result_count is not on the wire everywhere; fall back to the exam the
+    // fixtures picked, which is the one this suite has been marking
+    const marked = exams.filter((e) => e.result_count > 0)[0] ||
+                   exams.filter((e) => String(e.id) === String(F.examId))[0] || exams[0];
+    assert.ok(marked, 'No exam to test against.' + because(11));
     const scales = await API.listGradingScaleRows(SCHOOL, {});
     const other = scales.filter((g) => g.id !== marked.grading_scale_id)[0];
 

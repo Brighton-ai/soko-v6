@@ -20,6 +20,8 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..', '..');
 const MODE = (process.env.SHULE_BACKEND || 'demo').toLowerCase();
 const BASE_URL = process.env.SHULE_API_URL || 'http://localhost:8000/api';
+const EMAIL = process.env.SEED_EMAIL || 'contract@shule.test';
+const PASSWORD = process.env.SEED_PASSWORD || 'ContractTest!2026-local-only';
 const SCHOOL = process.env.SHULE_SCHOOL_ID || 'sch-riverside';
 
 if (!['demo', 'live'].includes(MODE)) {
@@ -63,7 +65,9 @@ function openAPI() {
 
   if (MODE === 'live') {
     sandbox.SHULE_API_BASE = BASE_URL;
-    sandbox.SHULE_API_TOKEN = process.env.SHULE_API_TOKEN || null;
+    // a token from a file goes stale in minutes; log in for each context
+    sandbox.SHULE_API_TOKEN = LIVE_TOKEN || process.env.SHULE_API_TOKEN || null;
+    sandbox.SHULE_GL_URL = process.env.SHULE_GL_URL || null;
     loadInto(sandbox, 'assets/js/live-backend.js');
     sandbox.SHULE_BACKEND = sandbox.ShuleLiveBackend;
   } else {
@@ -91,7 +95,29 @@ function because(row, where) {
          (MODE === 'live' ? `\n    A failure here is a production gap, not a broken test.` : '');
 }
 
-module.exports = { openAPI, MODE, BASE_URL, SCHOOL, rule, because };
+/**
+ * A fresh JWT. school.py issues short-lived access tokens, so a token captured
+ * at seed time is expired by the time a long suite reaches its later files.
+ * Call this once before the suite runs.
+ */
+let LIVE_TOKEN = null;
+async function authenticate() {
+  if (MODE !== 'live') return null;
+  const res = await fetch(BASE_URL + '/auth/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: EMAIL, password: PASSWORD })
+  });
+  if (!res.ok) {
+    throw new Error(`Contract harness could not log in as ${EMAIL}: ${res.status} ${await res.text()}\n` +
+      'Run `node dev/seed-live.mjs` first, or set SEED_EMAIL / SEED_PASSWORD.');
+  }
+  const body = await res.json();
+  LIVE_TOKEN = body.access_token || (body.data && body.data.access_token);
+  if (!LIVE_TOKEN) throw new Error('Login returned no access token: ' + JSON.stringify(body).slice(0, 200));
+  return LIVE_TOKEN;
+}
+
+module.exports = { openAPI, MODE, BASE_URL, SCHOOL, rule, because, authenticate };
 
 /**
  * Fixture discovery.

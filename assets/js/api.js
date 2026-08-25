@@ -243,6 +243,10 @@
   async function listWaiverRows(schoolId, opts) {
     return BACKEND.listWaiverRows(schoolId, opts);
   }
+  // POST /api/school/fee-waivers
+  async function createWaiver(schoolId, payload) {
+    return BACKEND.createWaiver(schoolId, payload);
+  }
   // POST /api/school/{school_id}/fee-waivers/{waiver_id}/approve
   async function approveWaiver(schoolId, waiverId, payload) {
     return BACKEND.approveWaiver(schoolId, waiverId, payload);
@@ -492,6 +496,7 @@
     listDefaulterRows: listDefaulterRows,
     sendRemindersFor: sendRemindersFor,
     listWaiverRows: listWaiverRows,
+    createWaiver: createWaiver,
     approveWaiver: approveWaiver,
     rejectWaiver: rejectWaiver,
 
