@@ -189,10 +189,15 @@ async function main() {
   const haveStudents = await GET(`/school/${schoolId}/students`).catch(() => []);
   const studentRows = (haveStudents.items || haveStudents || []);
   const students = [];
+  // Twelve, not six. Each money rule spends part of an invoice, so a thin roll
+  // starves the later rules and a run's result starts depending on test order.
   const roster = [
     ['Amina Ouma', 'ADM/C001', 0], ['Brian Kiptoo', 'ADM/C002', 0],
     ['Cynthia Wairimu', 'ADM/C003', 0], ['David Ochieng', 'ADM/C004', 1],
-    ['Esther Nafula', 'ADM/C005', 1], ['Felix Mwangi', 'ADM/C006', 1]
+    ['Esther Nafula', 'ADM/C005', 1], ['Felix Mwangi', 'ADM/C006', 1],
+    ['Grace Chebet', 'ADM/C007', 0], ['Hassan Abdi', 'ADM/C008', 0],
+    ['Irene Wanjiku', 'ADM/C009', 0], ['Joseph Kimani', 'ADM/C010', 1],
+    ['Khadija Yusuf', 'ADM/C011', 1], ['Lucy Atieno', 'ADM/C012', 1]
   ];
   for (const [full_name, admission_number, classIdx] of roster) {
     // school_students.admission_no is the column; admission_number exists only on StudentIn
@@ -277,7 +282,13 @@ async function main() {
          SET amount_paid = 0, discount_amount = 0, balance = amount_due, status = 'pending'
        WHERE tenant_id = '${tenantId}'`);
   sql(`DELETE FROM school_fee_waivers WHERE tenant_id = '${tenantId}'`);
+  // The ledger resets as a pair. Deleting only the lines leaves the journal
+  // headers behind, and posting is idempotent on (tenant, source_type,
+  // source_id) — so a re-seeded run would dedupe against an orphaned header and
+  // write no lines at all, leaving the books silently empty.
   sql(`DELETE FROM journal_lines WHERE tenant_id = '${tenantId}'`);
+  sql(`DELETE FROM journals WHERE tenant_id = '${tenantId}'`);
+  sql(`DELETE FROM school_fee_payments WHERE tenant_id = '${tenantId}'`);
   log('money reset to unpaid for a reproducible run');
 
   const invoices = await GET(`/school/fee-invoices?school_id=${schoolId}&per_page=100`);

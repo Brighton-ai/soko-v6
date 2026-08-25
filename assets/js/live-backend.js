@@ -429,8 +429,18 @@
     });
   };
   // PUT /api/school/fee-waivers/{id}/approve
+  // The route answers {waiver, invoice}. Normalising the invoice through the
+  // same function every other invoice goes through, so a waiver's view of a
+  // status agrees with the fees list's view of it.
   B.approveWaiver = function (schoolId, waiverId, payload) {
-    return PUT('/fee-waivers/' + waiverId + '/approve', payload || {});
+    return PUT('/fee-waivers/' + waiverId + '/approve', payload || {})
+      .then(function (v) {
+        var d = (v && v.data) || v || {};
+        return {
+          waiver: d.waiver || d,
+          invoice: d.invoice ? normaliseInvoice(d.invoice) : null
+        };
+      });
   };
   // POST /api/school/notifications/fee-reminder
   B.sendRemindersFor = function (schoolId, payload) {

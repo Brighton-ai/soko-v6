@@ -22,11 +22,7 @@
     },
     {
       "name": "[RULES row 19] report card positions use competition ranking — school.py:1254",
-      "msg": "Positions are not competition-ranked: | Amina Ouma: average 58 ranks 9 but is at 1 | Cynthia Wairimu: average 72 ranks 5 but is at 1"
-    },
-    {
-      "name": "[RULES row 19] a tie shares a position and the rank after it skips",
-      "msg": "Tied pupils hold positions 1, 1, 1, 1, 2, 2. | Rule: docs/RULES_RECONCILED.md row 19 | Backend under test: live"
+      "msg": "Positions are not competition-ranked: | Grace Chebet: average 0 ranks 33 but is at 1 | Lucy Atieno: average 0 ranks 33 but is at 1"
     },
     {
       "name": "[RULES row 32] a live token returns a payload rather than an error — school.py:2498",
@@ -57,36 +53,12 @@
       "msg": "Your session has ended. Please sign in again. | at apiError (assets/js/live-backend.js:67:13) | at refresh (assets/js/live-backend.js:155:39)"
     },
     {
-      "name": "[RULES row 2] a payment cannot exceed the balance — school.py:1976",
-      "msg": "A payment of 42001 against a balance of 42000 was accepted. | Rule: docs/RULES_RECONCILED.md row 2 | Backend: school.py:1976 takes body[\"amount\"] unchecked; :818 clamps balance but amount_paid keeps the overage"
-    },
-    {
-      "name": "[RULES row 2] a rejected over-payment mutates nothing",
-      "msg": "The over-payment was accepted. | Rule: docs/RULES_RECONCILED.md row 2 | Backend under test: live"
-    },
-    {
-      "name": "[RULES row 2] a zero or negative payment is refused",
-      "msg": "A payment of 0 was accepted. | Rule: docs/RULES_RECONCILED.md row 2 | Backend under test: live"
-    },
-    {
-      "name": "[RULES row 4] every payment posts a balanced double entry — school.py:1985, test_school_fees.py:63",
-      "msg": "Debits moved by 0 on a payment of 1500. | Rule: docs/RULES_RECONCILED.md row 4 | Backend under test: live"
-    },
-    {
-      "name": "[RULES row 5] a waiver discounts the charge and never reduces amount_due — school.py:919",
-      "msg": "Cannot read properties of null (reading 'invoice') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/fees.contract.test.js:116:20) | at process.processTicksAndRejections (node:internal/process/task_q"
-    },
-    {
       "name": "[RULES row 6] approving a waiver twice discounts once — school.py:908",
-      "msg": "Cannot read properties of null (reading 'invoice') | at TestContext.<anonymous> (/home/nova/Desktop/soko-v6/test/contract/fees.contract.test.js:130:37) | at process.processTicksAndRejections (node:internal/process/task_q"
-    },
-    {
-      "name": "[RULES row 31] approving a waiver posts to the general ledger",
-      "msg": "A waiver of 3000 posted nothing to the ledger. | Rule: docs/RULES_RECONCILED.md row 31 | Backend: school.py:900-921 approve_waiver never calls post_journal"
+      "msg": "The second approval did not report the waiver as already applied. | Rule: docs/RULES_RECONCILED.md row 6 | Backend: school.py:908 sets status='approved' unconditionally, then :919 discounts again"
     },
     {
       "name": "[RULES row 7] bulk generate skips pupils already invoiced for that term — school.py:793",
-      "msg": "Running bulk generate twice created 6 more invoices. | Rule: docs/RULES_RECONCILED.md row 7 | Backend: school.py:793 ON CONFLICT (student_id,term,year) DO NOTHING"
+      "msg": "The first run created nothing. | Rule: docs/RULES_RECONCILED.md row 7 | Backend under test: live"
     },
     {
       "name": "[RULES row 29] reminders never pass three",

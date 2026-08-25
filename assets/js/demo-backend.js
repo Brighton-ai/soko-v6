@@ -409,6 +409,23 @@
       return reject(422, 'Payment method must be M-Pesa, cash or a bank transfer.');
     }
 
+    // E31 — a transaction code identifies one movement of money. Receipting it
+    // twice credits a parent for a payment the school only ever received once,
+    // and it is an easy mistake: the bursar reads the same SMS twice, or a
+    // request is retried after a timeout. Cash has no reference and many cash
+    // payments legitimately coexist, so the rule applies only where there is
+    // a code to collide.
+    var reference = (payload && payload.reference) || null;
+    if (reference) {
+      var seen = d.payments.filter(function (p) {
+        return p.school_id === schoolId && p.method === method && p.reference === reference;
+      })[0];
+      if (seen) {
+        return reject(409, 'Reference ' + reference + ' has already been receipted on ' +
+          seen.paid_at.slice(0, 10) + '. A transaction code can only be banked once.');
+      }
+    }
+
     inv.amount_paid += amount;
     reconcileInvoice(inv);
 
@@ -418,8 +435,8 @@
       invoice_id: inv.id, student_id: inv.student_id, class_id: inv.class_id,
       amount: amount,
       method: method,
-      reference: (payload && payload.reference) || null,
-      mpesa_code: method === 'mpesa' ? ((payload && payload.reference) || null) : null,
+      reference: reference,
+      mpesa_code: method === 'mpesa' ? reference : null,
       paid_at: ((payload && payload.paidAt) || d.today) + 'T09:00:00+03:00',
       reconciled: true,
       matched: 'manual'          // posted from the office, not auto-matched by Daraja

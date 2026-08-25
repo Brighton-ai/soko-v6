@@ -27,9 +27,18 @@ async function pendingWaiver(amount) {
   return { waiver: created, invoice: inv };
 }
 
+/**
+ * An invoice with at least `min` still owed.
+ *
+ * Takes the largest balance rather than the first match. These rules each spend
+ * part of an invoice, and against a live tenant with only a handful of pupils
+ * the early rules would otherwise leave the later ones nothing to test — which
+ * shows up as a rule that passes or fails depending on what ran before it.
+ */
 const owing = async (min = 1) =>
   (await API.listInvoiceRows(SCHOOL, { pageSize: 100000 })).items
-    .filter((i) => i.balance >= min)[0];
+    .filter((i) => i.balance >= min)
+    .sort((a, b) => b.balance - a.balance)[0];
 
 describe('Contract — fees', () => {
   it(rule(1, 'balance = amount_due − amount_paid − discount_amount', 'school.py:815, :1978'), async () => {
@@ -104,6 +113,48 @@ describe('Contract — fees', () => {
       `Debits moved by ${after.debits - before.debits} on a payment of 1500.` + because(4));
     assert.equal(after.credits - before.credits, 1500,
       `Credits moved by ${after.credits - before.credits} on a payment of 1500.` + because(4));
+  });
+
+  it(rule(33, 'a second payment on an invoice also reaches the ledger', 'school.py:2085'), async () => {
+    const before = await API.listJournalLines(SCHOOL, {});
+    const inv = await owing(3000);
+    assert.ok(inv, 'No invoice with enough balance for two payments.');
+    await API.recordPayment(SCHOOL, inv.id, { amount: 1000, method: 'cash' });
+    const mid = await API.listJournalLines(SCHOOL, {});
+    await API.recordPayment(SCHOOL, inv.id, { amount: 700, method: 'cash' });
+    const after = await API.listJournalLines(SCHOOL, {});
+
+    assert.equal(mid.debits - before.debits, 1000,
+      `The first payment moved debits by ${mid.debits - before.debits}, expected 1000.` + because(33));
+    assert.equal(after.debits - mid.debits, 700,
+      `The second payment moved debits by ${after.debits - mid.debits}, expected 700.` +
+      because(33, 'school.py posted with source_id = the INVOICE id, and posting is idempotent on ' +
+        '(tenant, source_type, source_id) — so only the first payment against an invoice ever ' +
+        'reached the books and every part payment after it was silently swallowed'));
+    assert.ok(after.balanced, `The ledger is out by ${after.debits - after.credits}.` + because(33));
+  });
+
+  it(rule(34, 'a transaction code can only be receipted once', 'school.py:2085'), async () => {
+    const inv = await owing(2000);
+    assert.ok(inv, 'No invoice with a balance to pay.');
+    const ref = 'DUP' + Date.now().toString(36).toUpperCase();
+    await API.recordPayment(SCHOOL, inv.id, { amount: 500, method: 'mpesa', reference: ref });
+
+    const mid = (await API.listInvoiceRows(SCHOOL, { pageSize: 100000 })).items
+      .filter((i) => i.id === inv.id)[0];
+
+    let err = null;
+    await API.recordPayment(SCHOOL, inv.id, { amount: 500, method: 'mpesa', reference: ref })
+      .catch((e) => { err = e; });
+    assert.ok(err,
+      `The same M-Pesa code ${ref} was receipted twice; the parent is credited for money ` +
+      `the school received once.` + because(34));
+
+    const after = (await API.listInvoiceRows(SCHOOL, { pageSize: 100000 })).items
+      .filter((i) => i.id === inv.id)[0];
+    assert.equal(after.amount_paid, mid.amount_paid,
+      `amount_paid moved from ${mid.amount_paid} to ${after.amount_paid} on a refused duplicate.` +
+      because(34));
   });
 
   it(rule(5, 'a waiver discounts the charge and never reduces amount_due', 'school.py:919'), async () => {
