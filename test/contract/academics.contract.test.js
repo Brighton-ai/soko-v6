@@ -212,6 +212,11 @@ describe('Contract — academics', () => {
   });
 
   it(rule(19, 'report card positions use competition ranking', 'school.py:1254'), async () => {
+    // Generate this class's cards rather than ranking whatever an earlier rule
+    // happened to leave behind. A ranking test that depends on which class a
+    // different rule chose is measuring test order, not ranking.
+    await API.generateReportCards(SCHOOL, { classId: F.classId, examId: F.examId })
+      .catch(() => null);
     const all = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items;
     // A pupil who sat nothing has no position. Ranking them anyway put every
     // unmarked pupil at 1st, because "nobody scored higher than nothing" is
@@ -239,6 +244,8 @@ describe('Contract — academics', () => {
   });
 
   it(rule(19, 'a tie shares a position and the rank after it skips'), async () => {
+    await API.generateReportCards(SCHOOL, { classId: F.classId, examId: F.examId })
+      .catch(() => null);
     const cards = (await API.listReportCardRows(SCHOOL, { classId: F.classId })).items
       .filter((c) => c.position != null);
     const byAverage = {};
