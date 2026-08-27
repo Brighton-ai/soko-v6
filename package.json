@@ -16,7 +16,11 @@
     "routes:probe": "node dev/probe-routes.mjs",
     "routes:shadow": "node dev/shadowed.mjs",
     "db:columns": "python3 dev/check-columns.py",
-    "audit": "node dev/shadowed.mjs && python3 dev/check-columns.py && node dev/probe-routes.mjs"
+    "audit": "node dev/shadowed.mjs && python3 dev/check-columns.py && node dev/probe-routes.mjs",
+    "build": "node tools/build.mjs",
+    "build:demo": "node tools/build.mjs --demo --out dist-demo",
+    "start": "node server.mjs",
+    "browser:check": "node dev/browser-check.mjs"
   },
   "repository": {
     "type": "git",
@@ -31,5 +35,8 @@
     "cheerio": "^1.2.0",
     "jsdom": "^30.0.1"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -368,15 +368,26 @@
     return POST('/students/' + studentId + '/transfer-out', payload);
   };
   // POST /api/school/{school_id}/students/import   (school.py:2242 — multipart, not JSON)
+  // The preview and the import are the SAME call, with one flag. A preview
+  // computed in the browser applies whatever rules the page implements and
+  // none the server does — which is how a bursar sees "412 rows OK", presses
+  // import, and gets errors on rows the preview approved (E29).
   B.importStudentsCSV = function (schoolId, csvText, opts) {
-    if (opts && opts.dryRun) {
-      // the backend has no dry run; a preview would have to be client-side and
-      // would then disagree with what the server accepts
-      return notInBackend('importStudentsCSV(dryRun)', 28)();
-    }
     var form = new global.FormData();
     form.append('file', new global.Blob([csvText], { type: 'text/csv' }), 'students.csv');
-    return request('POST', '/' + schoolId + '/students/import', { form: form });
+    return request('POST', '/' + schoolId + '/students/import',
+                   { form: form, query: { dry_run: !!(opts && opts.dryRun) } })
+      .then(function (v) {
+        var d = (v && v.data) || v || {};
+        return {
+          dryRun: !!d.dry_run,
+          rowsRead: Number(d.rows_read || 0),
+          imported: Number(d.imported || 0),
+          wouldImport: Number(d.would_import || 0),
+          errors: d.errors || [],
+          ok: d.ok !== false
+        };
+      });
   };
   // GET /api/school/{school_id}/classes
   B.listClasses = function (schoolId, opts) {

@@ -1,0 +1,14 @@
+# The site is plain HTML, CSS and vanilla JavaScript. The build stamps the API
+# base into each page and removes the demo backend; the server serves the
+# result and proxies /api so the site and the API share one origin.
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm install --omit=dev || true"]
+
+[phases.build]
+cmds = ["node tools/build.mjs"]
+
+[start]
+cmd = "node server.mjs"

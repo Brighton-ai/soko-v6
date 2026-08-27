@@ -9,16 +9,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { JSDOM, VirtualConsole } from 'jsdom';
 
-const ROOT = process.cwd();
+const ROOT = process.env.SHULE_CHECK_DIR || process.cwd();
 const seed = JSON.parse(fs.readFileSync('dev/seed-live.json', 'utf8'));
-const API  = 'http://localhost:8000/api';
+// Point at whatever is being checked: the API directly, or a deployed site
+// serving the same origin through its proxy — which is what production is.
+const API  = process.env.SHULE_CHECK_API || 'http://localhost:8000/api';
+const SITE = process.env.SHULE_CHECK_SITE || null;
 
 function open(relPath, extra = {}) {
   const file = path.join(ROOT, relPath);
   const vc = new VirtualConsole();
   vc.on('jsdomError', (e) => console.log('   [page error]', String(e.message).slice(0, 160)));
   const dom = new JSDOM(fs.readFileSync(file, 'utf8'), {
-    url: 'https://school.example/' + relPath,
+    url: (SITE || 'https://school.example') + '/' + relPath,
     runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: vc
   });
   const win = dom.window;
