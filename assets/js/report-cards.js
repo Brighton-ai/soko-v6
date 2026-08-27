@@ -162,7 +162,7 @@
     }
     API.generateReportCards(SCHOOL, { classId: classId, examId: examId }).then(function (r) {
       load();
-      SHELL.toast('<b>' + r.generated + '</b> cards generated and ranked.');
+      SHELL.toast('<b>' + r.generated + '</b> cards generated and ranked.', { html: true });
     }).catch(function (err) { SHELL.toast(U.esc(err.message), { tone: 'bad', ms: 7000 }); });
   }
 
@@ -171,7 +171,7 @@
     if (!classId) { SHELL.toast('Choose a class to publish.', { tone: 'bad' }); return; }
     API.publishReportCardsFor(SCHOOL, { classId: classId }).then(function (r) {
       load();
-      SHELL.toast('<b>' + r.published + '</b> report cards published to guardians.');
+      SHELL.toast('<b>' + r.published + '</b> report cards published to guardians.', { html: true });
     }).catch(function (err) {
       SHELL.toast(U.esc(err.message), { tone: 'bad', ms: 10000 });
       load();

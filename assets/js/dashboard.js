@@ -222,7 +222,7 @@
       btn.disabled = false;
       btn.textContent = 'Reminders sent';
       SHELL.toast('<b>' + res.reminders_sent + '</b> reminder' + (res.reminders_sent === 1 ? '' : 's') +
-        ' queued for ' + esc(name) + '.');
+        ' queued for ' + esc(name) + '.', { html: true });
     }).catch(function (err) {
       btn.disabled = false;
       SHELL.toast('Could not send reminders: ' + esc(err.message), { tone: 'bad' });

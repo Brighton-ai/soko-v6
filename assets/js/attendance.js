@@ -111,7 +111,7 @@
     var unmarked = rows.filter(function (r) { return !r.status; });
     if (unmarked.length) {
       SHELL.toast('<b>' + unmarked.length + '</b> pupil' + (unmarked.length === 1 ? ' is' : 's are') +
-        ' still unmarked. Every pupil needs a mark before the register goes in.', { tone: 'bad', ms: 6000 });
+        ' still unmarked. Every pupil needs a mark before the register goes in.', { html: true,  tone: 'bad', ms: 6000 });
       return;
     }
     var teacher = doc.getElementById('r-teacher').value;
@@ -127,7 +127,7 @@
       btn.disabled = false;
       SHELL.toast(r.was_update
         ? 'Register updated — <b>' + r.updated + '</b> marks changed, no duplicate created.'
-        : '<b>' + r.created + '</b> marks recorded.');
+        : '<b>' + r.created + '</b> marks recorded.', { html: true });
       loadRegister();
     }).catch(function (err) {
       btn.disabled = false;

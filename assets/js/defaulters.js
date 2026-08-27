@@ -110,7 +110,7 @@
         pick.clear();
         load();
         SHELL.toast('<b>' + r.sent + '</b> reminder' + (r.sent === 1 ? '' : 's') + ' sent' +
-          (r.skipped ? ', ' + r.skipped + ' skipped — already at ' + r.max_reminders : '') + '.');
+          (r.skipped ? ', ' + r.skipped + ' skipped — already at ' + r.max_reminders : '') + '.', { html: true });
       }).catch(function (err) {
         SHELL.toast('Could not send: ' + U.esc(err.message), { tone: 'bad' });
       });

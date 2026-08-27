@@ -65,7 +65,7 @@
     doc.getElementById('export-csv').addEventListener('click', function () {
       API.exportPaymentsCSV(SCHOOL, state).then(function (r) {
         U.downloadCSV(r.filename, r.csv);
-        SHELL.toast('<b>' + r.rows + '</b> payments exported to ' + r.filename + '.');
+        SHELL.toast('<b>' + r.rows + '</b> payments exported to ' + U.esc(r.filename) + '.', { html: true });
       });
     });
     load().then(function () { U.ready(); })

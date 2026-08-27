@@ -1326,6 +1326,65 @@ describe('The reconciliation and patch documents', () => {
   });
 });
 
+describe('Nothing is fetched from a third party', () => {
+  /*
+   * Every asset comes from this origin.
+   *
+   * Two reasons, and the second is the one that matters. The server sends a
+   * Content-Security-Policy of style-src 'self' and font-src 'self', so an
+   * external stylesheet is blocked and the page silently falls back — the
+   * failure is a console message nobody reads.
+   *
+   * And a school management system holds children's records. A font, a script
+   * or an image loaded from someone else's domain tells that domain the
+   * visitor's IP address, the page they are on and their browser, on every
+   * screen. Under the Data Protection Act that is a transfer of personal data
+   * to a third party, and doing it for a typeface is not a trade worth making.
+   */
+  const ALLOWED_EXTERNAL = [
+    // Only things that are not fetched: a namespace URL is an identifier.
+    'http://www.w3.org/', 'https://www.w3.org/', 'https://schema.org/'
+  ];
+
+  for (const page of [...PAGES, ...APP_PAGES, PORTAL_PAGE]) {
+    it(`${page} loads nothing from another origin`, () => {
+      if (!exists(page)) return;
+      const src = readFile(page);
+      const offenders = [];
+      const re = /<(?:link|script|img|iframe|source|video|audio)\b[^>]*\b(?:href|src)=["'](https?:\/\/[^"']+)["']/gi;
+      for (const m of src.matchAll(re)) {
+        const url = m[1];
+        if (ALLOWED_EXTERNAL.some((a) => url.startsWith(a))) continue;
+        offenders.push(url);
+      }
+      // preconnect/dns-prefetch to a third party is the same disclosure
+      for (const m of src.matchAll(/rel=["'](?:preconnect|dns-prefetch|prefetch|preload)["'][^>]*href=["'](https?:\/\/[^"']+)["']/gi)) {
+        if (!ALLOWED_EXTERNAL.some((a) => m[1].startsWith(a))) offenders.push(m[1]);
+      }
+      assert.deepEqual([...new Set(offenders)], [],
+        `${page} fetches from another origin:\n  ${[...new Set(offenders)].join('\n  ')}\n` +
+        'Self-host it. The CSP blocks it, and it tells that domain who is reading the page.');
+    });
+  }
+
+  it('the fonts are on disk, and the stylesheet points at them', () => {
+    const css = readFile('assets/css/fonts.css');
+    assert.ok(/@font-face/.test(css), 'assets/css/fonts.css declares no @font-face rules.');
+    // Inside url() only. The file's own comment explains why the fonts were
+    // brought local, and naming the domain there is not fetching from it.
+    const remote = [...css.matchAll(/url\(\s*['"]?(https?:\/\/[^)'"]+)/g)].map((m) => m[1]);
+    assert.deepEqual(remote, [],
+      `assets/css/fonts.css still fetches from:\n  ${remote.join('\n  ')}\n` +
+      'Run: node tools/fetch-fonts.mjs');
+    const missing = [];
+    for (const m of css.matchAll(/url\(\.\.\/fonts\/([^)]+)\)/g)) {
+      if (!exists(path.join('assets', 'fonts', m[1]))) missing.push(m[1]);
+    }
+    assert.deepEqual(missing, [],
+      `assets/css/fonts.css references fonts that are not on disk:\n  ${missing.join('\n  ')}`);
+  });
+});
+
 describe('Budget', () => {
   it('no HTML page is over 120 KB', () => {
     const over = ALL_PAGES.filter((p) => exists(p))

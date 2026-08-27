@@ -135,7 +135,7 @@
     var bad = inputs.filter(function (i) { return !grade(i); });
     if (bad.length) {
       SHELL.toast('<b>' + bad.length + '</b> mark' + (bad.length === 1 ? ' is' : 's are') +
-        ' outside 0–' + sheet.max_score + '. Nothing was saved.', { tone: 'bad', ms: 6000 });
+        ' outside 0–' + sheet.max_score + '. Nothing was saved.', { html: true,  tone: 'bad', ms: 6000 });
       bad[0].focus();
       return;
     }
@@ -148,11 +148,12 @@
       btn.disabled = false;
       SHELL.toast('<b>' + r.saved + '</b> mark' + (r.saved === 1 ? '' : 's') + ' saved' +
         (r.cleared ? ', ' + r.cleared + ' cleared' : '') +
-        (r.updated ? ' · changed marks go back to unverified' : '') + '.');
+        (r.updated ? ' · changed marks go back to unverified' : '') + '.', { html: true });
       loadSheet();
     }).catch(function (err) {
       btn.disabled = false;
-      SHELL.toast(U.esc(err.message).replace(/\n/g, '<br>'), { tone: 'bad', ms: 9000 });
+      // escaped first, then newlines become breaks — that order matters
+      SHELL.toast(U.esc(err.message).replace(/\n/g, '<br>'), { html: true, tone: 'bad', ms: 9000 });
     });
   }
 

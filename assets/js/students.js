@@ -90,7 +90,7 @@
         var made = results.reduce(function (n, r) { return n + (r.created || 0); }, 0);
         var skipped = results.reduce(function (n, r) { return n + (r.skipped || 0); }, 0);
         SHELL.toast('<b>' + made + '</b> invoice' + (made === 1 ? '' : 's') + ' generated' +
-          (skipped ? ', ' + skipped + ' already invoiced and skipped' : '') + '.');
+          (skipped ? ', ' + skipped + ' already invoiced and skipped' : '') + '.', { html: true });
         pick.clear();
         load();
       });
@@ -234,7 +234,7 @@
     doc.getElementById('export-csv').addEventListener('click', function () {
       API.exportStudentsCSV(SCHOOL, { classId: state.classId, status: state.status }).then(function (r) {
         U.downloadCSV(r.filename, r.csv);
-        SHELL.toast('<b>' + r.rows + '</b> pupils exported to ' + r.filename + '.');
+        SHELL.toast('<b>' + r.rows + '</b> pupils exported to ' + U.esc(r.filename) + '.', { html: true });
       });
     });
   }
