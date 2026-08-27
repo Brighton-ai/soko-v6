@@ -54,7 +54,10 @@ const liveHas = (n) =>
 const liveStub = (n) =>
   new RegExp(`B\\.${n}\\s*=\\s*notInBackend`).test(liveSrc);
 // Constants are not functions and neither backend has to carry both.
-const isFn = (n) => !/^[A-Z0-9_]+$/.test(n);
+// Constants are not functions, and neither is a helper api.js answers itself
+// rather than passing to a backend.
+const API_LOCAL = new Set(['mode']);
+const isFn = (n) => !/^[A-Z0-9_]+$/.test(n) && !API_LOCAL.has(n);
 
 const fns = uniqueExports.filter(isFn);
 const missingLive = fns.filter((n) => !liveHas(n) && demoHas(n));

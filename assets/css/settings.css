@@ -1,0 +1,57 @@
+/* app/settings.html — integrations, plan, profile. */
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 20px}
+.tab{
+  appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  padding:10px 14px;font:inherit;font-size:14px;color:var(--body-2);cursor:pointer;
+}
+.tab:hover{color:var(--body)}
+.tab.is-on{color:var(--ink);border-bottom-color:var(--orange);font-weight:600}
+.tab:focus-visible{outline:2px solid var(--orange);outline-offset:-2px;border-radius:4px 4px 0 0}
+
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row--end{justify-content:flex-end;margin-top:4px}
+
+.card{border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden}
+.card + .card{margin-top:16px}
+.card__head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px;border-bottom:1px solid var(--line-2);background:var(--bg-2);
+}
+.card__head h2{margin:0;font-size:15px;font-weight:650}
+.card__body{padding:18px;display:flex;flex-direction:column;gap:14px}
+
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:600;color:var(--body)}
+.field input{
+  padding:9px 11px;border:1px solid var(--line);border-radius:7px;
+  font:inherit;font-size:14px;background:var(--card);color:var(--ink);
+}
+.field input:focus-visible{outline:2px solid var(--orange);outline-offset:1px;border-color:var(--orange)}
+/* The last four characters of what is stored — enough to tell which key was
+   pasted, useless to anybody reading the screen. */
+.field__saved{font-size:12px;color:var(--body-2);font-variant-numeric:tabular-nums}
+
+.where summary{font-size:13px;color:var(--body-2);cursor:pointer;padding:2px 0}
+.where summary:hover{color:var(--body)}
+.where p{margin:6px 0 0;font-size:13px;line-height:1.5}
+
+.hint{font-size:13px;line-height:1.5;color:var(--body-2);margin:0}
+.hint--ok{color:var(--green)}
+.hint--bad{color:var(--red-ink)}
+
+.btn--danger{color:var(--red-ink)}
+.btn--danger:hover{border-color:var(--red);background:var(--red-soft)}
+
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 20px;margin:0}
+.kv dt{font-size:13px;color:var(--body-2)}
+.kv dd{margin:0;font-size:14px;color:var(--ink);font-weight:550}
+
+.muted{color:var(--body-2);font-size:14px;line-height:1.55;margin:0}
+
+@media (max-width:640px){
+  .tabs{overflow-x:auto}
+  .row--end{justify-content:stretch}
+  .row--end .btn{flex:1}
+}

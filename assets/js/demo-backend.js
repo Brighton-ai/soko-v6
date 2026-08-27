@@ -3298,14 +3298,76 @@
   function register() {
     return reject(501, 'This is the demo. Registering a school needs the real system.');
   }
+  function verifyEmail() {
+    return reject(501, 'This is the demo. There is no address to confirm.');
+  }
+  function resendVerification() {
+    return reject(501, 'This is the demo. There is no address to confirm.');
+  }
+
+  // ── integrations, in the demo ──────────────────────────────────────────────
+  //
+  // Nothing is connected and nothing can be: the demo has no server to hold a
+  // credential and no Daraja to test one against. It says so, rather than
+  // offering a form that appears to work.
+  var DEMO_PROVIDERS = [
+    { provider: 'mpesa',  label: 'M-Pesa (Daraja)',
+      purpose: 'Take school fees by STK push and receive paybill confirmations.',
+      required: ['consumer_key', 'consumer_secret', 'shortcode', 'passkey'] },
+    { provider: 'resend', label: 'Resend (email)',
+      purpose: 'Send report cards, invoices, receipts and password resets by email.',
+      required: ['api_key', 'from_email'] },
+    { provider: 'sms',    label: 'SMS',
+      purpose: 'Fee reminders and absence alerts by SMS.',
+      required: ['api_key', 'sender_id'] },
+    { provider: 'etims',  label: 'eTIMS (KRA)',
+      purpose: 'Electronic tax invoices for fee receipts.',
+      required: ['pin', 'branch_id', 'device_serial'] }
+  ];
+
+  function listIntegrations() {
+    return resolve({
+      items: DEMO_PROVIDERS.map(function (p) {
+        return Object.assign({}, p, {
+          status: 'not_connected', missing: p.required, config: {},
+          where_to_find: 'Connecting a provider needs the real system.',
+          demo: true
+        });
+      }),
+      encryption: 'off',
+      demo: true
+    });
+  }
+  function saveIntegration() {
+    return reject(501, 'This is the demo. Connecting M-Pesa or email needs the real system.');
+  }
+  function testIntegration() {
+    return reject(501, 'This is the demo. There is nothing to test a credential against.');
+  }
+  function disconnectIntegration() {
+    return reject(501, 'This is the demo. Nothing is connected.');
+  }
+  function getSubscription() {
+    return resolve({ plan_name: 'Demo', plan_slug: 'demo', status: 'trial',
+                     price_kes: 0, active_modules: ['school'], demo: true });
+  }
+  function listPlans() { return resolve([]); }
 
   global.DemoBackend = {
+    listIntegrations: listIntegrations,
+    saveIntegration: saveIntegration,
+    testIntegration: testIntegration,
+    disconnectIntegration: disconnectIntegration,
+    getSubscription: getSubscription,
+    listPlans: listPlans,
     login: login,
     getMe: getMe,
     logout: logout,
     hasSession: hasSession,
     currentUser: currentUser,
     register: register,
+    verifyEmail: verifyEmail,
+    resendVerification: resendVerification,
     // people
     listStudents: listStudents,
     getStudent: getStudent,

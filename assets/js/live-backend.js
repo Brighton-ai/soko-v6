@@ -897,6 +897,45 @@
   B.cloneFeeStructure = notInBackend('cloneFeeStructure', 30);
   B.rejectWaiver = notInBackend('rejectWaiver', 6);
   // ══════════════════════════════════════════════════════════════════════
+  // Integrations — M2
+  //
+  // Secrets go up and never come back: a GET returns the last four characters
+  // of a key, which is enough for a bursar to tell which one they pasted and
+  // useless to anybody reading the screen over their shoulder.
+  // ══════════════════════════════════════════════════════════════════════
+
+  B.listIntegrations = function () {
+    return GET('/tenant-integrations').then(function (v) {
+      var d = (v && v.data) || v || {};
+      return { items: asList(d.items || d), encryption: d.encryption || 'unknown' };
+    });
+  };
+
+  B.saveIntegration = function (schoolId, provider, config) {
+    return PUT('/tenant-integrations/' + provider, { config: config || {} })
+      .then(function (v) { return (v && v.data) || v || {}; });
+  };
+
+  B.testIntegration = function (schoolId, provider) {
+    return POST('/tenant-integrations/' + provider + '/test', {})
+      .then(function (v) { return (v && v.data) || v || {}; });
+  };
+
+  B.disconnectIntegration = function (schoolId, provider) {
+    return request('DELETE', '/tenant-integrations/' + provider, {})
+      .then(function (v) { return (v && v.data) || v || {}; });
+  };
+
+  // GET /api/billing/subscription
+  B.getSubscription = function () {
+    return GET('/billing/subscription').then(function (v) { return (v && v.data) || v || {}; });
+  };
+  // GET /api/billing/plans
+  B.listPlans = function () {
+    return GET('/billing/plans').then(function (v) { return asList((v && v.data) || v); });
+  };
+
+  // ══════════════════════════════════════════════════════════════════════
   // Session
   //
   // The login page used to validate the shape of an email address, write a

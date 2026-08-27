@@ -51,6 +51,32 @@
     }
   }
   global.SHULE_MODE = CONFIG.mode;
+  // ── integrations (M2) ─────────────────────────────────────────────────────
+  // GET /api/tenant-integrations
+  async function listIntegrations(schoolId) {
+    return BACKEND.listIntegrations(schoolId);
+  }
+  // PUT /api/tenant-integrations/{provider}
+  async function saveIntegration(schoolId, provider, config) {
+    return BACKEND.saveIntegration(schoolId, provider, config);
+  }
+  // POST /api/tenant-integrations/{provider}/test
+  async function testIntegration(schoolId, provider) {
+    return BACKEND.testIntegration(schoolId, provider);
+  }
+  // DELETE /api/tenant-integrations/{provider}
+  async function disconnectIntegration(schoolId, provider) {
+    return BACKEND.disconnectIntegration(schoolId, provider);
+  }
+  // GET /api/billing/subscription
+  async function getSubscription(schoolId) {
+    return BACKEND.getSubscription(schoolId);
+  }
+  // GET /api/billing/plans
+  async function listPlans(schoolId) {
+    return BACKEND.listPlans(schoolId);
+  }
+
   // ── session ───────────────────────────────────────────────────────────────
   // POST /api/auth/login
   // opts.role is a hint, honoured only by the demo, which has no accounts to
@@ -512,6 +538,12 @@
   // demo-backend.js.
   // ════════════════════════════════════════════════════════════════════
   global.ShuleAPI = {
+    listIntegrations: listIntegrations,
+    saveIntegration: saveIntegration,
+    testIntegration: testIntegration,
+    disconnectIntegration: disconnectIntegration,
+    getSubscription: getSubscription,
+    listPlans: listPlans,
     login: login,
     getMe: getMe,
     logout: logout,

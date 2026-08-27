@@ -28,7 +28,7 @@ const PAGES = ['index.html', 'features.html', 'pricing.html', 'contact.html', 'l
 const APP_PAGES = [
   'app/dashboard.html', 'app/students.html', 'app/student.html',
   'app/invoices.html', 'app/payments.html', 'app/defaulters.html',
-  'app/waivers.html', 'app/fee-structures.html',
+  'app/waivers.html', 'app/fee-structures.html', 'app/settings.html',
   'app/grading-scales.html', 'app/attendance.html', 'app/exams.html',
   'app/results.html', 'app/report-cards.html',
   'app/teacher/dashboard.html', 'app/teacher/register.html',
@@ -629,13 +629,32 @@ describe('App shell', () => {
     assert.deepEqual(drifted, [], `The sidebar has drifted within a role:\n  ${drifted.join('\n  ')}`);
   });
 
-  it('the topbar is byte-identical across every page in app/', () => {
-    const shells = APP_PAGES.map((p) => ({ page: p, markup: normaliseShell(shellOf(p, 'header.top')) }));
+  it('the topbar is identical across every page in app/, allowing for depth', () => {
+    // A link out of app/teacher/ has to climb one more level than the same
+    // link in app/, so the hrefs legitimately differ by their ../ prefix and
+    // nothing else. Those prefixes are collapsed before comparing, which keeps
+    // the drift protection: any other difference still fails.
+    const depthless = (m) => m.replace(/(?:\.\.\/)+/g, '');
+    const shells = APP_PAGES.map((p) => ({
+      page: p, markup: depthless(normaliseShell(shellOf(p, 'header.top')))
+    }));
     const first = shells[0];
     const drifted = shells.slice(1)
       .filter((s) => s.markup !== first.markup)
       .map((s) => `${s.page} differs from ${first.page}${firstDiff(first.markup, s.markup)}`);
     assert.deepEqual(drifted, [], `The topbar has drifted between pages in app/:\n  ${drifted.join('\n  ')}`);
+  });
+
+  it('every page in app/ links to settings at the right depth', () => {
+    const wrong = [];
+    for (const p of APP_PAGES) {
+      const depth = p.split('/').length - 2;       // app/x.html -> 0, app/a/x.html -> 1
+      const want = '../'.repeat(depth) + 'settings.html';
+      const href = (shellOf(p, 'header.top').match(/href="([^"]*settings\.html)"/) || [])[1];
+      if (href !== want) wrong.push(`${p} links to "${href}", expected "${want}"`);
+    }
+    assert.deepEqual(wrong, [],
+      `A settings link that does not climb the right number of levels is a 404:\n  ${wrong.join('\n  ')}`);
   });
 
   it('the drift check is actually comparing something', () => {

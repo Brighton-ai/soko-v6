@@ -88,3 +88,26 @@ console.log('   listStudents →', students.error ? '✘ ' + students.error
 const summary = await w.ShuleAPI.getDashboardSummary(seed.school_id, {}).catch((e) => ({ error: e.message }));
 console.log('   dashboard →', summary.error ? '✘ ' + summary.error
   : `✔ ${summary.enrolment?.value} enrolled · ${summary.outstanding?.value} outstanding`);
+
+console.log('\n═══ the settings page, live ═══');
+const st = open('app/settings.html');
+st.localStorage.setItem('shule.jwt', jwt);
+st.localStorage.setItem('shule.refresh', login.localStorage.getItem('shule.refresh') || '');
+st.localStorage.setItem('shule.role', 'admin');
+// The page's own scripts already ran during open(); run settings.js again now
+// that the session is in place, which is what a real load would have.
+st.eval(fs.readFileSync(path.join(ROOT, 'assets/js/settings.js'), 'utf8'));
+
+for (let i = 0; i < 40 && st.document.querySelector('#integrations-list')?.getAttribute('data-ready') !== '1'; i++) {
+  await wait(100);
+}
+const list = st.document.querySelector('#integrations-list');
+const cards = [...st.document.querySelectorAll('.card__head h2')].map((h) => h.textContent);
+const badges = [...st.document.querySelectorAll('.card__head .tag')].map((t) => t.textContent.trim());
+console.log('   providers →', cards.length ? cards.join(', ') : '✘ none rendered');
+console.log('   status    →', badges.join(', ') || '—');
+console.log('   encryption→', st.document.querySelector('#enc-note')?.textContent?.slice(0, 60));
+const secretFields = [...st.document.querySelectorAll('input[type=password]')].map((i) => i.name);
+console.log('   secrets are password fields:', secretFields.join(', ') || 'none');
+const shown = [...st.document.querySelectorAll('.field__saved')].map((s2) => s2.textContent);
+console.log('   stored values shown as:', shown.length ? shown.join(' | ') : '(nothing stored yet)');

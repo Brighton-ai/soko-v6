@@ -91,7 +91,7 @@ export const ROLE_NAV = {
       { label: 'Events', icon: 'events', step: 'later' } ] },
     { group: 'admin', label: 'Admin', items: [
       { label: 'Reports', icon: 'analytics', step: 'later' },
-      { label: 'Settings', icon: 'settings', step: 'later' } ] }
+      { label: 'Settings', icon: 'settings', href: 'settings.html' } ] }
   ],
 
   teacher: [
@@ -176,7 +176,11 @@ export function sidebar(role, currentAppPath, depth) {
   ].join('\n');
 }
 
-export function topbar() {
+export function topbar(depth = 1) {
+  // depth is app/ + however deep the page sits, so a link out of teacher/ or
+  // parent/ climbs the right number of levels. A hard-coded "settings.html"
+  // in this template 404s from every subdirectory.
+  const settings = "../".repeat(depth - 1) + "settings.html";
   return `<header class="top">
   <button class="top__menu" id="sidetoggle" aria-label="Open menu" aria-expanded="false" aria-controls="side"><span></span></button>
   <div class="top__school">
@@ -203,7 +207,7 @@ export function topbar() {
       <span data-bind="user-email">jane.wanjiru@riverside.ac.ke</span>
     </div>
     <a href="#" data-step="later" role="menuitem">Profile &amp; password</a>
-    <a href="#" data-step="later" role="menuitem">School settings</a>
+    <a href="${settings}" role="menuitem">School settings</a>
     <button type="button" role="menuitem" id="reset-demo">Reset demo data</button>
     <button type="button" role="menuitem" id="signout">Sign out</button>
   </div>
@@ -273,7 +277,7 @@ export function page({ pageRel, role = 'admin', title, desc, content, pageJs, pa
     sidebar(role, pageRel, depth),
     '',
     '<div class="main">',
-    topbar(),
+    topbar(depth),
     '',
     content.trim(),
     '</div>',
@@ -322,7 +326,7 @@ export function restamp(pageRel, html) {
 
   const c = out.indexOf('<header class="top">');
   const d = out.indexOf('</header>') + '</header>'.length;
-  out = out.slice(0, c) + topbar() + out.slice(d);
+  out = out.slice(0, c) + topbar(depthOf(pageRel) + 1) + out.slice(d);
 
   const first = out.indexOf('<script src=');
   const last = out.lastIndexOf('</script>') + '</script>'.length;
