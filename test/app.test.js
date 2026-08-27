@@ -65,6 +65,11 @@ async function openPage(relPath, opts = {}) {
  */
 async function loadScriptsManually(dom, relPath) {
   const win = dom.window;
+  // These tests assert the UI against a deterministic dataset, so they ask for
+  // demo mode explicitly. config.js defaults to live now: a page that cannot
+  // reach the API must fail visibly rather than quietly serving seeded data,
+  // and that applies to the test harness as much as to a school.
+  win.SHULE_FORCE_DEMO = true;
   const dir = path.dirname(path.join(ROOT, relPath));
   const srcs = Array.from(win.document.querySelectorAll('script[src]')).map((s) => s.getAttribute('src'));
   for (const src of srcs) {

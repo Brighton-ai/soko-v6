@@ -1001,11 +1001,40 @@ describe('Data access discipline', () => {
   });
 
   it('api.js resolves its backend through one swappable reference', () => {
-    const src = readFile('assets/js/api.js');
-    assert.ok(/global\.SHULE_BACKEND\s*\|\|\s*global\.DemoBackend/.test(src),
-      'api.js does not read `window.SHULE_BACKEND || DemoBackend`; there must be exactly one swap point.');
-    const calls = (codeOf('assets/js/api.js').match(/BACKEND\./g) || []).length;
+    const code = codeOf('assets/js/api.js');
+    // One assignment of BACKEND per branch, and no second place that decides.
+    const assignments = (code.match(/\bBACKEND\s*=/g) || []).length;
+    assert.ok(assignments <= 4 && assignments >= 1,
+      `api.js assigns BACKEND ${assignments} times. The choice belongs in one place.`);
+    assert.ok(/global\.SHULE_BACKEND/.test(code),
+      'api.js no longer honours window.SHULE_BACKEND; the contract harness swaps through it.');
+    const calls = (code.match(/BACKEND\./g) || []).length;
     assert.ok(calls >= 55, `api.js only calls BACKEND ${calls} times; every route should go through it.`);
+  });
+
+  it('a live page never falls back to demo data', () => {
+    const code = codeOf('assets/js/api.js');
+    // The failure this guards against is the quiet one. An app that serves
+    // seeded data when the API is unreachable shows a bursar a school that
+    // does not exist, with fees nobody owes, and looks entirely normal doing
+    // it. Better a page that says it cannot reach the school system.
+    assert.ok(!/SHULE_BACKEND\s*\|\|\s*global\.DemoBackend/.test(code),
+      'api.js falls back to DemoBackend when no backend is set. A page that cannot ' +
+      'reach the API must fail visibly, not serve a fictional school.');
+    assert.ok(/SHULE_CONFIG/.test(code),
+      'api.js does not read the mode from config.js; the choice must be made once.');
+    const liveBranch = /ShuleLiveBackend/.test(code);
+    assert.ok(liveBranch, 'api.js has no live branch, so it can only ever serve demo data.');
+  });
+
+  it('config.js decides the mode before any backend loads', () => {
+    const { CORE_SCRIPTS } = require('../tools/shell.mjs');
+    const order = CORE_SCRIPTS.map((s) => s.split('/').pop());
+    assert.equal(order[0], 'config.js',
+      `config.js must load first; the order is ${order.join(' → ')}. Anything that ` +
+      'loads before it has to guess which backend it is talking to.');
+    assert.ok(order.indexOf('api.js') > order.indexOf('live-backend.js'),
+      'api.js loads before live-backend.js, so the live client is not defined when it looks.');
   });
 
   it('the backend adapter owns the rules, and says it is the file that goes', () => {

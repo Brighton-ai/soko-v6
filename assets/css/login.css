@@ -66,3 +66,18 @@
 @media (max-width:520px){
   .roles{grid-template-columns:1fr}
 }
+
+/* A sign-in that failed. Sits above the fields, announced to screen readers,
+   and uses the status red rather than the accent — this is not a decoration. */
+.lform__err{
+  margin:0 0 14px;
+  padding:10px 12px;
+  border:1px solid var(--red);
+  border-left-width:3px;
+  border-radius:6px;
+  background:var(--red-soft);
+  color:var(--body);
+  font-size:14px;
+  line-height:1.45;
+}
+.lform__err[hidden]{display:none}

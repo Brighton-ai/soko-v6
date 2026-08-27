@@ -17,11 +17,74 @@
 (function (global) {
   'use strict';
 
-  var BACKEND = global.SHULE_BACKEND || global.DemoBackend;
-  if (!BACKEND) {
-    throw new Error('Shule API: no backend. Load assets/js/demo-backend.js before assets/js/api.js, ' +
-      'or set window.SHULE_BACKEND to your own implementation.');
+  /*
+   * Choosing the backend.
+   *
+   * This used to be `SHULE_BACKEND || DemoBackend`, which meant a page that
+   * failed to load the live adapter quietly served demo data instead. That is
+   * the worst failure this app can have: a bursar sees a school that does not
+   * exist, with pupils who are not theirs and fees nobody owes, and nothing on
+   * the screen says so. It looks like a working app.
+   *
+   * So the mode is decided once, in config.js, and honoured here without a
+   * fallback in either direction. If the chosen backend is missing, the page
+   * fails loudly rather than showing somebody else's school.
+   */
+  var CONFIG = global.SHULE_CONFIG || { mode: global.SHULE_BACKEND ? 'live' : 'demo' };
+  var BACKEND;
+
+  if (global.SHULE_BACKEND) {
+    // An explicit override — the contract harness, or a test stub.
+    BACKEND = global.SHULE_BACKEND;
+  } else if (CONFIG.mode === 'demo') {
+    BACKEND = global.DemoBackend;
+    if (!BACKEND) {
+      throw new Error('Shule is in demo mode but assets/js/demo-backend.js has not loaded. ' +
+        'Load assets/js/data/demo-data.js and assets/js/demo-backend.js before assets/js/api.js.');
+    }
+  } else {
+    BACKEND = global.ShuleLiveBackend;
+    if (!BACKEND) {
+      throw new Error('Shule cannot reach the school system: assets/js/live-backend.js has not ' +
+        'loaded. The app will not fall back to demo data, because showing a school records ' +
+        'that are not theirs is worse than showing nothing.');
+    }
   }
+  global.SHULE_MODE = CONFIG.mode;
+  // ── session ───────────────────────────────────────────────────────────────
+  // POST /api/auth/login
+  // opts.role is a hint, honoured only by the demo, which has no accounts to
+  // read a role from. The live backend takes the role off the account.
+  async function login(identifier, password, opts) {
+    return BACKEND.login(identifier, password, opts);
+  }
+  // GET /api/auth/me
+  async function getMe() {
+    return BACKEND.getMe();
+  }
+  // POST /api/auth/logout
+  async function logout() {
+    return BACKEND.logout();
+  }
+  // POST /api/auth/register
+  async function register(payload) {
+    return BACKEND.register(payload);
+  }
+  // POST /api/auth/verify-email
+  async function verifyEmail(token) {
+    return BACKEND.verifyEmail ? BACKEND.verifyEmail(token)
+      : Promise.reject(Object.assign(new Error('Not available in this mode.'), { status: 501 }));
+  }
+  // POST /api/auth/resend-verification
+  async function resendVerification(email) {
+    return BACKEND.resendVerification ? BACKEND.resendVerification(email)
+      : Promise.reject(Object.assign(new Error('Not available in this mode.'), { status: 501 }));
+  }
+  // Async like everything else here, even though both read local state. One
+  // rule for the whole surface is worth more than saving a caller an await.
+  async function hasSession() { return BACKEND.hasSession ? BACKEND.hasSession() : false; }
+  async function currentUser() { return BACKEND.currentUser ? BACKEND.currentUser() : null; }
+
   // GET /api/school/{school_id}/students
   async function listStudents(schoolId, opts) {
     return BACKEND.listStudents(schoolId, opts);
@@ -449,6 +512,15 @@
   // demo-backend.js.
   // ════════════════════════════════════════════════════════════════════
   global.ShuleAPI = {
+    login: login,
+    getMe: getMe,
+    logout: logout,
+    register: register,
+    verifyEmail: verifyEmail,
+    resendVerification: resendVerification,
+    hasSession: hasSession,
+    currentUser: currentUser,
+    mode: async function () { return (global.SHULE_CONFIG && global.SHULE_CONFIG.mode) || 'demo'; },
     listStudents: listStudents,
     getStudent: getStudent,
     createStudent: createStudent,

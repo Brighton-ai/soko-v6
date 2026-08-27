@@ -106,8 +106,24 @@
   }
 
   // ── transport ─────────────────────────────────────────────────────────
+  /*
+   * Paths are relative to /api/school, because almost everything here is.
+   *
+   * A path starting with a bare segment the school router does not own — auth,
+   * billing, mpesa, tenant-integrations — is passed through unprefixed. Without
+   * this, signing in went to /api/school/auth/login and 404'd, and the adapter
+   * reported it as a bad password.
+   */
+  // Only paths the school router does NOT own. /notifications/fee-reminder is
+  // a school route despite the name, and listing it here sent fee reminders to
+  // the tenant notification centre instead.
+  var ROOT_PREFIXES = ['/auth/', '/billing/', '/mpesa/', '/tenant-integrations',
+                       '/subscriptions/', '/superadmin/', '/settings/', '/users/',
+                       '/tenants/', '/roles/', '/branches/', '/import/'];
+
   function url(path, query) {
-    var full = CONFIG.baseUrl.replace(/\/$/, '') + '/school' + path;
+    var atRoot = ROOT_PREFIXES.some(function (p) { return path === p || path.indexOf(p) === 0; });
+    var full = CONFIG.baseUrl.replace(/\/$/, '') + (atRoot ? '' : '/school') + path;
     var parts = [];
     Object.keys(query || {}).forEach(function (k) {
       var v = query[k];
@@ -189,6 +205,13 @@
   /** One retry on 401, then out. A second 401 means the refresh is dead too. */
   function request(method, path, opts) {
     return once(method, path, opts).then(function (r) {
+      // A 401 from signing in means the password was wrong, not that a session
+      // expired. Sending it through the refresh path told someone who had just
+      // mistyped their password that their session had ended — and then sent
+      // them to the login page they were already on.
+      if (r.res.status === 401 && opts && opts.noRefresh) {
+        throw apiError(401, 'That email address and password do not match an account.', r.body);
+      }
       if (r.res.status !== 401) return unwrap(r, method, path);
       return refresh().then(function () {
         return once(method, path, opts).then(function (r2) {
@@ -862,6 +885,96 @@
   B.deleteFeeStructure = notInBackend('deleteFeeStructure', 30);
   B.cloneFeeStructure = notInBackend('cloneFeeStructure', 30);
   B.rejectWaiver = notInBackend('rejectWaiver', 6);
+  // ══════════════════════════════════════════════════════════════════════
+  // Session
+  //
+  // The login page used to validate the shape of an email address, write a
+  // role to localStorage and redirect. Anyone who typed anything was inside,
+  // as a school administrator. This is the real thing.
+  // ══════════════════════════════════════════════════════════════════════
+
+  // POST /api/auth/login
+  B.login = function (identifier, password /*, opts */) {
+    // opts.role is deliberately ignored: the role comes from the account.
+    return request('POST', '/auth/login', {
+      body: { email: String(identifier || '').trim().toLowerCase(), password: password },
+      noRefresh: true
+    }).then(function (v) {
+      var d = (v && v.data) || v || {};
+      var access = d.access_token || v.access_token;
+      var refresh = d.refresh_token || v.refresh_token;
+      if (!access) throw apiError(500, 'Signing in returned no session.');
+      setSession(access, refresh);
+      var user = d.user || v.user || {};
+      try {
+        global.localStorage.setItem('shule.user', JSON.stringify({
+          id: user.id, email: user.email, full_name: user.full_name,
+          role: user.role_name || user.role, tenant_id: user.tenant_id,
+          is_super_admin: !!user.is_super_admin
+        }));
+      } catch (e) { /* private mode: the session lives for this page only */ }
+      return { user: user, requires_2fa: !!(d.requires_2fa || v.requires_2fa),
+               partial_token: d.partial_token || v.partial_token || null };
+    });
+  };
+
+  // GET /api/auth/me
+  B.getMe = function () {
+    return GET('/auth/me').then(function (v) { return (v && v.data) || v || {}; });
+  };
+
+  // POST /api/auth/logout
+  B.logout = function () {
+    var s = store();
+    var refresh = null;
+    try { refresh = s ? s.getItem(CONFIG.refreshKey) : null; } catch (e) { refresh = null; }
+    var done = function () {
+      clearSession();
+      try { global.localStorage.removeItem('shule.user'); } catch (e) {}
+      try { global.localStorage.removeItem('shule.role'); } catch (e) {}
+      return { ok: true };
+    };
+    if (!refresh) return Promise.resolve(done());
+    // A failed logout still clears this device: the session is gone from here
+    // either way, and leaving a token in the browser because the server was
+    // unreachable is the wrong side to err on.
+    return request('POST', '/auth/logout', { body: { refresh_token: refresh } })
+      .then(done, done);
+  };
+
+  // POST /api/auth/register
+  B.register = function (payload) {
+    return request('POST', '/auth/register', {
+      body: {
+        school_name: payload.schoolName, full_name: payload.fullName,
+        email: String(payload.email || '').trim().toLowerCase(),
+        password: payload.password, phone: payload.phone || null,
+        plan_slug: payload.plan || 'school-trial'
+      }
+    });
+  };
+
+  // POST /api/auth/verify-email
+  B.verifyEmail = function (token) {
+    return request('POST', '/auth/verify-email', { body: { token: token } });
+  };
+
+  // POST /api/auth/resend-verification
+  B.resendVerification = function (email) {
+    return request('POST', '/auth/resend-verification',
+                   { body: { email: String(email || '').trim().toLowerCase() } });
+  };
+
+  /** Whether this browser holds a session at all. Not whether it is valid. */
+  B.hasSession = function () {
+    return !!getToken();
+  };
+
+  B.currentUser = function () {
+    try { return JSON.parse(global.localStorage.getItem('shule.user') || 'null'); }
+    catch (e) { return null; }
+  };
+
   // ══════════════════════════════════════════════════════════════════════
   // Teacher and parent surfaces — E16, E17
   //

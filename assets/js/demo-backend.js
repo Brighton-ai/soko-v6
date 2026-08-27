@@ -3242,7 +3242,70 @@
     return resolve({ id: t.id, state: 'revoked', already: false });
   }
 
+  // ── session, for the demo ──────────────────────────────────────────────────
+  //
+  // The demo has no accounts and no passwords: it is a fixed school anyone can
+  // look at. Signing in picks which of the three surfaces to show, and says so
+  // plainly rather than pretending to check a credential.
+  function login(identifier, password, opts) {
+    var who = String(identifier || '').trim();
+    if (!who) return reject(422, 'Enter your email address.');
+    // The demo has no accounts, so the surface the visitor asked for is the
+    // only thing that can decide which one they get. The live backend ignores
+    // this and reads the role off the account — a parent choosing the admin
+    // tab must not be handed a bursar's screens.
+    var asked = opts && opts.role;
+    var role = ['admin', 'teacher', 'parent'].indexOf(asked) !== -1 ? asked
+             : /parent|guardian|^0[17]/.test(who.toLowerCase()) ? 'parent'
+             : /teacher|tch/.test(who.toLowerCase()) ? 'teacher' : 'admin';
+    var user = {
+      id: 'demo-' + role, email: who, full_name: 'Demo ' + role,
+      role_name: role, tenant_id: 'demo-tenant', is_super_admin: false,
+      demo: true
+    };
+    try {
+      global.localStorage.setItem('shule.user', JSON.stringify(user));
+      global.localStorage.setItem('shule.role', role);
+    } catch (e) { /* private mode: the shell falls back to admin */ }
+    return resolve({ user: user, requires_2fa: false, demo: true });
+  }
+
+  function getMe() {
+    try {
+      var u = JSON.parse(global.localStorage.getItem('shule.user') || 'null');
+      if (u) return resolve(u);
+    } catch (e) { /* fall through */ }
+    return resolve({ id: 'demo-admin', full_name: 'Demo admin', role_name: 'admin', demo: true });
+  }
+
+  function logout() {
+    try {
+      global.localStorage.removeItem('shule.user');
+      global.localStorage.removeItem('shule.role');
+    } catch (e) { /* nothing to clear */ }
+    return resolve({ ok: true });
+  }
+
+  function hasSession() {
+    try { return !!global.localStorage.getItem('shule.user'); } catch (e) { return false; }
+  }
+
+  function currentUser() {
+    try { return JSON.parse(global.localStorage.getItem('shule.user') || 'null'); }
+    catch (e) { return null; }
+  }
+
+  function register() {
+    return reject(501, 'This is the demo. Registering a school needs the real system.');
+  }
+
   global.DemoBackend = {
+    login: login,
+    getMe: getMe,
+    logout: logout,
+    hasSession: hasSession,
+    currentUser: currentUser,
+    register: register,
     // people
     listStudents: listStudents,
     getStudent: getStudent,

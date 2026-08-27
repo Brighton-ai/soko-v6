@@ -210,9 +210,30 @@ export function topbar() {
 </header>`;
 }
 
+/*
+ * Order matters, and it is the whole design.
+ *
+ *   config.js   decides live or demo, once, before anything can assume.
+ *   live-backend.js  the real client. Always shipped.
+ *   demo-data + demo-backend  the seeded school. Present so the demo works and
+ *     so the behaviour tests have something deterministic to assert against;
+ *     never reached in live mode, because api.js honours the config with no
+ *     fallback in either direction.
+ *   api.js      the one swap point.
+ *
+ * tools/build.mjs strips the demo pair out of a live deployment, so a school
+ * does not download a fictional school's records to never use them.
+ */
 export const CORE_SCRIPTS = [
+  'assets/js/config.js',
+  'assets/js/live-backend.js',
   'assets/js/data/demo-data.js', 'assets/js/demo-backend.js',
   'assets/js/api.js', 'assets/js/shell.js', 'assets/js/ui.js'
+];
+
+/** The scripts a live deployment does not need. */
+export const DEMO_ONLY_SCRIPTS = [
+  'assets/js/data/demo-data.js', 'assets/js/demo-backend.js'
 ];
 
 export function scripts(depth, pageJs) {
